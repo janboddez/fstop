@@ -1,1 +1,2 @@
-# fstop
+# F-Stop
+Simple blogware.
