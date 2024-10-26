@@ -1,0 +1,6 @@
+[submodule "packages/janboddez/laravel-webmention"]
+	path = packages/janboddez/laravel-webmention
+	url = https://github.com/janboddez/laravel-webmention
+[submodule "packages/janboddez/laravel-indieauth"]
+	path = packages/janboddez/laravel-indieauth
+	url = https://github.com/janboddez/laravel-indieauth

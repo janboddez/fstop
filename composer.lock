@@ -1060,10 +1060,11 @@
             "dist": {
                 "type": "path",
                 "url": "packages/janboddez/laravel-indieauth",
-                "reference": "4faaa4790bd33355e3e9b51b650b1eb451cfa01e"
+                "reference": "9476666c3cd37ba040c11a031e3bb0e5e9fdec20"
             },
             "require": {
                 "guzzlehttp/guzzle": "^7.0",
+                "laravel/framework": "^8|^9|^10|^11",
                 "laravel/sanctum": "^2|^3|^4",
                 "masterminds/html5": "^2.0",
                 "mf2/mf2": "^0.5",
@@ -1100,10 +1101,11 @@
             "dist": {
                 "type": "path",
                 "url": "packages/janboddez/laravel-webmention",
-                "reference": "ad054f186c3ba4f699da0f53cfabb8cd91b6e598"
+                "reference": "62fcfb67c04a13995675e640cff403943df8b6be"
             },
             "require": {
                 "guzzlehttp/guzzle": "^7.0",
+                "laravel/framework": "^8|^9|^10|^11",
                 "masterminds/html5": "^2.0",
                 "mf2/mf2": "^0.5",
                 "symfony/dom-crawler": "^5.4"

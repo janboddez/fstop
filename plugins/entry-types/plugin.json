@@ -3,10 +3,7 @@
     "description": "Enable short-form entry types, like “note,” and “like.”",
     "extra": {
         "laravel": {
-            "providers": ["Plugins\\EntryTypes\\EntryTypesServiceProvider"],
-            "aliases": {
-
-            }
+            "providers": ["Plugins\\EntryTypes\\EntryTypesServiceProvider"]
         }
     },
     "autoload": {

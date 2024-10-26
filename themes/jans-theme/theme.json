@@ -3,10 +3,7 @@
     "description": "Adds support for short-form post types.",
     "extra": {
         "laravel": {
-            "providers": ["Themes\\JansTheme\\JansThemeServiceProvider"],
-            "aliases": {
-
-            }
+            "providers": ["Themes\\JansTheme\\JansThemeServiceProvider"]
         }
     },
     "autoload": {
