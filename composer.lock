@@ -1060,7 +1060,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/janboddez/laravel-indieauth",
-                "reference": "9476666c3cd37ba040c11a031e3bb0e5e9fdec20"
+                "reference": "772938841d3e0a57650d34e4379c9dbfb28c0d1c"
             },
             "require": {
                 "guzzlehttp/guzzle": "^7.0",
@@ -1101,7 +1101,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/janboddez/laravel-webmention",
-                "reference": "62fcfb67c04a13995675e640cff403943df8b6be"
+                "reference": "8e86b5b5c2a72c5b7e736bc2a76e539ae0f2eef4"
             },
             "require": {
                 "guzzlehttp/guzzle": "^7.0",
