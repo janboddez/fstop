@@ -30,7 +30,7 @@
                     <tr>
                         <td style="width: 2.5%;"><input type="checkbox" name="plugin_{{ $plugin }}" id="plugin_{{ $plugin }}" value="1"{{ old('plugin_'.$plugin, $attributes['active']) ? ' checked' : '' }}></td>
                         <td style="width: 20%;"><label for="plugin_{{ $plugin }}">{{ $plugin }}</label></td>
-                        <td>{{ $attributes['description'] }}</td>
+                        <td>{{ $attributes['description'] ?? __('—') }}</td>
                     </tr>
                 @empty
                     <tr>

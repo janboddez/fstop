@@ -30,7 +30,7 @@
                     <tr>
                         <td style="width: 2.5%;"><input type="radio" name="theme" id="theme_{{ $theme }}" value="{{ $theme }}"{{ old('theme_'.$theme, $attributes['active']) ? ' checked' : '' }}></td>
                         <td style="width: 20%;"><label for="theme_{{ $theme }}">{{ $theme }}</label></td>
-                        <td>{{ $attributes['description'] }}</td>
+                        <td>{{ $attributes['description'] ?? __('—') }}</td>
                     </tr>
                 @empty
                     <tr>
