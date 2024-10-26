@@ -1,0 +1,120 @@
+<?php
+
+namespace janboddez\Webmention;
+
+use Carbon\Carbon;
+use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Symfony\Component\DomCrawler\Crawler;
+
+class WebmentionSender
+{
+    public static function send(string $source, string $target): array
+    {
+        // Find endpoint, if any.
+        $endpoint = static::discoverEndpoint($target);
+
+        if (! $endpoint) {
+            Log::notice(__('No Webmention endpoint found for :target', [
+                'target' => $target,
+            ]));
+
+            return [
+                'result' => false,
+                'target' => $target,
+                'endpoint' => null,
+                'status' => null,
+                'sent' => null,
+            ];
+        }
+
+        // Send webmention.
+        $response = Http::asForm()->post($endpoint, [
+            'source' => $source,
+            'target' => $target,
+        ]);
+
+        return [
+            'result' => $response->successful(),
+            'target' => $target,
+            'endpoint' => $endpoint,
+            'status' => $response->status(),
+            'sent' => Carbon::now()->toDateTimeString(),
+        ];
+    }
+
+    public static function discoverEndpoint(string $url): ?string
+    {
+        $client = new Client([
+            'allow_redirects' => true,
+        ]);
+
+        /** @todo Set a proper user agent. */
+        $response = $client->request('HEAD', $url);
+
+        $links = $response->getHeader('Link');
+        // $links = explode(',', $links);
+
+        if (! empty($links)) {
+            foreach ($links as $link) {
+                // phpcs:ignore Generic.Files.LineLength.TooLong
+                if (! preg_match('/<(.[^>]+)>;\s+rel\s?=\s?[\"\']?(http:\/\/)?webmention(\.org)?\/?[\"\']?/i', $link, $matches)) {
+                    continue;
+                }
+
+                return static::absolutizeUrl($matches[1], $url);
+            }
+        }
+
+        $response = Http::get($url);
+
+        if (! $response->successful()) {
+            return null;
+        }
+
+        try {
+            $crawler = new Crawler((string) $response->getBody());
+            $endpoint = $crawler->filterXPath('(//link|//a)[contains(concat(" ", @rel, " "), " webmention ") or contains(@rel, "webmention.org")]')->attr('href'); // phpcs:ignore Generic.Files.LineLength.TooLong
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return null;
+        }
+
+        if (! empty($endpoint)) {
+            return static::absolutizeUrl($endpoint, $url);
+        }
+
+        return null;
+    }
+
+    public static function findLinks(string $html): array
+    {
+        try {
+            $crawler = new Crawler($html);
+            $urls = $crawler->filterXPath('//a[@href]')->extract(['href']);
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+        }
+
+        if (! empty($urls)) {
+            return array_map(
+                fn ($item) => filter_var($item, FILTER_SANITIZE_URL),
+                $urls
+            );
+        }
+
+        return [];
+    }
+
+    public static function absolutizeUrl(string $url, string $baseUrl): ?string
+    {
+        $absoluteUrl = \Mf2\resolveUrl($baseUrl, $url);
+
+        if (! filter_var($absoluteUrl, FILTER_VALIDATE_URL)) {
+            return null;
+        }
+
+        return $absoluteUrl;
+    }
+}

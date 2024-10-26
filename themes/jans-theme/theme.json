@@ -1,0 +1,17 @@
+{
+    "name": "janboddez/jans-theme",
+    "description": "Adds support for short-form post types.",
+    "extra": {
+        "laravel": {
+            "providers": ["Themes\\JansTheme\\JansThemeServiceProvider"],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Themes\\JansTheme\\": "src"
+        }
+    }
+}

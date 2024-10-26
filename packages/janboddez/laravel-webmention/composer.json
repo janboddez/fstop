@@ -1,0 +1,26 @@
+{
+    "name": "janboddez/laravel-webmention",
+    "description": "Webmention package for Laravel",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "janboddez\\Webmention\\": "src/"
+        }
+    },
+    "require": {
+        "guzzlehttp/guzzle": "^7.0",
+        "masterminds/html5": "^2.0",
+        "mf2/mf2": "^0.5",
+        "symfony/dom-crawler": "^5.4"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "janboddez\\Webmention\\WebmentionServiceProvider"
+            ]
+        },
+        "branch-alias": {
+            "dev-master": "1.0-dev"
+        }
+    }
+}

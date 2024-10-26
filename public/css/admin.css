@@ -1,0 +1,208 @@
+@font-face {
+    font-family: 'Inter';
+    font-style:  normal;
+    font-weight: 400;
+    font-display: swap;
+    src: local(''),
+         url(../fonts/inter-v12-latin-ext_latin-regular.woff2) format('woff2');
+}
+
+@font-face {
+    font-family: 'Inter';
+    font-style:  normal;
+    font-weight: 600;
+    font-display: swap;
+    src: local(''),
+         url(../fonts/inter-v12-latin-ext_latin-600.woff2) format('woff2');
+}
+
+@font-face {
+    font-family: 'Inter';
+    font-style:  normal;
+    font-weight: 700;
+    font-display: swap;
+    src: local(''),
+         url(../fonts/inter-v12-latin-ext_latin-700.woff2) format('woff2');
+}
+
+@font-face {
+    font-family: 'Source Code Pro';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: local(''),
+         url('../fonts/source-code-pro-v21-latin-ext_latin-regular.woff2') format('woff2');
+}
+
+@media screen and (max-width: 1023px) {
+    main.px-5 {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+}
+
+.pagination-previous,
+.pagination-next {
+    order: initial;
+}
+html {
+    background: #f1f4f8;
+    overflow-y: scroll;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+    font-family: "Inter", sans-serif;
+}
+
+textarea {
+    font-family: "Source Code Pro", monospace;
+}
+
+#menu {
+    background: #222e3c;
+    overflow-y: auto;
+}
+
+@media screen and (min-width: 1024px) {
+    #menu {
+        height: 100vh;
+        position: sticky;
+        top: 0;
+    }
+}
+
+.navbar {
+    display: block !important;
+}
+
+.navbar-menu {
+    background-color: transparent !important;
+    padding: 0 !important;
+}
+
+.navbar-burger {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.menu-list {
+    width: 100%;
+}
+
+.menu-list a {
+    border-radius: 0;
+    color: rgba(255, 255, 255, 0.5);
+    text-decoration: none !important;
+}
+
+.menu-list a:not(.is-active):hover,
+.menu-list a:not(.is-active):active,
+.menu-list a:not(.is-active):focus {
+    border-radius: 0;
+    color: rgba(255, 255, 255, 0.75);
+    background: none !important;
+}
+
+.title:not(:last-child) {
+    margin-bottom: 0;
+}
+.title + .button {
+    position: relative;
+    top: 0.375rem;
+}
+
+.table th {
+    padding-top: calc(0.5em - 1px);
+    padding-bottom: calc(0.5em - 1px);
+}
+
+.card {
+    border: 1px solid #dbdbdb;
+    box-shadow: none;
+}
+
+.card-header {
+    border-bottom: 2px solid #dbdbdb;
+    box-shadow: none;
+}
+
+th,
+.card-header-title {
+    font-weight: 600; /* Bulma uses `font-weight: 600` nearly everywhere else. */
+}
+
+.card-content {
+    padding: 1rem;
+}
+
+.card,
+.card-content,
+.input,
+.textarea {
+    border-radius: 0 !important;
+}
+
+@media screen and (max-width: 768px) {
+    /* Stack columns inside "cards" a bit tighter. */
+    .card-content .column:not(:first-child) {
+        padding-top: 0;
+    }
+
+    .card-content .column:not(:last-child) {
+        padding-bottom: 0;
+    }
+}
+
+label {
+    font-weight: 600;
+}
+
+label.radio,
+label.file-label,
+.is-grouped label {
+    font-weight: normal;
+}
+
+.button.is-ghost {
+    display: inline;
+    border: 0;
+    font-size: inherit;
+    height: auto;
+    padding: 0;
+    vertical-align: baseline;
+}
+
+.button.is-ghost:hover {
+    color: #363636;
+}
+form:last-child .button.is-ghost:hover,
+form:last-child .button.is-ghost:active,
+form:last-child .button.is-ghost:focus {
+    color: #cc0f35; /* "Danger," for Delete buttons. */
+}
+
+img.file {
+    border: 1px solid #dbdbdb;
+}
+
+a:not(.button).is-active,
+a:not(.button):hover,
+a:not(.button):active,
+a:not(.button):focus {
+    text-decoration: underline;
+}
+
+a.pagination-previous,
+a.pagination-next,
+a.pagination-link {
+    text-decoration: none !important;
+}
+
+a[href] {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+}

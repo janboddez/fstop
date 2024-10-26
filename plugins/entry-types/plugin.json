@@ -1,0 +1,17 @@
+{
+    "name": "janboddez/entry-types",
+    "description": "Enable short-form entry types, like “note,” and “like.”",
+    "extra": {
+        "laravel": {
+            "providers": ["Plugins\\EntryTypes\\EntryTypesServiceProvider"],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Plugins\\EntryTypes\\": "src"
+        }
+    }
+}
