@@ -29,12 +29,15 @@ class EntryObserver
         // Ensure a title is set.
         if (empty($entry->name)) {
             // Generate a title off the (current) content.
-            $content = MarkdownExtra::defaultTransform($entry->content);
+            $parser = new MarkdownExtra();
+            $parser->no_markup = false; // Do not escape markup already present.
+
+            $content = $parser->defaultTransform($entry->content);
             $content = trim(strip_tags($content));
 
             $name = Str::words($content, 10, ' …');
 
-            // Decode quotes, etc. (We escape on output, at least on the front end.)
+            // Decode quotes, etc. (We escape on output.)
             $name = html_entity_decode($name, ENT_HTML5, 'UTF-8');
             $name = preg_replace('~\s+~', ' ', $name); // Get rid of excess whitespace.
             $name = Str::limit($name, 250, '…'); // Shorten (again).

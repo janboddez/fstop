@@ -129,7 +129,10 @@ class Entry extends Model
     public function getSummaryAttribute(?string $value): string
     {
         if ((! request()->is('admin/*') || app()->runningInConsole()) && empty($value)) {
-            $value = MarkdownExtra::defaultTransform($this->content);
+            $parser = new MarkdownExtra();
+            $parser->no_markup = false; // Do not escape markup already present.
+
+            $value = $parser->defaultTransform($this->content);
             $value = trim(strip_tags($value));
             $value = Str::words($value, 30, ' […]');
         }

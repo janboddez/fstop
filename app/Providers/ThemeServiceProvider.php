@@ -11,7 +11,7 @@ use Illuminate\Support\ServiceProvider;
 class ThemeServiceProvider extends ServiceProvider
 {
     /**
-     * Bootstrap services.
+     * Load active theme.
      */
     public function boot(): void
     {
