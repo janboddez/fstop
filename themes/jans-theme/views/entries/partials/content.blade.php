@@ -1,7 +1,6 @@
 <article class="h-entry {{ $entry->type }}{{ ! empty($entry->thumbnail) ? ' has-thumbnail' : '' }}">
-    {{-- @todo: Condense these into `is_single()` or something helper functions. --}}
-
-    @if (is_archive() && ! empty($entry->thumbnail))
+    {{-- Show short-form entries' thumbnail also on singular pages. --}}
+    @if ((is_archive() || in_array($entry->type, ['note', 'like'], true)) && ! empty($entry->thumbnail))
         <div class="post-thumbnail">
             {{-- @todo: Make responsive. --}}
             <a class="u-url" href="{{ route(Str::plural($entry->type) . '.show', $entry->slug) }}" rel="bookmark"><img class="u-featured" src="{{ $entry->thumbnail }}" width="1600" height="720" alt="" loading="lazy"></a>
