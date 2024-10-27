@@ -4,7 +4,7 @@ use App\Models\Entry;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
-function is_archive($type = null): bool
+function is_archive(string $type = null): bool
 {
     if (request()->is('admin/*')) {
         return false;
@@ -18,13 +18,18 @@ function is_archive($type = null): bool
         return false;
     }
 
-    if (Route::currentRouteName() === 'tags.show') {
+    if (is_tag()) {
         // Tag archive.
         return true;
     }
 
     if (request()->is('search')) {
         // Search results.
+        return true;
+    }
+
+    if (request()->is('stream')) {
+        // "Stream," i.e., all entry types.
         return true;
     }
 
@@ -37,20 +42,41 @@ function is_archive($type = null): bool
     return false;
 }
 
-function is_page(): bool
+function is_tag(string $name = null): bool
 {
-    if (request()->is('admin/*')) {
+    if (! request()->is('tags/*')) {
         return false;
     }
 
-    if (is_singular('page')) {
+    if (! $name) {
         return true;
     }
 
-    return false;
+    if (! request()->is("tags/$name")) {
+        return false;
+    }
+
+    return true;
 }
 
-function is_singular($type = null): bool
+function is_page(string $name = null): bool
+{
+    if (! is_singular('page')) {
+        return false;
+    }
+
+    if (! $name) {
+        return true;
+    }
+
+    if (! request()->is($name)) {
+        return false;
+    }
+
+    return true;
+}
+
+function is_singular(string $type = null): bool
 {
     if (request()->is('admin/*')) {
         return false;
@@ -89,11 +115,25 @@ function body_class(): string
         $classes[] = 'single';
     }
 
-    if (is_page()) {
-        $classes[] = 'page';
+    if (is_tag()) {
+        $classes[] = 'tag';
     }
 
-    return implode(' ', $classes);
+    foreach (array_keys(Entry::getRegisteredTypes()) as $type) {
+        if (Route::currentRouteName() === Str::plural($type) . '.index') {
+            $classes[] = $type;
+        }
+
+        if (Route::currentRouteName() === Str::plural($type) . '.show') {
+            $classes[] = $type;
+        }
+    }
+
+    if (request()->is('stream')) {
+        $classes[] = 'stream';
+    }
+
+    return implode(' ', array_unique($classes));
 }
 
 function random_slug(): string
