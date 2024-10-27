@@ -38,5 +38,5 @@ Then when the prompt appears:
 DB::table('users')->insert(['name' => 'alice', 'email' => 'alice@example.org', 'password' => Hash::make('<my-super-secret-password>'), 'url' => 'https://example.org/']);
 ```
 
-You'll want to also set `fstop/public` as your web server's "document root."
+You'll also want to set `fstop/public` as your web server's "document root."
 You should now able to head over to https://example.org/admin and log in.
