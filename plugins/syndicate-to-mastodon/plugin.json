@@ -1,0 +1,14 @@
+{
+    "name": "janboddez/syndicate-to-mastodon",
+    "description": "Automatically share entries on Mastodon.",
+    "extra": {
+        "laravel": {
+            "providers": ["Plugins\\SyndicateToMastodon\\SyndicateToMastodonServiceProvider"]
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Plugins\\SyndicateToMastodon\\": "src"
+        }
+    }
+}
