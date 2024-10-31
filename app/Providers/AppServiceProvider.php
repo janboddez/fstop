@@ -93,11 +93,11 @@ class AppServiceProvider extends ServiceProvider
             // Do nothing, like when the database hasn't been set up, yet.
         }
 
-        DB::listen(function ($query) {
-            Log::debug(
-                $query->sql,
-                $query->bindings
-            );
-        });
+        // DB::listen(function ($query) {
+        //     Log::debug(
+        //         $query->sql,
+        //         $query->bindings
+        //     );
+        // });
     }
 }

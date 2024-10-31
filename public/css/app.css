@@ -70,6 +70,13 @@ h1,
     margin: 0.5rem 0 0;
 }
 
+/*
+body.archive:not(.home) h1,
+.page h1 {
+    margin-bottom: 3.46875rem;
+}
+*/
+
 h2,
 h3,
 h4 {

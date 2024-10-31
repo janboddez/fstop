@@ -76,7 +76,7 @@
                                     <div class="column">
                                         <div class="control">
                                             <textarea class="textarea" id="summary" name="meta_values[]" rows="1">{{
-                                                ! empty($value[0]) && is_string($value[0])
+                                                ! empty($value[0]) && ! is_array($value[0]) /*is_string($value[0])*/
                                                     ? $value[0] /* Even single values should always be cast to an array! */
                                                     : json_encode($value, JSON_UNESCAPED_SLASHES)
                                             }}</textarea>

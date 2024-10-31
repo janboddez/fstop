@@ -106,11 +106,15 @@ class EntryObserver
 
         // Normalize line endings.
         $entry->content = preg_replace('~\R~u', "\r\n", $entry->content); // `$entry->content` is required!
+
+        Eventy::action('entries.saving', $entry);
     }
 
     public function saved(Entry $entry): void
     {
         SendWebmention::dispatch($entry);
+
+        Eventy::action('entries.saved', $entry);
     }
 
     public function restoring(Entry $entry): void
