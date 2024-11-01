@@ -27,7 +27,9 @@
         @endphp
 
     <item>
-        <dc:creator><![CDATA[Jan Boddez]]></dc:creator>
+        @if (! blank($entry->user->name))
+            <dc:creator><![CDATA[{{ $entry->user->name }}]]></dc:creator>
+        @endif
 
         @if ($type === 'article')
             <title><![CDATA[{{ $entry->name }}]]></title>

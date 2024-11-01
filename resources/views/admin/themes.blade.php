@@ -9,11 +9,8 @@
 
 @include('admin.partials.flash-message')
 
-<div class="mx-1 my-3 is-clearfix">
-    {{ __('Themes allow developers to override certain front-end templates, and publish assets (like CSS and JavaScript) of their own.') }}
-</div>
-
 <form action="{{ route('admin.themes.index') }}" method="POST">
+    @method('PUT')
     @csrf
 
     <div class="card">

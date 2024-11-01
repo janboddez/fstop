@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\CommentController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EntryController as EntryAdminController;
 use App\Http\Controllers\Admin\PluginController;
+use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\TagController as TagAdminController;
 use App\Http\Controllers\Admin\ThemeController;
 use App\Http\Controllers\EntryController;
@@ -61,17 +62,23 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin', 'as' => 'admin.'], fu
     Route::post('comments/{comment}/unapprove', [CommentController::class, 'unapprove'])
         ->name('comments.unapprove');
 
-    Route::get('plugins', [PluginController::class, 'index'])
-        ->name('plugins.index');
-
-    Route::post('plugins', [PluginController::class, 'update'])
-        ->name('plugins.update');
-
     Route::get('themes', [ThemeController::class, 'index'])
         ->name('themes.index');
 
-    Route::post('themes', [ThemeController::class, 'update'])
+    Route::put('themes', [ThemeController::class, 'update'])
         ->name('themes.update');
+
+    Route::get('plugins', [PluginController::class, 'index'])
+        ->name('plugins.index');
+
+    Route::put('plugins', [PluginController::class, 'update'])
+        ->name('plugins.update');
+
+    Route::get('settings', [SettingController::class, 'index'])
+        ->name('settings.index');
+
+    Route::put('settings', [SettingController::class, 'update'])
+        ->name('settings.update');
 });
 
 // Everything below is front-end routes.

@@ -1,6 +1,6 @@
 @extends('theme::layout')
 
-@section('title', request()->is('/') ? config('app.tagline') : (isset($type) ? ucfirst(Str::plural($type)) : __('Stream')))
+@section('title', request()->is('/') ? site_tagline() : (isset($type) ? ucfirst(Str::plural($type)) : __('Stream')))
 
 @section('content')
 <div class="h-feed">

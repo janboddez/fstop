@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     @hasSection('title')
-        <title>@yield(strip_tags('title')) &ndash; {{ config('app.name') }}</title>
+        <title>@yield(strip_tags('title')) &ndash; {{ site_name() }}</title>
     @else
-        <title>{{ config('app.name') }}</title>
+        <title>{{ site_name() }}</title>
     @endif
 
     <link rel="webmention" href="/webmention">
@@ -28,11 +28,11 @@
 
             @if (request()->is('/'))
                 <h1 class="site-branding">
-                    <a href="/">{{ config('app.name') }}</a>
+                    <a href="/">{{ site_name() }}</a>
                 </h1>
             @else
                 <div class="site-branding">
-                    <a href="/">{{ config('app.name') }}</a>
+                    <a href="/">{{ site_name() }}</a>
                 </div>
             @endif
 

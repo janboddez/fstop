@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Entry;
+use App\Models\Option;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
@@ -159,6 +160,44 @@ function url_to_entry(string $url): Entry
         ->first();
 
     return Eventy::filter('entries.url_to_entry', $entry, $url);
+}
+
+function get_site_settings(): array
+{
+    static $settings = null; // `static`, to avoid having to hit the database more than once.
+
+    if ($settings) {
+        return $settings;
+    }
+
+    $option = Option::where('key', 'site_settings')
+        ->first();
+
+    $settings = $option->value ?? [];
+
+    return $settings;
+}
+
+function site_name(): string
+{
+    $settings = get_site_settings();
+
+    if (! empty($settings['name'])) {
+        return $settings['name'];
+    }
+
+    return config('app.name');
+}
+
+function site_tagline(): string
+{
+    $settings = get_site_settings();
+
+    if (! empty($settings['tagline'])) {
+        return $settings['tagline'];
+    }
+
+    return '';
 }
 
 /**
