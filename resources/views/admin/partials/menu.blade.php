@@ -46,6 +46,11 @@
             <span class="icon-text"><span class="icon"><i class="mdi mdi-connection"></i></span> <span>{{ __('Plugins') }}</span></span>
         </a>
     </li>
+    <li>
+        <a{!! request()->is('admin/settings*') ? ' class="is-active"' : '' !!} href="{{ route('admin.settings.index') }}">
+            <span class="icon-text"><span class="icon"><i class="mdi mdi-cog"></i></span> <span>{{ __('Settings') }}</span></span>
+        </a>
+    </li>
 
     <li class="my-3">
         <a href="/logout" class="logout" data-no-instant><span class="icon-text">
