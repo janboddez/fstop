@@ -5,7 +5,6 @@ namespace Plugins\EntryTypes;
 use App\Models\Entry;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
-use Michelf\MarkdownExtra;
 
 class EntryTypesServiceProvider extends ServiceProvider
 {
@@ -41,20 +40,15 @@ class EntryTypesServiceProvider extends ServiceProvider
          */
         add_filter('entries.set_name', function ($name, $entry) {
             if (! in_array($entry->type, ['note', 'like'], true)) {
+                // Do nothing.
                 return $name;
             }
 
-            // Ensure notes, likes, and listens get a name based off their content.
-            $parser = new MarkdownExtra();
-            $parser->no_markup = false; // Do not escape markup already present.
-
-            $content = $parser->defaultTransform($entry->content);
-            $content = trim(strip_tags($content));
-
-            $name = Str::words($content, 10, ' …');
-
-            // Decode quotes, etc. (We escape on output.)
-            $name = html_entity_decode($name, ENT_HTML5, 'UTF-8');
+            // Generate a title off the (current) content.
+            $name = strip_tags($entry->content); // Strip tags.
+            $name = Str::words($name, 10, ' …'); // Shorten.
+            $name = html_entity_decode($name); // Decode quotes, etc. (We escape on output.)
+            $name = preg_replace('~… …$~', '…', $name);
             $name = preg_replace('~\s+~', ' ', $name); // Get rid of excess whitespace.
             $name = Str::limit($name, 250, '…'); // Shorten (again).
 

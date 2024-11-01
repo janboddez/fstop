@@ -20,14 +20,6 @@ class SyndicateToMastodonServiceProvider extends ServiceProvider
     protected function registerHooks(): void
     {
         /** todo Use a proper observer class, rather than "action hooks."  */
-        add_action('entries.saving', function (Entry $entry) {
-            if (request()->has('syndicate_to_mastodon')) {
-                $meta = $entry->meta;
-                $meta['syndicate_to_mastodon'] = true;
-                $entry->meta = $meta;
-            }
-        });
-
         add_action('entries.saved', function (Entry $entry) {
             SyndicateToMastodon::dispatch($entry);
         });

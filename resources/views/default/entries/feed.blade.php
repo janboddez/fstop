@@ -30,7 +30,7 @@
         <dc:creator><![CDATA[Jan Boddez]]></dc:creator>
 
         @if ($type === 'article')
-            <title><![CDATA[{{ html_entity_decode($entry->name) }}]]></title>
+            <title><![CDATA[{{ $entry->name }}]]></title>
         @endif
 
         <description><![CDATA[{!! $content !!}]]></description>

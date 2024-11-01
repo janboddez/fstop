@@ -74,11 +74,8 @@ class SyndicateToMastodon implements ShouldQueue
         }
 
         if ($this->entry->type === 'note') {
-            $parser = new MarkdownExtra();
-            $parser->no_markup = false; // Do not escape markup already present.
-
-            $content = $parser->defaultTransform($this->entry->content);
-            $content = html_entity_decode(strip_tags($content), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5);
+            $content = $this->entry->content ?? '';
+            $content = html_entity_decode(strip_tags($content));
             $content .= "\n\n{$this->entry->permalink}";
         } else {
             $content = "{$this->entry->name} {$this->entry->permalink}";
@@ -109,7 +106,6 @@ class SyndicateToMastodon implements ShouldQueue
             // Delete previous errors, if any.
             unset($meta['syndicate_to_mastodon_error']);
 
-            Log::debug("[SyndicateToMastodon] Entry {$this->entry->id} got syndicated okay: {$response['url']}");
             $meta['syndication'] = array_merge(
                 $meta['syndication'] ?? [],
                 [filter_var($response['url'], FILTER_SANITIZE_URL)]

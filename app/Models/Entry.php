@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\HasMeta;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
@@ -93,7 +94,7 @@ class Entry extends Model
     public function getTypeAttribute(?string $value): string
     {
         return ($value === null || ! in_array($value, array_keys(static::getRegisteredTypes()), true))
-            ? array_keys(self::TYPES())[0] // Treat "unsupported" types as, in this case, articles.
+            ? array_keys(self::TYPES)[0] // Treat "unsupported" types as, in this case, articles.
             : $value;
     }
 
@@ -102,42 +103,43 @@ class Entry extends Model
         return route(Str::plural($this->type) . '.show', $this->slug);
     }
 
-    public function getContentAttribute(?string $value): string
+    public function getRawNameAttribute(): string
     {
-        if ($value === null) {
-            return '';
-        }
+        $value = $this->getRawOriginal('name') ?: '';
 
-        if (! request()->is('admin/*') || app()->runningInConsole()) {
-            $parser = new MarkdownExtra();
-            $parser->no_markup = false; // Do not escape markup already present.
+        // Replace common HTML entities with Unicode characters, for easier editing.
+        $value = str_replace(
+            ['&#8216;', '&#8217;', '&#8220;', '&#8221;', '&#8211;', '&#8212;', '&#8230;', '&hellip;'],
+            ['‘', '’', '“', '”', '–', '—', '…', '…'],
+            $value
+        );
 
-            $value = $parser->defaultTransform($value);
-            $value = SmartyPants::defaultTransform($value, SmartyPants::ATTR_LONG_EM_DASH_SHORT_EN);
-        } else {
-            // Replace common HTML entities with Unicode characters, for easier editing.
-            $value = str_replace(
-                ['&#8216;', '&#8217;', '&#8220;', '&#8221;', '&#8211;', '&#8212;', '&#8230;', '&hellip;'],
-                ['‘', '’', '“', '”', '–', '—', '…', '…'],
-                $value
-            );
-        }
+        return trim($value);
+    }
+
+    public function getRawContentAttribute(): string
+    {
+        $value = $this->getRawOriginal('content') ?: '';
+
+        // Replace common HTML entities with Unicode characters, for easier editing.
+        $value = str_replace(
+            ['&#8216;', '&#8217;', '&#8220;', '&#8221;', '&#8211;', '&#8212;', '&#8230;', '&hellip;'],
+            ['‘', '’', '“', '”', '–', '—', '…', '…'],
+            $value
+        );
 
         return trim($value);
     }
 
     public function getSummaryAttribute(?string $value): string
     {
-        if ((! request()->is('admin/*') || app()->runningInConsole()) && empty($value)) {
-            $parser = new MarkdownExtra();
-            $parser->no_markup = false; // Do not escape markup already present.
-
-            $value = $parser->defaultTransform($this->content);
-            $value = trim(strip_tags($value));
+        if (empty($value) && ! request()->is('admin/*') && ! app()->runningInConsole()) {
+            // Autogenerate a summary, on the front end only.
+            $value = strip_tags($this->content);
             $value = Str::words($value, 30, ' […]');
         }
 
-        return strip_tags(html_entity_decode($value, ENT_HTML5, 'UTF-8'));
+        return html_entity_decode($value);
     }
 
     public function getThumbnailAttribute(): ?string
@@ -220,5 +222,46 @@ class Entry extends Model
         }
 
         return $types;
+    }
+
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            get: function (string $value = null) {
+                if (empty($value)) {
+                    return '';
+                }
+
+                $value = SmartyPants::defaultTransform($value, SmartyPants::ATTR_LONG_EM_DASH_SHORT_EN);
+
+                return trim(html_entity_decode($value));
+            }
+        );
+    }
+
+    protected function content(): Attribute
+    {
+        return Attribute::make(
+            get: function (string $value = null) {
+                if (empty($value)) {
+                    return '';
+                }
+
+                $parser = new MarkdownExtra();
+                $parser->no_markup = false; // Do not escape markup already present.
+
+                $value = $parser->defaultTransform($value);
+                $value = SmartyPants::defaultTransform($value, SmartyPants::ATTR_LONG_EM_DASH_SHORT_EN);
+
+                return trim($value);
+            },
+            set: function (string $value = null) {
+                if (empty($value)) {
+                    return '';
+                }
+
+                return trim(preg_replace('~\R~u', "\r\n", $value));
+            }
+        );
     }
 }

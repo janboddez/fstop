@@ -25,7 +25,7 @@
             <div class="field">
                 <label for="name" class="is-sr-only">{{ __('Name') }}</label>
                 <div class="control">
-                    <input class="input{{ $errors->has('name') ? ' is-danger': '' }}" type="text" id="name" name="name" placeholder="{{ __('Name') }}" value="{{ old('name', $entry->name ?? '') }}">
+                    <input class="input{{ $errors->has('name') ? ' is-danger': '' }}" type="text" id="name" name="name" placeholder="{{ __('Name') }}" value="{{ old('name', $entry->rawName ?? '') }}">
                 </div>
             </div>
 
@@ -39,7 +39,7 @@
             <div class="field">
                 <label for="content" class="is-sr-only">{{ __('Content') }}</label>
                 <div class="control">
-                    <textarea class="textarea{{ $errors->has('content') ? ' is-danger': '' }}" id="content" name="content" rows="18">{{ old('content', $entry->content ?? '') }}</textarea>
+                    <textarea class="textarea{{ $errors->has('content') ? ' is-danger': '' }}" id="content" name="content" rows="18">{{ old('content', $entry->rawContent ?? '') }}</textarea>
                </div>
             </div>
 

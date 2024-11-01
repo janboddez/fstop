@@ -44,10 +44,10 @@ class SendWebmention implements ShouldQueue
             return;
         }
 
-        $parser = new MarkdownExtra();
-        $parser->no_markup = false; // Do not escape markup already present.
-
-        $content = $parser->defaultTransform($this->entry->content);
+        $content = $this->entry->content ?? '';
+        if (empty($content)) {
+            return;
+        }
 
         // Previously sent webmentions, if any.
         $previousMentions = $this->entry->meta['webmention'] ?? [];
