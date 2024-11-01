@@ -93,9 +93,10 @@ class EntryController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'nullable',
-            'slug' => 'nullable',
+            'name' => 'nullable|max:250',
+            'slug' => 'nullable|max:250',
             'content' => 'required',
+            'summary' => 'nullable',
             'created_at' => 'nullable|date_format:Y-m-d',
             'status' => 'in:draft,published',
             'visibility' => 'in:public,unlisted,private',
@@ -164,9 +165,10 @@ class EntryController extends Controller
     public function update(Request $request, Entry $entry)
     {
         $validated = $request->validate([
-            'name' => 'nullable',
-            'slug' => 'nullable',
+            'name' => 'nullable|max:250',
+            'slug' => 'nullable|max:250',
             'content' => 'required',
+            'summary' => 'nullable',
             'created_at' => 'nullable|date_format:Y-m-d',
             'status' => 'in:draft,published',
             'visibility' => 'in:public,unlisted,private',
