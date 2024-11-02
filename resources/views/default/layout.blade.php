@@ -22,7 +22,7 @@
     @action('layout.head')
 </head>
 
-<body class="{{ body_class() }}">
+<body class="{{ body_class() }}" data-instant-allow-query-string>
     <header class="site-header">
         <div class="container">
 
@@ -107,5 +107,7 @@
             </symbol>
         </defs>
     </svg>
+
+    <script src="{{ url('js/instantpage-5.2.0.js') }}" type="module" defer></script>
 </body>
 </html>

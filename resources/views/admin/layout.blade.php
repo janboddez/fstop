@@ -80,6 +80,6 @@
     @section('scripts')
     @show
 
-    <script src="{{ url('js/instantpage-5.1.1.js') }}?v=5.1.1" type="module" defer></script>
+    <script src="{{ url('js/instantpage-5.2.0.js') }}" type="module" defer></script>
 </body>
 </html>
