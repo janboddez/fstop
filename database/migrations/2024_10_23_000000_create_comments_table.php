@@ -22,7 +22,7 @@ class CreateCommentsTable extends Migration
             $table->string('status')->default('pending');
             $table->string('type')->default('comment');
             $table->json('meta')->nullable();
-            $table->foreignId('entry_id')->nullable()->constrained();
+            $table->foreignId('entry_id')->nullable()->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }

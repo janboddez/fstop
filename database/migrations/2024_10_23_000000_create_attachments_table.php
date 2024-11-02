@@ -20,8 +20,8 @@ class CreateAttachmentsTable extends Migration
             $table->string('alt')->nullable();
             $table->string('caption')->nullable();
             $table->json('meta')->nullable();
-            $table->foreignId('entry_id')->nullable()->constrained();
-            $table->foreignId('user_id')->constrained();
+            $table->foreignId('entry_id')->nullable();
+            $table->foreignId('user_id');
             $table->timestamps();
         });
     }

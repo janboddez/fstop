@@ -21,7 +21,8 @@ return new class extends Migration
             $table->string('visibility')->default('public');
             $table->string('type');
             $table->json('meta')->nullable();
-            $table->foreignId('user_id')->constrained();
+            $table->foreignId('user_id');
+            $table->foreignId('attachment_id')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
