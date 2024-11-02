@@ -213,8 +213,8 @@ class Entry extends Model
     public function syndication(): Attribute
     {
         return Attribute::make(
-            get: function (string $value = null, array $attributes) {
-                if (empty($attributes['meta']['syndication'])) {
+            get: function () {
+                if (empty($this->meta['syndication'])) {
                     return null;
                 }
 
@@ -233,7 +233,7 @@ class Entry extends Model
                         $url,
                         $supportedPlatforms[parse_url($url, PHP_URL_HOST)] ?? parse_url($url, PHP_URL_HOST)
                     ),
-                    $attributes['meta']['syndication']
+                    $this->meta['syndication']
                 ));
             }
         )->shouldCache();
