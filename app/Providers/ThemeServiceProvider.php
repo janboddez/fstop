@@ -25,18 +25,16 @@ class ThemeServiceProvider extends ServiceProvider
                     ->first();
 
                 if ($option) {
-                    $themes = $option->value;
-
-                    foreach ($themes as $name => $theme) {
-                        if (! $theme['active']) {
+                    foreach ($option->value as $theme => $attributes) {
+                        if (! $attributes['active']) {
                             continue;
                         }
 
-                        if (! empty($theme['namespaces']) && ! empty($theme['providers'])) {
+                        if (! empty($attributes['namespaces']) && ! empty($attributes['providers'])) {
                             // Register this theme's namespace(s), for autoloading.
-                            autoload_register($theme['namespaces'], $theme['dir']);
+                            autoload_register($attributes['namespaces'], $attributes['dir']);
 
-                            foreach ((array) $theme['providers'] as $serviceProvider) {
+                            foreach ((array) $attributes['providers'] as $serviceProvider) {
                                 // Dynamically load the theme's service provider(s). This allows us to publish its
                                 // assets, if any, or have themes register action and filter callbacks.
                                 if (! class_exists($serviceProvider)) {
@@ -58,10 +56,15 @@ class ThemeServiceProvider extends ServiceProvider
         // The "parent theme," if you like.
         $views = [resource_path('views/default')];
 
-        if (isset($name)) {
+        if (empty($theme)) {
+            // Only add "force-add" our CSS if no theme is active (yet).
+            Eventy::addAction('layout.head', function () {
+                echo '<link rel="stylesheet" href="/css/app.css?v=' . config('app.version') . '">' . "\n";
+            });
+        } else {
             // Let site owners override the views in `resources/views/default` with their own in `themes/*`. While views
             // are registered automatically, any assets should be made publishable through the theme's service provider.
-            $views[] = __DIR__ . "/../../themes/$name/views";
+            $views[] = __DIR__ . "/../../themes/$theme/views";
         }
 
         $this->loadViewsFrom(array_reverse($views), 'theme');

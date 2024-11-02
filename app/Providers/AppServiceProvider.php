@@ -60,39 +60,6 @@ class AppServiceProvider extends ServiceProvider
 
         Entry::observe(EntryObserver::class);
 
-        try {
-            // This code will run also on `composer dump-autoload`, and a database may not have been set up at that
-            // point, hence the `try` and `catch` blocks. The potentially missing database is also why we can't just
-            // cache the result of this check.
-            DB::connection()
-                ->getPdo();
-
-            // Prevent code from running before migrations have run.
-            if (Schema::hasTable('options')) {
-                $option = Option::where('key', 'themes')
-                    ->first();
-
-                if ($option) {
-                    $themes = $option->value;
-
-                    foreach ($themes as $name => $theme) {
-                        if (! $theme['active']) {
-                            continue;
-                        }
-
-                        // Only add "force-add" our CSS if no theme is active.
-                        Eventy::addAction('layout.head', function () {
-                            echo '<link rel="stylesheet" href="/css/app.css?v=' . config('app.version') . '">' . "\n";
-                        });
-
-                        break;
-                    }
-                }
-            }
-        } catch (\Exception $e) {
-            // Do nothing, like when the database hasn't been set up, yet.
-        }
-
         // DB::listen(function ($query) {
         //     Log::debug(
         //         $query->sql,
