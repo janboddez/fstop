@@ -1,6 +1,4 @@
 <article class="h-entry {{ $entry->type }}{{ ! empty($entry->thumbnail) ? ' has-thumbnail' : '' }}">
-    {{-- @todo: Condense these into `is_single()` or something helper functions. --}}
-
     @if (is_archive() && ! empty($entry->thumbnail))
         <div class="post-thumbnail">
             {{-- @todo: Make responsive. --}}

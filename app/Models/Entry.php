@@ -54,10 +54,6 @@ class Entry extends Model
         return $this->hasMany(Comment::class);
     }
 
-    /**
-     * An entry can have only one featured image. One image, however, can be the
-     * featured image of multiple entries!
-     */
     public function featured()
     {
         return $this->belongsTo(Attachment::class, 'attachment_id');
@@ -91,99 +87,156 @@ class Entry extends Model
         return $query->where('type', $type);
     }
 
-    public function getTypeAttribute(?string $value): string
+    protected function type(): Attribute
     {
-        return ($value === null || ! in_array($value, array_keys(static::getRegisteredTypes()), true))
-            ? array_keys(self::TYPES)[0] // Treat "unsupported" types as, in this case, articles.
-            : $value;
+        return Attribute::make(
+            // phpcs:ignore Generic.Files.LineLength.TooLong
+            get: fn (string $value = null) => ($value === null || ! in_array($value, array_keys(static::getRegisteredTypes()), true))
+                ? array_keys(self::TYPES)[0] // Treat "unsupported" types as, in this case, articles.
+                : $value
+        )->shouldCache();
     }
 
-    public function getPermalinkAttribute(): string
+    public function permalink(): Attribute
     {
-        return route(Str::plural($this->type) . '.show', $this->slug);
+        return Attribute::make(
+            // phpcs:ignore Generic.Files.LineLength.TooLong
+            get: fn (string $value = null, array $attributes) => route(Str::plural($this->type) . '.show', $attributes['slug'])
+        )->shouldCache();
     }
 
-    public function getRawNameAttribute(): string
+    protected function name(): Attribute
     {
-        $value = $this->getRawOriginal('name') ?: '';
+        return Attribute::make(
+            get: function (string $value = null) {
+                if (empty($value)) {
+                    return '';
+                }
 
-        // Replace common HTML entities with Unicode characters, for easier editing.
-        $value = str_replace(
-            ['&#8216;', '&#8217;', '&#8220;', '&#8221;', '&#8211;', '&#8212;', '&#8230;', '&hellip;'],
-            ['‘', '’', '“', '”', '–', '—', '…', '…'],
-            $value
+                $value = SmartyPants::defaultTransform($value, SmartyPants::ATTR_LONG_EM_DASH_SHORT_EN);
+
+                return trim(html_entity_decode($value));
+            }
+        )->shouldCache();
+    }
+
+    protected function content(): Attribute
+    {
+        return Attribute::make(
+            get: function (string $value = null) {
+                if (empty($value)) {
+                    return '';
+                }
+
+                $parser = new MarkdownExtra();
+                $parser->no_markup = false; // Do not escape markup already present.
+
+                $value = $parser->defaultTransform($value);
+                $value = SmartyPants::defaultTransform($value, SmartyPants::ATTR_LONG_EM_DASH_SHORT_EN);
+
+                return trim($value);
+            }
+        )->shouldCache();
+    }
+
+    protected function rawName(): Attribute
+    {
+        return Attribute::make(
+            get: function (string $value = null, array $attributes) {
+                $value = $attributes['name'] ?? '';
+
+                // Replace common HTML entities with Unicode characters, for easier editing.
+                $value = str_replace(
+                    ['&#8216;', '&#8217;', '&#8220;', '&#8221;', '&#8211;', '&#8212;', '&#8230;', '&hellip;'],
+                    ['‘', '’', '“', '”', '–', '—', '…', '…'],
+                    $value
+                );
+
+                return trim($value);
+            }
         );
-
-        return trim($value);
     }
 
-    public function getRawContentAttribute(): string
+    protected function rawContent(): Attribute
     {
-        $value = $this->getRawOriginal('content') ?: '';
+        return Attribute::make(
+            get: function (string $value = null, array $attributes) {
+                $value = $attributes['content'] ?? '';
 
-        // Replace common HTML entities with Unicode characters, for easier editing.
-        $value = str_replace(
-            ['&#8216;', '&#8217;', '&#8220;', '&#8221;', '&#8211;', '&#8212;', '&#8230;', '&hellip;'],
-            ['‘', '’', '“', '”', '–', '—', '…', '…'],
-            $value
+                // Replace common HTML entities with Unicode characters, for easier editing.
+                $value = str_replace(
+                    ['&#8216;', '&#8217;', '&#8220;', '&#8221;', '&#8211;', '&#8212;', '&#8230;', '&hellip;'],
+                    ['‘', '’', '“', '”', '–', '—', '…', '…'],
+                    $value
+                );
+
+                return trim($value);
+            }
         );
-
-        return trim($value);
     }
 
-    public function getSummaryAttribute(?string $value): string
+    public function summary(): Attribute
     {
-        if (empty($value) && ! request()->is('admin/*') && ! app()->runningInConsole()) {
-            // Autogenerate a summary, on the front end only.
-            $value = strip_tags($this->content);
-            $value = Str::words($value, 30, ' […]');
-        }
+        return Attribute::make(
+            get: function (string $value = null, array $attributes) {
+                if (empty($value) && ! request()->is('admin/*') && ! app()->runningInConsole()) {
+                    // Autogenerate a summary, on the front end only.
+                    // $value = strip_tags($this->content);
+                    $value = strip_tags($attributes['content']);
+                    $value = Str::words($value, 30, ' […]');
+                }
 
-        return html_entity_decode($value);
+                return html_entity_decode($value); // We encode on output!
+            }
+        );
     }
 
-    public function getThumbnailAttribute(): ?string
+    protected function thumbnail(): Attribute
     {
-        if (! empty($this->featured->url)) {
-            // @todo Output an actual image tag and whatnot.
-            return $this->featured->url;
-        }
+        return Attribute::make(
+            get: function () {
+                if (! empty($this->featured->url)) {
+                    // @todo Output an actual image tag and whatnot.
+                    return $this->featured->url;
+                }
 
-        // "Legacy" format.
-        $meta = $this->meta;
+                // "Legacy" format.
+                if (! empty($this->meta['featured'][0])) {
+                    return $this->meta['featured'][0];
+                }
 
-        if (! empty($meta['featured'][0])) {
-            return $meta['featured'][0];
-        }
-
-        return null;
+                return null;
+            }
+        )->shouldCache();
     }
 
-    public function getSyndicationAttribute(): ?string
+    public function syndication(): Attribute
     {
-        $meta = $this->meta;
+        return Attribute::make(
+            get: function (string $value = null, array $attributes) {
+                if (empty($attributes['meta']['syndication'])) {
+                    return null;
+                }
 
-        if (empty($meta['syndication'])) {
-            return null;
-        }
+                /** @todo Move to config file. */
+                $supportedPlatforms = [
+                    'indieweb.social' => 'Mastodon',
+                    'mastodon.social' => 'Mastodon',
+                    'geekcompass.com' => 'Mastodon',
+                    'pixelfed.social' => 'Pixelfed',
+                    'twitter.com', 'Twitter',
+                ];
 
-        /** @todo Move to config file. */
-        $supportedPlatforms = [
-            'indieweb.social' => 'Mastodon',
-            'mastodon.social' => 'Mastodon',
-            'geekcompass.com' => 'Mastodon',
-            'pixelfed.social' => 'Pixelfed',
-            'twitter.com', 'Twitter',
-        ];
-
-        return implode(', ', array_map(
-            fn ($url) => sprintf(
-                '<a class="u-syndication" href="%1$s">%2$s</a>',
-                $url,
-                $supportedPlatforms[parse_url($url, PHP_URL_HOST)] ?? parse_url($url, PHP_URL_HOST)
-            ),
-            $meta['syndication']
-        ));
+                return implode(', ', array_map(
+                    fn ($url) => sprintf(
+                        '<a class="u-syndication" href="%1$s">%2$s</a>',
+                        $url,
+                        $supportedPlatforms[parse_url($url, PHP_URL_HOST)] ?? parse_url($url, PHP_URL_HOST)
+                    ),
+                    $attributes['meta']['syndication']
+                ));
+            }
+        )->shouldCache();
     }
 
     /**
@@ -222,46 +275,5 @@ class Entry extends Model
         }
 
         return $types;
-    }
-
-    protected function name(): Attribute
-    {
-        return Attribute::make(
-            get: function (string $value = null) {
-                if (empty($value)) {
-                    return '';
-                }
-
-                $value = SmartyPants::defaultTransform($value, SmartyPants::ATTR_LONG_EM_DASH_SHORT_EN);
-
-                return trim(html_entity_decode($value));
-            }
-        );
-    }
-
-    protected function content(): Attribute
-    {
-        return Attribute::make(
-            get: function (string $value = null) {
-                if (empty($value)) {
-                    return '';
-                }
-
-                $parser = new MarkdownExtra();
-                $parser->no_markup = false; // Do not escape markup already present.
-
-                $value = $parser->defaultTransform($value);
-                $value = SmartyPants::defaultTransform($value, SmartyPants::ATTR_LONG_EM_DASH_SHORT_EN);
-
-                return trim($value);
-            },
-            set: function (string $value = null) {
-                if (empty($value)) {
-                    return '';
-                }
-
-                return trim(preg_replace('~\R~u', "\r\n", $value));
-            }
-        );
     }
 }

@@ -36,6 +36,7 @@ class EntryController extends Controller
         // rather than rely on implicit model binding.
         $entry = Entry::where('slug', $slug) // Slugs are unique across all types; no need to take type along.
             ->whereIn('type', array_keys(Entry::getRegisteredTypes()))
+            ->with('featured')
             ->with('tags')
             ->with(['comments' => function ($query) {
                 $query->where('status', 'approved');
