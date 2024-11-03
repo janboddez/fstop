@@ -128,5 +128,5 @@
     </table>
 </div>
 
-{{ $entries->onEachSide(2)->links('admin.partials.pagination.bottom') }}
+{{ $entries->onEachSide(3)->links('admin.partials.pagination.bottom') }}
 @stop

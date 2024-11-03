@@ -22,7 +22,8 @@ class CommentController extends Controller
             ->appends(['s' => $request->input('s')]);
         } elseif ($request->input('pending')) {
             $comments = $comments->where('status', 'pending')
-            ->paginate();
+            ->paginate()
+            ->appends(['pending' => true]);
         } else {
             $comments = $comments->where('status', 'approved')
             ->paginate();
@@ -63,8 +64,9 @@ class CommentController extends Controller
     {
         $comment->delete();
 
-        return back()
-            ->with('success', __('Deleted!'));
+        return redirect()
+            ->route('admin.comments.index')
+            ->withSuccess(__('Deleted!'));
     }
 
     public function approve(Comment $comment)

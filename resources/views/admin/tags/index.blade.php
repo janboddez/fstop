@@ -61,5 +61,5 @@
     </table>
 </div>
 
-{{ $tags->onEachSide(2)->links('admin.partials.pagination.bottom') }}
+{{ $tags->onEachSide(3)->links('admin.partials.pagination.bottom') }}
 @stop

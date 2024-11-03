@@ -77,7 +77,7 @@
     </table>
 </div>
 
-{{ $attachments->onEachSide(2)->links('admin.partials.pagination.bottom') }}
+{{ $attachments->onEachSide(3)->links('admin.partials.pagination.bottom') }}
 
 <div class="modal" id="upload-modal">
     <div class="modal-background"></div>
@@ -122,7 +122,6 @@
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-
     (document.querySelectorAll('.copy-trigger') || []).forEach(($trigger) => {
         var text = '';
         $trigger.addEventListener('click', () => {

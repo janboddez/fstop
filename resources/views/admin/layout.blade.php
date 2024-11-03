@@ -2,10 +2,10 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
+    <title>@yield(strip_tags('title')) &ndash; {{ config('app.name') }}</title>
+
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <title>@yield(strip_tags('title')) &ndash; {{ config('app.name') }}</title>
 
     <link href="{{ url('css/bulma.min.css') }}?v=0.9.4" rel="stylesheet">
     <link href="{{ url('css/materialdesignicons.min.css') }}?v=6.9.96" rel="stylesheet">

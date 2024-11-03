@@ -79,5 +79,5 @@
     </table>
 </div>
 
-{{ $comments->onEachSide(20)->links('admin.partials.pagination.bottom') }}
+{{ $comments->onEachSide(3)->links('admin.partials.pagination.bottom') }}
 @stop
