@@ -1,0 +1,14 @@
+{
+    "name": "janboddez/scrobbble",
+    "description": "Add “scrobbling” to F-Stop.",
+    "extra": {
+        "laravel": {
+            "providers": ["Plugins\\Scrobbble\\ScrobbbleServiceProvider"]
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Plugins\\Scrobbble\\": "src"
+        }
+    }
+}
