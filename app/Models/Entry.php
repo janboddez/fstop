@@ -134,6 +134,9 @@ class Entry extends Model
                 $value = $parser->defaultTransform($value);
                 $value = SmartyPants::defaultTransform($value, SmartyPants::ATTR_LONG_EM_DASH_SHORT_EN);
 
+                $value = preg_replace('~\R~u', "\n", $value);
+                $value = preg_replace('~\n\n+~u', "\n\n", $value);
+
                 return trim($value);
             }
         )->shouldCache();
@@ -169,6 +172,9 @@ class Entry extends Model
                     ['‘', '’', '“', '”', '–', '—', '…', '…'],
                     $value
                 );
+
+                $value = preg_replace('~\R~u', "\n", $value);
+                $value = preg_replace('~\n\n+~u', "\n\n", $value);
 
                 return trim($value);
             }
