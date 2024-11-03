@@ -72,7 +72,7 @@ class EntryTypesServiceProvider extends ServiceProvider
                 return $slug;
             }
 
-            // Ensure notes, likes, and listens get a random slug rather than a title-based one.
+            // Ensure notes and likes get a random slug rather than a title-based one.
             return random_slug();
         }, 20, 2);
     }

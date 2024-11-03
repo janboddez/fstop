@@ -4,7 +4,7 @@ use App\Http\Controllers\EntryController;
 use App\Http\Controllers\FeedController;
 use Illuminate\Support\Facades\Route;
 
-foreach (['note', 'like', 'listen'] as $type) {
+foreach (['note', 'like'] as $type) {
     Route::middleware(['web'])
         ->get(Str::plural($type) . '/feed', FeedController::class)
         ->name(Str::plural($type) . '.feed');
