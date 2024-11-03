@@ -153,7 +153,7 @@
                             <td>
                                 <a href="{{ route('admin.comments.edit', $comment) }}">{{ $comment->author }} &ndash; {!! Str::words(strip_tags($comment->content), 10, ' […]') !!}</a>
                                 <br>
-                                <small class="is-block mt-1">On <a href="{{ route('admin.entries.edit', $comment->entry) }}">{!! $comment->entry->name !!}</a></small>
+                                <small class="is-block mt-2">On <a href="{{ route('admin.entries.edit', $comment->entry) }}">{!! $comment->entry->name !!}</a></small>
 
                                 <small class="is-block mt-2">
                                     @if ($comment->status === 'pending')
