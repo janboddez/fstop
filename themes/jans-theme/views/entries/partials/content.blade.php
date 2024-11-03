@@ -1,9 +1,14 @@
 <article class="h-entry {{ $entry->type }}{{ ! empty($entry->thumbnail) ? ' has-thumbnail' : '' }}">
     {{-- Show short-form entries' thumbnail also on singular pages. --}}
-    @if ((is_archive() || in_array($entry->type, ['note', 'like'], true)) && ! empty($entry->thumbnail))
+    @if (is_archive() && ! empty($entry->thumbnail))
         <div class="post-thumbnail">
             {{-- @todo: Make responsive. --}}
-            <a class="u-url" href="{{ route(Str::plural($entry->type) . '.show', $entry->slug) }}" rel="bookmark"><img class="u-featured" src="{{ $entry->thumbnail }}" width="1600" height="720" alt="" loading="lazy"></a>
+            <a class="u-url" href="{{ $entry->permalink }}" rel="bookmark"><img class="u-featured" src="{{ $entry->thumbnail }}" width="1600" height="720" alt="" loading="lazy"></a>
+        </div>
+    @elseif (in_array($entry->type, ['note', 'like'], true)) && ! empty($entry->thumbnail)
+        <div class="post-thumbnail">
+            {{-- @todo: Make responsive. --}}
+            <a href="{{ $entry->thumbnail }}"><img class="u-featured" src="{{ $entry->thumbnail }}" width="1600" height="720" alt="" loading="lazy"></a>
         </div>
     @endif
 
@@ -12,12 +17,12 @@
             @if (is_singular())
                 <h1 class="entry-title p-name">{{ $entry->name }}</h1>
             @else
-                <h2 class="entry-title p-name"><a class="u-url" href="{{ route(Str::plural($entry->type) . '.show', $entry->slug) }}" rel="bookmark">{{ $entry->name }}</a></h2>
+                <h2 class="entry-title p-name"><a class="u-url" href="{{ $entry->permalink }}" rel="bookmark">{{ $entry->name }}</a></h2>
             @endif
 
             @if ($entry->type === 'article')
                 <div class="entry-meta">
-                    <a class="u-url" href="{{ route(Str::plural($entry->type) . '.show', $entry->slug) }}" rel="bookmark"><time class="dt-published" datetime="{{ $entry->created_at->format('c') }}">{{ $entry->created_at->format('M j, Y') }}</time></a>
+                    <a class="u-url" href="{{ $entry->permalink }}" rel="bookmark"><time class="dt-published" datetime="{{ $entry->created_at->format('c') }}">{{ $entry->created_at->format('M j, Y') }}</time></a>
                     @auth
                         |
                         <a href="{{ route('admin.entries.edit', $entry) }}">{{ __('Edit :type', ['type' => $entry->type]) }}</a>
@@ -34,10 +39,10 @@
     @else
         {{-- One of the short-form entry formats. --}}
         <header class="entry-header">
-            @if (Str::endsWith(Route::currentRouteName(),'show'))
+            @if (is_singular())
                 <h1 class="sr-only">{{ $entry->name }}</h1>
             @else
-                <h2 class="sr-only"><a class="u-url" href="{{ route(Str::plural($entry->type) . '.show', $entry->slug) }}" rel="bookmark">{{ $entry->name }}</a></h2>
+                <h2 class="sr-only"><a class="u-url" href="{{ $entry->permalink }}" rel="bookmark">{{ $entry->name }}</a></h2>
             @endif
         </header>
     @endif
@@ -51,14 +56,14 @@
                     {{ Str::limit(strip_tags($entry->content), 150, '…') }}
                 @endif
 
-                <a class="u-url" href="{{ route(Str::plural($entry->type) . '.show', $entry->slug) }}" rel="bookmark">{!! __('Continue reading :title', ['title' => '<span class="sr-only">' . $entry->name . '</span>']) !!} →</a>
+                <a class="u-url" href="{{ $entry->permalink }}" rel="bookmark">{!! __('Continue reading :title', ['title' => '<span class="sr-only">' . $entry->name . '</span>']) !!} →</a>
             </p>
         </div>
     @else
+        {{-- Only define `e-content` if it doesn't already exist. --}}
         @if (preg_match('~class=("|\')?e-content("|\')?~', $entry->content))
             {!! $entry->content !!}
         @else
-            {{-- Only define `e-content` if it doesn't already exist. --}}
             <div class="e-content">
                 {!! $entry->content !!}
             </div>
@@ -66,7 +71,6 @@
     @endif
 
     @if (! blank($entry->tags))
-        {{-- Tags. --}}
         <p class="entry-meta">
             {{ __('Tagged:') }}
 
@@ -101,7 +105,13 @@
                         <span class="p-name">{{ $entry->meta['geo']['address'] }}</span>
 
                         @if (isset($entry->meta['weather']['temperature']))
-                            &bull; {{ round($entry->meta['weather']['temperature']) }}&nbsp;&deg;
+                            @php
+                                $temperature = $entry->meta['weather']['temperature'];
+                                if ($temperature > 273.15) {
+                                    $temperature -= 273.15;
+                                }
+                            @endphp
+                            &bull; {{ round($temperature) }}&nbsp;&deg;C
                         @endif
 
                         @if (isset($entry->meta['weather']['description']))

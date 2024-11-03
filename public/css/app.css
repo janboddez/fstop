@@ -953,16 +953,16 @@ a.sr-only:focus {
         margin-bottom: -3.25rem;
     }
 
-    .home .has-thumbnail .entry-header,
-    .tag .has-thumbnail .entry-header,
-    .search .has-thumbnail .entry-header,
-    .home .has-thumbnail .p-summary,
-    .home .has-thumbnail .entry-footer,
-    .tag .has-thumbnail .p-summary,
-    .tag .has-thumbnail .entry-footer,
-    .search .has-thumbnail .p-summary,
-    .search .has-thumbnail .entry-footer {
-        padding: 0 2rem;
+    body:not(.single) .article.has-thumbnail .entry-header,
+    body:not(.single) .article.has-thumbnail .p-summary,
+    body:not(.single) .article.has-thumbnail .entry-footer,
+    body:not(.single) .article.has-thumbnail .entry-meta {
+        padding-inline: 2rem;
+    }
+
+    body:not(.single) .article.has-thumbnail .entry-header .entry-meta,
+    body:not(.single) .article.has-thumbnail .entry-footer .entry-meta {
+        padding-inline: 0;
     }
 
     .home .has-thumbnail .entry-header,
