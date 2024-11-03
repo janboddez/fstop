@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
+use TorMorten\Eventy\Facades\Events as Eventy;
 
 class ThemeServiceProvider extends ServiceProvider
 {
