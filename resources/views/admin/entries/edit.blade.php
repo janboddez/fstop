@@ -160,9 +160,13 @@
 
                             @if ($entry->status === 'published')
                                 <div class="control">
-                                    <a class="button" href="{{ route(Str::plural($type) . '.show', $entry->slug) }}" rel="noopener noreferrer" target="_blank">{{ __('View :Type', ['type' => $type]) }}</a>
+                                    <a class="button" href="{{ $entry->permalink }}" rel="noopener noreferrer" target="_blank">{{ __('View :Type', ['type' => $type]) }}</a>
                                 </div>
                             @endif
+
+                            <div class="control">
+                                <button class="button is-danger" type="submit" form="delete-form">{{ __('Trash') }}</button>
+                            </div>
                         @else
                             <div class="control">
                                 <button class="button is-success">{{ __('Create') }}</button>
@@ -200,4 +204,12 @@
         </div>
     </div>
 </form>
+
+@if (isset($entry))
+    {{-- Wanting to avoid AJAX, we have the "Trash" button above submit this here form. --}}
+    <form action="{{ route('admin.entries.destroy', $entry) }}" method="post" id="delete-form">
+        @method('DELETE')
+        @csrf
+    </form>
+@endif
 @stop

@@ -223,22 +223,24 @@ class EntryController extends Controller
         $entry->saveQuietly();
 
         return back()
-            ->with('success', __('Changes saved!'));
+            ->withSuccess(__('Changes saved!'));
     }
 
     public function destroy(Entry $entry)
     {
+        $type = $entry->type;
+
         if ($entry->trashed()) {
             $entry->forceDelete();
         } else {
             $entry->comments()->delete(); // @todo Soft-delete comments.
-
             $entry->tags()->detach();
             $entry->delete();
         }
 
-        return back()
-            ->with('success', __('Deleted!'));
+        return redirect()
+            ->route('admin.entries.index', ['type' => $type])
+            ->withSuccess(__('Deleted!'));
     }
 
     public function restore(Entry $entry)

@@ -10,10 +10,7 @@
 @include('admin.partials.flash-message')
 
 <form action="{{ route('admin.comments.update', $comment) }}" method="post">
-    @if (isset($comment))
-        @method('PUT')
-    @endif
-
+    @method('PUT')
     @csrf
 
     <div class="columns">
@@ -108,7 +105,7 @@
                         </div>
                     </div>
 
-                    @if ($comment->status === 'approved' && $comment->entry->status === 'published' && $comment->entry->visibility !== 'private')
+                    @if (! empty($comment->entry))
                         <div class="field">
                             <div class="control">
                                 {!! __('In reply to: <a href=":url">:name</a>', [
@@ -134,15 +131,25 @@
                             <button class="button is-success">{{ __('Update') }}</button>
                         </div>
 
-                            @if ($comment->status === 'approved' && $comment->entry->status === 'published' && $comment->entry->visibility !== 'private')
-                                <div class="control">
-                                    <a class="button" href="{{ route(Str::plural($comment->entry->type) . '.show', $comment->entry->slug) }}#comment-{{ $comment->id }}" rel="noopener noreferrer" target="_blank">{{ __('View Comment') }}</a>
-                                </div>
-                            @endif
+                        @if ($comment->status === 'approved' && ! empty($comment->entry) && $comment->entry->status === 'published' && $comment->entry->visibility !== 'private')
+                            <div class="control">
+                                <a class="button" href="{{ route(Str::plural($comment->entry->type) . '.show', $comment->entry->slug) }}#comment-{{ $comment->id }}" rel="noopener noreferrer" target="_blank">{{ __('View Comment') }}</a>
+                            </div>
+                        @endif
+
+                        <div class="control">
+                            <button class="button is-danger" type="submit" form="delete-form">{{ __('Permanently Delete') }}</button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</form>
+
+{{-- Wanting to avoid AJAX, we have the "Trash" button above submit this here form. --}}
+<form action="{{ route('admin.comments.destroy', $comment) }}" method="post" id="delete-form">
+    @method('DELETE')
+    @csrf
 </form>
 @stop
