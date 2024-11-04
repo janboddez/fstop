@@ -6,14 +6,16 @@ use Illuminate\Support\Facades\Route;
 
 foreach (['note', 'like'] as $type) {
     Route::middleware(['web'])
-        ->get(Str::plural($type) . '/feed', FeedController::class)
-        ->name(Str::plural($type) . '.feed');
+        ->prefix(Str::plural($type))
+        ->name(Str::plural($type) . '.')
+        ->group(function () {
+            Route::get('/', [EntryController::class, 'index'])
+                ->name('index');
 
-    Route::middleware(['web'])
-        ->get(Str::plural($type), [EntryController::class, 'index'])
-        ->name(Str::plural($type) . '.index');
+            Route::get('feed', FeedController::class)
+                ->name('feed');
 
-    Route::middleware(['web'])
-        ->get(Str::plural($type) . '/{slug}', [EntryController::class, 'show'])
-        ->name(Str::plural($type) . '.show');
+            Route::get('{slug}', [EntryController::class, 'show'])
+                ->name('show');
+        });
 }

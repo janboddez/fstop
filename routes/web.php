@@ -27,15 +27,23 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+/**
+ * Authentication and the Like
+ */
 Route::get('login', [LoginController::class, 'login'])->name('login');
 Route::post('login', [LoginController::class, 'authenticate']);
 
 Route::get('logout', [LoginController::class, 'logout']);
 
+/**
+ * Admin Interface
+ */
 Route::group(['middleware' => 'auth', 'prefix' => 'admin', 'as' => 'admin.'], function () {
-    // Admin routes.
     Route::get('/', DashboardController::class);
 
+    /**
+     * Resource Controllers
+     */
     Route::resource('entries', EntryAdminController::class)
         ->except(['show', 'destroy']);
 
@@ -56,61 +64,70 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin', 'as' => 'admin.'], fu
     Route::resource('comments', CommentController::class)
         ->except(['create', 'show']);
 
-    Route::post('comments/{comment}/approve', [CommentController::class, 'approve'])
-        ->name('comments.approve');
+    /**
+     * Everything Else
+     */
+    Route::group(['prefix' => 'comments', 'as' => 'comments.'], function () {
+        Route::post('{comment}/approve', [CommentController::class, 'approve'])
+            ->name('approve');
 
-    Route::post('comments/{comment}/unapprove', [CommentController::class, 'unapprove'])
-        ->name('comments.unapprove');
+        Route::post('{comment}/unapprove', [CommentController::class, 'unapprove'])
+            ->name('unapprove');
+    });
 
-    Route::get('themes', [ThemeController::class, 'index'])
-        ->name('themes.index');
+    Route::group(['prefix' => 'themes', 'as' => 'themes.'], function () {
+        Route::get('/', [ThemeController::class, 'index'])
+            ->name('index');
 
-    Route::put('themes', [ThemeController::class, 'update'])
-        ->name('themes.update');
+        Route::put('/', [ThemeController::class, 'update'])
+            ->name('update');
+    });
 
-    Route::get('plugins', [PluginController::class, 'index'])
-        ->name('plugins.index');
+    Route::group(['prefix' => 'plugins', 'as' => 'plugins.'], function () {
+        Route::get('/', [PluginController::class, 'index'])
+            ->name('index');
 
-    Route::put('plugins', [PluginController::class, 'update'])
-        ->name('plugins.update');
+        Route::put('/', [PluginController::class, 'update'])
+            ->name('update');
+    });
 
-    Route::get('settings', [SettingController::class, 'index'])
-        ->name('settings.index');
+    Route::group(['prefix' => 'settings', 'as' => 'settings.'], function () {
+        Route::get('/', [SettingController::class, 'index'])
+            ->name('index');
 
-    Route::put('settings', [SettingController::class, 'update'])
-        ->name('settings.update');
+        Route::put('/', [SettingController::class, 'update'])
+            ->name('update');
+    });
 });
 
-// Everything below is front-end routes.
-Route::get('/', [EntryController::class, 'index'])
-    ->name('articles.index');
+/**
+ * Front-End Routes
+ */
+Route::prefix('articles')
+    ->name('articles.')
+    ->group(function () {
+        Route::get('/', [EntryController::class, 'index'])
+            ->name('index');
 
-Route::get('articles', [EntryController::class, 'articleArchive'])
-    ->name('articles.archive');
+        Route::get('feed', FeedController::class)
+            ->name('feed');
 
-foreach (array_keys(Entry::TYPES) as $type) {
-    Route::get(Str::plural($type) . '/feed', FeedController::class)
-        ->name(Str::plural($type) . '.feed');
-
-    if ($type !== 'article') {
-        Route::get(Str::plural($type), [EntryController::class, 'index'])
-            ->name(Str::plural($type) . '.index');
-    }
-
-    if ($type !== 'page') {
-        Route::get(Str::plural($type) . '/{slug}', [EntryController::class, 'show'])
-            ->name(Str::plural($type) . '.show');
-    }
-}
+        Route::get('{slug}', [EntryController::class, 'show'])
+            ->name('show');
+    });
 
 Route::get('tags/{tag:slug}', [TagController::class, 'show'])
     ->name('tags.show');
 
-// "Stream."
-Route::get('stream', [EntryController::class, 'stream']);
+Route::get('/', [EntryController::class, 'index']);
+
+// Route::get('articles', [EntryController::class, 'articleArchive']);
 
 // Generic feed; contains all content types.
 Route::get('feed', FeedController::class);
+
+// "Stream."
+Route::get('stream', [EntryController::class, 'stream']);
 
 Route::get('search', SearchController::class);
 

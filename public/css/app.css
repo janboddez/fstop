@@ -62,20 +62,11 @@ hr::before {
  * ========================================================================== */
 h1,
 .page-title,
-.home .entry-title,
-.tag .entry-title,
-.search .entry-title {
+.entry-title {
     color: #555;
     font: bold 1.75rem/1.25 "Inter", sans-serif;
     margin: 0.5rem 0 0;
 }
-
-/*
-body.archive:not(.home) h1,
-.page h1 {
-    margin-bottom: 3.46875rem;
-}
-*/
 
 h2,
 h3,
@@ -1031,9 +1022,7 @@ a.sr-only:focus {
      * ====================================================================== */
     h1,
     .page-title,
-    .home .entry-title,
-    .tag .entry-title,
-    .search .entry-title {
+    .entry-title {
         font-size: 2rem;
     }
 

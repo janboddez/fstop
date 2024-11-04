@@ -5,13 +5,15 @@ use App\Http\Controllers\FeedController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['web'])
-    ->get('listens/feed', FeedController::class)
-    ->name('listens.feed');
+    ->prefix('listens')
+    ->name('listens.')
+    ->group(function () {
+        Route::get('/', [EntryController::class, 'index'])
+            ->name('index');
 
-Route::middleware(['web'])
-    ->get('listens', [EntryController::class, 'index'])
-    ->name('listens.index');
+        Route::get('feed', FeedController::class)
+            ->name('feed');
 
-Route::middleware(['web'])
-    ->get('listens/{slug}', [EntryController::class, 'show'])
-    ->name('listens.show');
+        Route::get('{slug}', [EntryController::class, 'show'])
+            ->name('show');
+    });

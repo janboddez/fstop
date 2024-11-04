@@ -15,8 +15,7 @@ class FeedController extends Controller
             ? Str::singular($request->segment(1))
             : null;
 
-        $entries = Entry::whereIn('type', array_diff(array_keys(Entry::getRegisteredTypes()), ['page']))
-            ->orderBy('created_at', 'desc')
+        $entries = Entry::orderBy('created_at', 'desc')
             ->orderBy('id', 'desc') // Prevent pagination issues by also sorting by ID.
             ->published()
             ->public()
@@ -26,6 +25,8 @@ class FeedController extends Controller
 
         if ($type) {
             $entries->ofType($type);
+        } else {
+            $entries->whereIn('type', array_diff(array_keys(Entry::getRegisteredTypes()), ['page']));
         }
 
         $entries = $entries->get();

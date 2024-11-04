@@ -24,6 +24,11 @@ function is_archive(string $type = null): bool
         return true;
     }
 
+    if (request()->is('/')) {
+        // Homepage. Which may be an "alias" for `articles.index`.
+        return true;
+    }
+
     if (request()->is('search')) {
         // Search results.
         return true;
