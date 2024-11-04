@@ -21,7 +21,7 @@ class ScrobbbleServiceProvider extends ServiceProvider
         /**
          * Adds short-form entry types.
          *
-         * @param  array  $types Rewgistered types.
+         * @param  array  $types Registered types.
          * @return array  $types Filtered array of types.
          */
         add_filter('entries.registered_types', function ($types) {
