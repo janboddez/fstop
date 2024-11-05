@@ -16,7 +16,7 @@ button,
 input,
 select,
 textarea {
-    font: 1rem/1.67 "Merriweather", Georgia, serif;
+    font: 1rem/1.67 "Source Serif 4", Georgia, serif;
 }
 
 dl {
@@ -64,7 +64,7 @@ h1,
 .page-title,
 .entry-title {
     color: #555;
-    font: bold 1.75rem/1.25 "Inter", sans-serif;
+    font: bold 1.75rem/1.25 "DM Sans", sans-serif;
     margin: 0.5rem 0 0;
 }
 
@@ -72,7 +72,7 @@ h2,
 h3,
 h4 {
     color: #555;
-    font: bold 1.5rem/1.25 "Inter", sans-serif;
+    font: bold 1.5rem/1.25 "DM Sans", sans-serif;
     margin: 1.5rem 0 0.5rem;
 }
 
@@ -86,7 +86,7 @@ h3 {
 }
 
 h4 {
-    font-family: "Inter", sans-serif;
+    font-family: "DM Sans", sans-serif;
     font-size: 1.25rem;
 }
 
@@ -101,7 +101,7 @@ figure {
 p.intro {
     color: #555;
     margin: 0.5rem 0 1rem;
-    font-family: "Inter", sans-serif;
+    font-family: "DM Sans", sans-serif;
     font-size: 1.125rem;
 }
 
@@ -144,7 +144,7 @@ a:focus {
 
 pre,
 code {
-    font: 0.9375rem/1.5 "Roboto Mono", monospace, monospace;
+    font: 0.9375rem/1.5 "Source Code Pro", monospace, monospace;
 }
 
 pre {
@@ -181,7 +181,7 @@ pre {
  *  Header
  * ========================================================================== */
 .site-header {
-    font-family: "Inter", sans-serif;
+    font-family: "DM Sans", sans-serif;
     padding: 2rem 0;
 }
 
@@ -271,9 +271,10 @@ pre {
 }
 
 .entry-header,
-.entry-footer {
+.entry-footer,
+.entry-meta {
     color: #555;
-    font-family: "Inter", sans-serif;
+    font-family: "DM Sans", sans-serif;
     font-size: 1rem;
 }
 
@@ -316,7 +317,7 @@ blockquote {
     padding: 2rem 2rem 1.75rem;
     margin: 1.875rem 0;
     position: relative;
-    font-family: "Inter", sans-serif;
+    font-family: "DM Sans", sans-serif;
     font-size: 1.1em;
 }
 
@@ -461,7 +462,7 @@ input[type="submit"] {
     color: #fff;
     border: none;
     border-radius: 0.375rem;
-    font: 1.25rem/1.25 "Inter", sans-serif;
+    font: 1.25rem/1.25 "DM Sans", sans-serif;
     padding: 0.75rem 1rem;
     cursor: pointer;
 }
@@ -517,7 +518,7 @@ ol.comments li + li {
 }
 
 ol.comments h3 {
-    font-family: "Inter", sans-serif;
+    font-family: "DM Sans", sans-serif;
     font-size: inherit;
     font-weight: normal;
     margin: 0;
@@ -542,7 +543,7 @@ ol.comments h3 .avatar > img {
 }
 
 ol.comments li small {
-    font-family: "Inter", sans-serif;
+    font-family: "DM Sans", sans-serif;
     font-style: italic;
 }
 
@@ -581,7 +582,7 @@ ol.comments li .twitter-icon {
 .with-replies-link {
     color: #999;
     display: inline;
-    font: bold 1.75rem/1.25 "Inter", sans-serif;
+    font: bold 1.75rem/1.25 "DM Sans", sans-serif;
 }
 
 .with-replies-link::before {
@@ -599,13 +600,13 @@ ol.comments li .twitter-icon {
     color: #f2836b;
 }
 
-.h-entry.post .entry-footer,
+.h-entry.article .entry-footer,
 .h-entry.note .entry-footer,
 .h-entry.like .entry-footer {
     clear: both;
     display: flex;
     justify-content: space-between;
-    align-items: flex-end;
+    align-items: center;
 }
 
 .h-entry.note .entry-footer > .client,
@@ -613,13 +614,13 @@ ol.comments li .twitter-icon {
     display: none;
 }
 
-.h-entry.post .entry-footer > div:last-child,
+.h-entry.article .entry-footer > div:last-child,
 .h-entry.note .entry-footer > div:last-child,
 .h-entry.like .entry-footer > div:last-child {
     text-align: right;
 }
 
-.h-entry.post .entry-footer > div:first-child,
+.h-entry.article .entry-footer > div:first-child,
 .h-entry.note .entry-footer > div:first-child,
 .h-entry.like .entry-footer > div:first-child {
     text-align: left;
@@ -693,7 +694,7 @@ ol.comments li .twitter-icon {
 
 .pagination {
     list-style: none;
-    font: 1rem/1.5 "Inter", sans-serif;
+    font: 1rem/1.5 "DM Sans", sans-serif;
     margin: 0;
     padding: 0;
 }
@@ -855,12 +856,12 @@ a.sr-only:focus {
     input,
     select,
     textarea {
-        font: 1.25rem/1.75 "Merriweather", Georgia, serif;
+        font: 1.25rem/1.75 "Source Serif 4", Georgia, serif;
     }
 
     pre,
     code {
-        font: 1.125rem/1.5 "Roboto Mono", monospace, monospace;
+        font: 1.125rem/1.5 "Source Code Pro", monospace, monospace;
     }
 
     blockquote {
@@ -932,7 +933,8 @@ a.sr-only:focus {
     }
 
     .entry-header,
-    .entry-footer {
+    .entry-footer,
+    .entry-meta {
         font-size: 1.125rem;
     }
 
@@ -1144,7 +1146,7 @@ a.sr-only:focus {
 
 .sidebar {
     background: #eee;
-    font-family: 'Inter', sans-serif;
+    font-family: "DM Sans", sans-serif;
     margin-top: 2.5rem;
     padding: 1rem 0 1.25rem;
 }
@@ -1154,7 +1156,6 @@ a.sr-only:focus {
 }
 
 .sidebar h2 {
-    font-family: 'Merriweather', serif;
     font-size: 1.25rem;
     margin-top: 0.5rem !important;
 }
@@ -1175,7 +1176,7 @@ a.sr-only:focus {
     font-family: 'Inter', sans-serif;
     padding: 0.25rem 0.375rem;
     display: inline-block;
-    margin-top: 0.67rem;
+    margin-block: 0.67rem;
     box-sizing: border-box;
     width: 100%;
 }
@@ -1219,7 +1220,7 @@ a.sr-only:focus {
 .toc {
     border: 1px solid #ddd;
     background: rgba(0,0,0,0.05);
-    font-family: "Inter", sans-serif;
+    font-family: "DM Sans", sans-serif;
     line-height: 1.33;
     padding: 0.5rem 3rem;
     margin-bottom: 0.5rem;

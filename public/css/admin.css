@@ -31,7 +31,7 @@
     font-weight: 400;
     font-display: swap;
     src: local(''),
-         url('../fonts/source-code-pro-v21-latin-ext_latin-regular.woff2') format('woff2');
+         url('../fonts/source-code-pro-v23-latin_latin-ext-regular.woff2') format('woff2');
 }
 
 @media screen and (max-width: 1023px) {

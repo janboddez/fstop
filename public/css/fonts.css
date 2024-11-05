@@ -1,93 +1,71 @@
 @font-face {
-    font-family: 'Inter';
-    src: local('Inter Regular'),
-         local('Inter-Regular'),
-         url(../fonts/Inter-Regular.woff2) format('woff2');
+    font-display: swap;
+    font-family: "Source Serif 4";
+    font-style: normal;
     font-weight: 400;
-    font-style:  normal;
-    font-display: swap;
+    src: url("../fonts/source-serif-4-v8-latin_latin-ext-regular.woff2") format("woff2");
 }
 
 @font-face {
-    font-family: 'Inter';
-    src: local('Inter Italic'),
-         local('Inter-Italic'),
-         url(../fonts/Inter-Italic.woff2) format('woff2');
-    font-weight: 400;
-    font-style:  italic;
     font-display: swap;
-}
-
-@font-face {
-    font-family: 'Inter';
-    src: local('Inter Bold'),
-         local('Inter-Bold'),
-         url(../fonts/Inter-Bold.woff2) format('woff2');
-    font-weight: 700;
-    font-style:  normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'Inter';
-    src: local('Inter Bold Italic'),
-         local('Inter-BoldItalic'),
-         url(../fonts/Inter-BoldItalic.woff2) format('woff2');
-    font-weight: 700;
-    font-style:  italic;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'Merriweather';
-    src: local('Merriweather Italic'),
-         local('Merriweather-Italic'),
-         url(../fonts/Merriweather-Italic.woff2) format('woff2'),
-         url(../fonts/Merriweather-Italic.ttf) format('truetype');
-    font-weight: 400;
+    font-family: "Source Serif 4";
     font-style: italic;
-    font-display: swap;
+    font-weight: 400;
+    src: url("../fonts/source-serif-4-v8-latin_latin-ext-italic.woff2") format("woff2");
 }
 
 @font-face {
-    font-family: 'Merriweather';
-    src: local('Merriweather Bold Italic'),
-         local('Merriweather-BoldItalic'),
-         url(../fonts/Merriweather-BoldItalic.woff2) format('woff2'),
-         url(../fonts/Merriweather-BoldItalic.ttf) format('truetype');
+    font-display: swap;
+    font-family: "Source Serif 4";
+    font-style: normal;
     font-weight: 700;
+    src: url("../fonts/source-serif-4-v8-latin_latin-ext-700.woff2") format("woff2");
+}
+
+@font-face {
+    font-display: swap;
+    font-family: "Source Serif 4";
     font-style: italic;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'Merriweather';
-    src: local('Merriweather Regular'),
-         local('Merriweather-Regular'),
-         url(../fonts/Merriweather-Regular.woff2) format('woff2'),
-         url(../fonts/Merriweather-Regular.ttf) format('truetype');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'Merriweather';
-    src: local('Merriweather Bold'),
-         local('Merriweather-Bold'),
-         url(../fonts/Merriweather-Bold.woff2) format('woff2'),
-         url(../fonts/Merriweather-Bold.ttf) format('truetype');
     font-weight: 700;
-    font-style: normal;
-    font-display: swap;
+    src: url("../fonts/source-serif-4-v8-latin_latin-ext-700italic.woff2") format("woff2");
 }
 
 @font-face {
-    font-family: 'Roboto Mono';
-    src: local('Roboto Mono'),
-         local('RobotoMono-Regular'),
-         url(../fonts/Roboto-Mono-Regular.woff2) format('woff2'),
-         url(../fonts/Roboto-Mono-Regular.ttf) format('truetype');
-    font-weight: 400;
+    font-display: swap;
+    font-family: "DM Sans";
     font-style: normal;
+    font-weight: 400;
+    src: url("../fonts/dm-sans-v15-latin_latin-ext-regular.woff2") format("woff2");
+}
+
+@font-face {
+    font-display: swap;
+    font-family: "DM Sans";
+    font-style: italic;
+    font-weight: 400;
+    src: url("../fonts/dm-sans-v15-latin_latin-ext-italic.woff2") format("woff2");
+}
+
+@font-face {
+    font-display: swap;
+    font-family: "DM Sans";
+    font-style: normal;
+    font-weight: 700;
+    src: url("../fonts/dm-sans-v15-latin_latin-ext-700.woff2") format("woff2");
+}
+
+@font-face {
+    font-display: swap;
+    font-family: "DM Sans";
+    font-style: italic;
+    font-weight: 700;
+    src: url("../fonts/dm-sans-v15-latin_latin-ext-700italic.woff2") format("woff2");
+}
+
+@font-face {
+    font-display: swap;
+    font-family: "Source Code Pro";
+    font-style: normal;
+    font-weight: 400;
+    src: url("../fonts/source-code-pro-v23-latin_latin-ext-regular.woff2") format("woff2");
 }
