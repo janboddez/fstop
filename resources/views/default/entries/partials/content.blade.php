@@ -84,7 +84,7 @@
         @include('theme::entries.partials.card')
     @endif
 
-    @if (is_single() && $entry->comments()->approved()->count() > 0)
+    @if (is_singular() && $entry->comments()->approved()->count() > 0)
         {{-- Comments. --}}
         <h2 id="comments">{{ __('Reactions') }}</h2>
         <ol class="comments">
