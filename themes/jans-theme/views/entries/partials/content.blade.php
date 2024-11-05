@@ -5,7 +5,7 @@
             {{-- @todo: Make responsive. --}}
             <a class="u-url" href="{{ $entry->permalink }}" rel="bookmark"><img class="u-featured" src="{{ $entry->thumbnail }}" width="1600" height="720" alt="" loading="lazy"></a>
         </div>
-    @elseif (in_array($entry->type, ['note', 'like'], true)) && ! empty($entry->thumbnail)
+    @elseif (in_array($entry->type, ['note', 'like'], true) && ! empty($entry->thumbnail))
         <div class="post-thumbnail">
             {{-- @todo: Make responsive. --}}
             <a href="{{ $entry->thumbnail }}"><img class="u-featured" src="{{ $entry->thumbnail }}" width="1600" height="720" alt="" loading="lazy"></a>
