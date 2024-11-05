@@ -16,6 +16,9 @@ class ThemeServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Add default CSS. A "theme" could remove this action.
+        Eventy::addAction('layout.head', [self::class, 'printDefaultStylesheet']);
+
         try {
             DB::connection()
                 ->getPdo();
@@ -57,17 +60,17 @@ class ThemeServiceProvider extends ServiceProvider
         // The "parent theme," if you like.
         $views = [resource_path('views/default')];
 
-        if (empty($theme)) {
-            // Only add "force-add" our CSS if no theme is active (yet).
-            Eventy::addAction('layout.head', function () {
-                echo '<link rel="stylesheet" href="/css/app.css?v=' . config('app.version') . '">' . "\n";
-            });
-        } else {
+        if (! empty($theme)) {
             // Let site owners override the views in `resources/views/default` with their own in `themes/*`. While views
             // are registered automatically, any assets should be made publishable through the theme's service provider.
             $views[] = __DIR__ . "/../../themes/$theme/views";
         }
 
         $this->loadViewsFrom(array_reverse($views), 'theme');
+    }
+
+    public static function printDefaultStylesheet(): void
+    {
+        echo '<link rel="stylesheet" href="/css/app.css?v=' . config('app.version') . '">' . "\n";
     }
 }
