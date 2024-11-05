@@ -240,3 +240,22 @@ function autoload_register(array $namespaces, string $dir): ?string
 
     return null;
 }
+
+function list_pages(int $number = 5): string
+{
+    $html = '';
+
+    $pages = Entry::ofType('page')
+        ->orderBy('name', 'asc')
+        ->orderBy('id', 'desc')
+        ->published()
+        ->public()
+        ->limit($number)
+        ->get();
+
+    foreach ($pages as $page) {
+        $html .= '<li ' . (request()->is($page->slug) ? ' class="active"' : '') . '><a href="' . e($page->permalink) . '">' . e($page->name) . "</a></li>\n";
+    }
+
+    return $html;
+}

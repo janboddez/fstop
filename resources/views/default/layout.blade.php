@@ -39,9 +39,7 @@
             <nav class="main-navigation">
                 <ul>
                     <li{!! request()->is('/') && request()->input('page') < 2 ? ' class="active"' : '' !!}><a href="/">{{ __('Home') }}</a></li>
-                    {{-- <li{!! request()->is('articles*') ? ' class="active"' : '' !!}><a href="/articles">{{ __('Articles') }}</a></li> --}}
-                    <li{!! request()->is('about') ? ' class="active"' : '' !!}><a href="/about">{{ __('About') }}</a></li>
-                    <li{!! request()->is('notes*') ? ' class="active"' : '' !!}><a href="/notes">{{ __('Notes') }}</a></li>
+                    {!! list_pages(4) !!}
                 </ul>
             </nav>
         </div>
@@ -57,14 +55,7 @@
     <aside class="sidebar">
         <div class="container">
             <div class="column">
-                <h2>{{ __('Browse by Content Type') }}</h2>
-                <nav>
-                    <ul>
-                        <li><a href="/notes">{{ __('Notes') }}</a></li>
-                        <li><a href="/likes">{{ __('Likes') }}</a></li>
-                        <li><a href="/stream">{{ __('Stream') }}</a></li>
-                    </ul>
-                </nav>
+                &nbsp;
             </div>
 
             <div class="column">
