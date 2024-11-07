@@ -51,7 +51,9 @@ class Entry extends Model
 
     public function comments()
     {
-        return $this->hasMany(Comment::class);
+        return $this->hasMany(Comment::class)
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc');
     }
 
     public function featured()
@@ -97,25 +99,11 @@ class Entry extends Model
         )->shouldCache();
     }
 
-    public function permalink(): Attribute
+    protected function permalink(): Attribute
     {
         return Attribute::make(
             // phpcs:ignore Generic.Files.LineLength.TooLong
             get: fn (string $value = null, array $attributes) => route(Str::plural($this->type) . '.show', $attributes['slug'])
-        )->shouldCache();
-    }
-
-    public function shortlink(): Attribute
-    {
-        return Attribute::make(
-            // phpcs:ignore Generic.Files.LineLength.TooLong
-            get: function () {
-                if (! empty($this->meta['short_url'][0])) {
-                    return $this->meta['short_url'][0];
-                }
-
-                return null;
-            }
         )->shouldCache();
     }
 
@@ -195,7 +183,7 @@ class Entry extends Model
         );
     }
 
-    public function summary(): Attribute
+    protected function summary(): Attribute
     {
         return Attribute::make(
             get: function (string $value = null, array $attributes) {
@@ -230,7 +218,7 @@ class Entry extends Model
         )->shouldCache();
     }
 
-    public function syndication(): Attribute
+    protected function syndication(): Attribute
     {
         return Attribute::make(
             get: function () {
@@ -255,6 +243,34 @@ class Entry extends Model
                     ),
                     $this->meta['syndication']
                 ));
+            }
+        )->shouldCache();
+    }
+
+    protected function shortlink(): Attribute
+    {
+        return Attribute::make(
+            // phpcs:ignore Generic.Files.LineLength.TooLong
+            get: function () {
+                if (! empty($this->meta['short_url'][0])) {
+                    return $this->meta['short_url'][0];
+                }
+
+                return null;
+            }
+        )->shouldCache();
+    }
+
+    protected function previewCard(): Attribute
+    {
+        return Attribute::make(
+            // phpcs:ignore Generic.Files.LineLength.TooLong
+            get: function () {
+                if (! empty($this->meta['preview_card']['url'])) {
+                    return $this->meta['preview_card'];
+                }
+
+                return null;
             }
         )->shouldCache();
     }

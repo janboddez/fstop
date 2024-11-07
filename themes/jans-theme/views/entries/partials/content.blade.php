@@ -118,7 +118,8 @@
                         @if (isset($entry->meta['weather']['temperature']))
                             @php
                                 $temperature = $entry->meta['weather']['temperature'];
-                                if ($temperature > 273.15) {
+                                if ($temperature > 100) {
+                                    // Anything above 100 must be in Kelvin.
                                     $temperature -= 273.15;
                                 }
                             @endphp
@@ -135,6 +136,24 @@
             </div>
             <div class="also-on">{!! (! blank($entry->syndication) ? __('Also on :syndication', ['syndication' => $entry->syndication]) : '') !!}</div>
         </footer>
+
+        @if (! empty($entry->preview_card))
+            <a class="card{{ (! empty($entry->preview_card['thumbnail']) ? ' has-thumbnail' : '' ) }}" href="{{ $entry->preview_card['url'] }}" target="_blank" rel="nofollow noopener noreferrer">
+                <div class="thumbnail">
+                    @if (! empty($entry->preview_card['thumbnail']))
+                        <img src="{{ $entry->preview_card['thumbnail'] }}" width="100" height="100" alt="">
+                    @endif
+                </div>
+
+                <dl class="summary">
+                    @if (! empty($entry->preview_card['title']))
+                        <dt>{!! \Michelf\SmartyPants::defaultTransform(Str::limit($entry->preview_card['title'], 120, '&hellip;'), \Michelf\SmartyPants::ATTR_LONG_EM_DASH_SHORT_EN) !!}</dt>
+                    @endif
+
+                    <dd><svg class="icon icon-link" aria-hidden="true" role="img" width="14" height="14"><use href="#icon-link"></use></svg> {{ parse_url($entry->preview_card['url'] , PHP_URL_HOST) }}</dd>
+                </dl>
+            </a>
+        @endif
     @endif
 
     @if (is_singular() && $entry->comments->count() > 0)

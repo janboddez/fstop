@@ -629,7 +629,8 @@ ol.comments li .twitter-icon {
 .h-entry .card {
     display: flex;
     align-items: center;
-    margin: 1.25rem 0 1.25rem auto;
+    font-family: "DM Sans", sans-serif;
+    margin: 1.25rem auto;
     border: 1px solid #ddd !important;
     border-radius: 0.5rem;
     max-width: 550px;
@@ -664,7 +665,7 @@ ol.comments li .twitter-icon {
 .h-entry .card .summary dt {
     font-size: 1rem;
     font-weight: bold;
-    margin: 0 0 0.25rem;
+    margin: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -697,12 +698,14 @@ ol.comments li .twitter-icon {
     font: 1rem/1.5 "DM Sans", sans-serif;
     margin: 0;
     padding: 0;
+    text-transform: lowercase;
 }
 
 .simple-pagination {
     display: flex;
     justify-content: space-between;
 }
+
 /*
 .pagination li,
 .archive main ul.pagination li {
@@ -722,6 +725,7 @@ ol.comments li .twitter-icon {
     clear: both;
 }
 */
+
 .simple-pagination li {
     margin: 0;
     flex-shrink: 0;

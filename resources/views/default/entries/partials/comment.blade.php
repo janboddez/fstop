@@ -14,7 +14,7 @@
             'created' => $comment->created_at->format('M j, Y'),
         ]) !!}
         @auth
-            |
+            &bull;
             <a href="{{ route('admin.comments.edit', $comment) }}">{{ __('Edit') }}</a>
         @endauth
     </h3>

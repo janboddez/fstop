@@ -18,15 +18,15 @@
                 <div class="entry-meta">
                     <a class="u-url" href="{{ route(Str::plural($entry->type) . '.show', $entry->slug) }}" rel="bookmark"><time class="dt-published" datetime="{{ $entry->created_at->format('c') }}">{{ $entry->created_at->format('M j, Y') }}</time></a>
                     @auth
-                        |
+                        &bull;
                         <a href="{{ route('admin.entries.edit', $entry) }}">{{ __('Edit :type', ['type' => $entry->type]) }}</a>
                     @endauth
                 </div>
             @else
                 @auth
-                <div class="entry-meta">
-                    <a href="{{ route('admin.entries.edit', $entry) }}">{{ __('Edit :type', ['type' => $entry->type]) }}</a>
-                </div>
+                    <div class="entry-meta">
+                        <a href="{{ route('admin.entries.edit', $entry) }}">{{ __('Edit :type', ['type' => $entry->type]) }}</a>
+                    </div>
                 @endauth
             @endif
         </header>
