@@ -23,8 +23,13 @@
             @if ($entry->type === 'article')
                 <div class="entry-meta">
                     <a class="u-url" href="{{ $entry->permalink }}" rel="bookmark"><time class="dt-published" datetime="{{ $entry->created_at->format('c') }}">{{ $entry->created_at->format('M j, Y') }}</time></a>
+                    @if (! empty($entry->shortlink) && ($shortUrl = parse_url($entry->shortlink)) !== false)
+                        &bull;
+                        <a href="{{ $entry->shortlink }}">{{ $shortUrl['host'] . $shortUrl['path'] }}</a>
+                    @endif
+
                     @auth
-                        |
+                        &bull;
                         <a href="{{ route('admin.entries.edit', $entry) }}">{{ __('Edit :type', ['type' => $entry->type]) }}</a>
                     @endauth
                 </div>
@@ -94,14 +99,20 @@
         <footer class="entry-footer">
             <div class="entry-meta">
                 <a class="u-url" href="{{ route(Str::plural($entry->type) . '.show', $entry->slug) }}" rel="bookmark"><time class="dt-published" datetime="{{ $entry->created_at->format('c') }}">{{ $entry->created_at->format('M j, Y') }}</time></a>
+
+                @if (! empty($entry->shortlink) && ($shortUrl = parse_url($entry->shortlink)) !== false)
+                    &bull;
+                    <a href="{{ $entry->shortlink }}">{{ $shortUrl['host'] . $shortUrl['path'] }}</a>
+                @endif
+
                 @auth
-                    |
+                    &bull;
                     <a href="{{ route('admin.entries.edit', $entry) }}">{{ __('Edit :type', ['type' => $entry->type]) }}</a>
                 @endauth
             </div>
             <div class="client">
                 @if (! empty($entry->meta['geo']['address']))
-                    <small class="h-geo">
+                    <span class="h-geo">
                         <span class="p-name">{{ $entry->meta['geo']['address'] }}</span>
 
                         @if (isset($entry->meta['weather']['temperature']))
@@ -117,9 +128,9 @@
                         @if (isset($entry->meta['weather']['description']))
                             &bull; {{ $entry->meta['weather']['description'] }}
                         @endif
-                    </small>
+                            </span>
                 @elseif (! empty($entry->meta['client']))
-                    <small>{{ $entry->meta['client'] }}</small>
+                    <span>{{ $entry->meta['client'] }}</span>
                 @endif
             </div>
             <div class="also-on">{!! (! blank($entry->syndication) ? __('Also on :syndication', ['syndication' => $entry->syndication]) : '') !!}</div>

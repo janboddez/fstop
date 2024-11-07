@@ -59,7 +59,7 @@ class SearchReplace extends Command
                 $post->meta = $meta;
             }
 
-            $post->save();
+            $post->saveQuietly();
         }
     }
 }

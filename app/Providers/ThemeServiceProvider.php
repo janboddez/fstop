@@ -71,6 +71,6 @@ class ThemeServiceProvider extends ServiceProvider
 
     public static function printDefaultStylesheet(): void
     {
-        echo '<link rel="stylesheet" href="/css/app.css?v=' . config('app.version') . '">' . "\n";
+        echo '<link rel="stylesheet" href="/css/default.css?v=' . config('app.version') . '">' . "\n";
     }
 }

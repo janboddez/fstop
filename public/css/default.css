@@ -181,11 +181,12 @@ pre {
  *  Header
  * ========================================================================== */
 .site-header {
-    font-family: "DM Sans", sans-serif;
+    font-family: "Inter", sans-serif;
     padding: 2rem 0;
 }
 
 .site-branding {
+    font-family: "DM Sans", sans-serif;
     font-size: 1em; /* Whatever the surrounding text's size is. */
     line-height: 1.75;
     text-align: center;
@@ -265,8 +266,7 @@ pre {
     padding-top: 1.25rem;
 }
 
-.h-entry + .h-entry.note,
-.h-entry + .h-entry.like {
+.h-entry + .h-entry:not(.article)  {
     padding-top: 0.75rem;
 }
 
@@ -274,7 +274,7 @@ pre {
 .entry-footer,
 .entry-meta {
     color: #555;
-    font-family: "DM Sans", sans-serif;
+    font-family: "Inter", sans-serif;
     font-size: 1rem;
 }
 
@@ -869,6 +869,10 @@ a.sr-only:focus {
         padding: 2rem 3rem 1.75rem;
     }
 
+    blockquote blockquote {
+        margin-inline: 0;
+    }
+
     /* ======================================================================
      *  Layout
      * ====================================================================== */
@@ -932,15 +936,20 @@ a.sr-only:focus {
         font-size: 1.375rem;
     }
 
+    /*
     .entry-header,
     .entry-footer,
     .entry-meta {
         font-size: 1.125rem;
     }
 
-    .home .post-thumbnail,
-    .tag .post-thumbnail,
-    .search .post-thumbnail {
+    .h-entry:not(.article) .entry-footer,
+    .h-entry:not(.article) .entry-meta {
+        font-size: 1rem;
+    }
+    */
+
+    body:not(.single) .article .post-thumbnail {
         margin-left: -4rem;
         margin-right: -4rem;
         margin-bottom: -3.25rem;
@@ -958,9 +967,7 @@ a.sr-only:focus {
         padding-inline: 0;
     }
 
-    .home .has-thumbnail .entry-header,
-    .tag .has-thumbnail .entry-header,
-    .search .has-thumbnail .entry-header {
+    body:not(.single) .article.has-thumbnail .entry-header {
         position: relative;
         background: #fff;
         z-index: 10;

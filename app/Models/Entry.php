@@ -105,6 +105,20 @@ class Entry extends Model
         )->shouldCache();
     }
 
+    public function shortlink(): Attribute
+    {
+        return Attribute::make(
+            // phpcs:ignore Generic.Files.LineLength.TooLong
+            get: function () {
+                if (! empty($this->meta['short_url'][0])) {
+                    return $this->meta['short_url'][0];
+                }
+
+                return null;
+            }
+        )->shouldCache();
+    }
+
     protected function name(): Attribute
     {
         return Attribute::make(
