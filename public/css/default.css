@@ -68,6 +68,10 @@ h1,
     margin: 0.5rem 0 0;
 }
 
+body:not(.home).archive h1 {
+    margin-bottom: 3.125rem;
+}
+
 h2,
 h3,
 h4 {
@@ -630,7 +634,7 @@ ol.comments li .twitter-icon {
     display: flex;
     align-items: center;
     font-family: "DM Sans", sans-serif;
-    margin: 1.25rem auto;
+    margin: 1.25rem auto 1.675rem;
     border: 1px solid #ddd !important;
     border-radius: 0.5rem;
     max-width: 550px;
@@ -1037,6 +1041,10 @@ a.sr-only:focus {
     .page-title,
     .entry-title {
         font-size: 2rem;
+    }
+
+    body:not(.home).archive h1 {
+        margin-bottom: 3.25rem;
     }
 
     h2 {

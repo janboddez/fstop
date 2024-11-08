@@ -35,11 +35,13 @@
                 </div>
             @else
                 @auth
-                <div class="entry-meta">
-                    <a href="{{ route('admin.entries.edit', $entry) }}">{{ __('Edit :type', ['type' => $entry->type]) }}</a>
-                </div>
+                    <div class="entry-meta">
+                        <a href="{{ route('admin.entries.edit', $entry) }}">{{ __('Edit :type', ['type' => $entry->type]) }}</a>
+                    </div>
                 @endauth
             @endif
+
+            <span class="sr-only p-author h-card"><a href="{{ url('/') }}" class="u-url p-name fn" rel="author">{{ $entry->user->name }}</a></span>
         </header>
     @else
         {{-- One of the short-form entry formats. --}}
@@ -49,6 +51,8 @@
             @else
                 <h2 class="sr-only"><a class="u-url" href="{{ $entry->permalink }}" rel="bookmark">{{ $entry->name }}</a></h2>
             @endif
+
+            <span class="sr-only p-author h-card"><a href="{{ url('/') }}" class="u-url p-name fn" rel="author">{{ $entry->user->name }}</a></span>
         </header>
     @endif
 
@@ -129,7 +133,7 @@
                         @if (isset($entry->meta['weather']['description']))
                             &bull; {{ $entry->meta['weather']['description'] }}
                         @endif
-                            </span>
+                    </span>
                 @elseif (! empty($entry->meta['client']))
                     <span>{{ $entry->meta['client'] }}</span>
                 @endif
