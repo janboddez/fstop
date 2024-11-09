@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\HasMeta;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 
 class Comment extends Model
@@ -42,5 +43,35 @@ class Comment extends Model
     public function scopePending($query)
     {
         return $query->where('status', 'pending');
+    }
+
+    protected function authorUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function (string $value = null) {
+                if ($value) {
+                    return $value;
+                }
+
+                if (! empty($this->meta['source'][0])) {
+                    return $this->meta['source'][0];
+                }
+
+                return null;
+            }
+        )->shouldCache();
+    }
+
+    protected function source(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (! empty($this->meta['source'][0])) {
+                    return $this->meta['source'][0];
+                }
+
+                return null;
+            }
+        )->shouldCache();
     }
 }

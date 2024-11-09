@@ -19,7 +19,10 @@ class EntryController extends Controller
         abort_unless(in_array($type, array_keys(Entry::getRegisteredTypes()), true), 404);
 
         $entries = Entry::ofType($type)
-            ->with('tags');
+            ->with('tags')
+            ->withCount(['comments' => function ($query) {
+                $query->where('status', 'approved');
+            }]);
 
         if ($type === 'page') {
             $entries = $entries->orderBy('slug', 'asc');

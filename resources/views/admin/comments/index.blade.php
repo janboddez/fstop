@@ -21,7 +21,7 @@
 @include('admin.partials.flash-message')
 
 <div class="mx-1 my-3 is-clearfix">
-    <a{!! ! request()->input('pending') && ! request()->input('s') ? ' class="is-active"' : '' !!} href="{{ route('admin.comments.index') }}">{{ __('Approved (:count)', ['count' => $approved]) }}</a>
+    <a{!! ! request()->input('pending') && ! request()->input('s') && ! request()->input('entry') ? ' class="is-active"' : '' !!} href="{{ route('admin.comments.index') }}">{{ __('Approved (:count)', ['count' => $approved]) }}</a>
     |
     <a{!! request()->input('pending') ? ' class="is-active"' : '' !!} href="{{ route('admin.comments.index', ['pending' => true]) }}">{{ __('Pending (:count)', ['count' => $pending]) }}</a>
 

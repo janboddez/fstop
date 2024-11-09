@@ -20,6 +20,12 @@ class CommentController extends Controller
             })
             ->paginate()
             ->appends(['s' => $request->input('s')]);
+        } elseif ($request->filled('entry')) {
+            $comments = $comments->where(function ($query) use ($request) {
+                $query->where('entry_id', (int) $request->input('entry'));
+            })
+            ->paginate()
+            ->appends(['s' => $request->input('entry')]);
         } elseif ($request->input('pending')) {
             $comments = $comments->where('status', 'pending')
             ->paginate()

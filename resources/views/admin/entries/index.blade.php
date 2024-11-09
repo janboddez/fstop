@@ -46,6 +46,7 @@
                 <th class="is-hidden-mobile">{{ __('Visibility') }}</th>
 
                 @if ($type !== 'page')
+                    <th style="text-align: center;">{{ __('Comments') }}</th>
                     <th class="is-hidden-mobile">{{ __('Tags') }}</th>
                 @endif
 
@@ -55,7 +56,7 @@
         <tbody>
             @forelse ($entries as $entry)
                 <tr>
-                    <td style="width: {{ $type === 'page' ? '30%' : '50%' }};">
+                    <td>
                         @if ($entry->trashed())
                             @if ($entry->type === 'page')
                                 {{ (count(explode('/', $entry->slug)) > 1 ? '— ': '').$entry->name }}
@@ -110,6 +111,9 @@
                     <td class="is-hidden-mobile">{{ ucfirst($entry->visibility) }}</td>
 
                     @if ($type !== 'page')
+                        <td style="text-align: center;">
+                            <a href="{{ route('admin.comments.index', ['entry' => $entry->id]) }}">{{ $entry->comments_count }}</a>
+                        </td>
                         <td class="is-hidden-mobile">
                             <small>{!! ! blank($entry->tags)
                                 ? $entry->tags->map(fn ($tag) => '<a href="' . route('admin.tags.edit', $tag) . '">' . $tag->name . '</a>')->implode(', ')
@@ -121,7 +125,11 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" style="text-align: center;">{{ __('Nothing here, yet.') }}</td>
+                    @if ($type === 'page')
+                        <td colspan="5" style="text-align: center;">{{ __('Nothing here, yet.') }}</td>
+                    @else
+                        <td colspan="6" style="text-align: center;">{{ __('Nothing here, yet.') }}</td>
+                    @endif
                 </tr>
             @endforelse
         </tbody>

@@ -160,7 +160,7 @@
         @endif
     @endif
 
-    @if (is_singular() && $entry->comments->count() > 0)
+    @if (is_singular() && ! blank($entry->comments))
         {{-- Comments. --}}
         <h2 id="comments">{{ __('Reactions') }}</h2>
         <ol class="comments">
