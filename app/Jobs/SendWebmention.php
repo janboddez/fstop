@@ -8,7 +8,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
 use janboddez\Webmention\WebmentionSender;
-use Michelf\MarkdownExtra;
 
 class SendWebmention implements ShouldQueue
 {
