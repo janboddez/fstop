@@ -82,6 +82,9 @@
         <div class="container">
             <ul class="social-links">
                 <li><a href="/feed"><svg class="icon icon-rss" aria-hidden="true" role="img" width="32" height="32"><use href="#icon-rss"></use></svg> <span class="sr-only">{{ __('RSS Feed') }}</span></a></li>
+                <li><a href="https://indieweb.social/@janboddez" rel="me"><svg class="icon icon-mastodon" aria-hidden="true" role="img" width="32" height="32"><use href="#icon-mastodon"></use></svg> <span class="sr-only">{{ __('Mastodon') }}</span></a></li>
+                <li><a href="https://pixelfed.social/janboddez" rel="me"><svg class="icon icon-pixelfed" aria-hidden="true" role="img" width="32" height="32"><use href="#icon-pixelfed"></use></svg> <span class="sr-only">{{ __('Pixelfed') }}</span></a></li>
+                <li><a href="https://github.com/janboddez" rel="me"><svg class="icon icon-github" aria-hidden="true" role="img" width="32" height="32"><use href="#icon-github"></use></svg> <span class="sr-only">{{ __('Github') }}</span></a></li>
             </ul>
         </div>
     </footer>
