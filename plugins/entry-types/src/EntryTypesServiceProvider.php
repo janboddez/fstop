@@ -75,5 +75,18 @@ class EntryTypesServiceProvider extends ServiceProvider
             // Ensure notes and likes get a random slug rather than a title-based one.
             return random_slug();
         }, 20, 2);
+
+        // Add feed links.
+        add_action('layout.head', function () {
+            // Does it make sense to add an article-only feed, too, given that we now have multiple entry types?
+            echo '<link rel="alternate" type="application/rss+xml" title="' . site_name() .
+                ' &ndash; Articles" href="' . url('articles/feed') . '">' . "\n";
+
+            echo '<link rel="alternate" type="application/rss+xml" title="' . site_name() .
+                ' &ndash; Notes" href="' . url('notes/feed') . '">' . "\n";
+
+            echo '<link rel="alternate" type="application/rss+xml" title="' . site_name() .
+                ' &ndash; Likes" href="' . url('likes/feed') . '">' . "\n";
+        });
     }
 }

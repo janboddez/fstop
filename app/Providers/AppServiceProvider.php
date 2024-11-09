@@ -58,6 +58,11 @@ class AppServiceProvider extends ServiceProvider
             echo Eventy::filter('admin.menu', view('admin.partials.menu')->render());
         });
 
+        Eventy::addAction('layout.head', function () {
+            echo '<link rel="alternate" type="application/rss+xml" title="' . site_name() . ' &ndash; Feed" href="' .
+                url('feed') . '">' . "\n";
+        });
+
         Entry::observe(EntryObserver::class);
 
         // DB::listen(function ($query) {
