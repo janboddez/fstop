@@ -38,4 +38,9 @@ class Comment extends Model
     {
         return $query->where('status', 'approved');
     }
+
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
 }

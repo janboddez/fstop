@@ -28,7 +28,7 @@
     @endforelse
     <li>
         <a{!! request()->is('admin/comments*') ? ' class="is-active"' : '' !!} href="{{ route('admin.comments.index') }}">
-            <span class="icon-text"><span class="icon"><i class="mdi mdi-forum"></i></span> <span>{{ __('Comments') }}</span></span>
+            <span class="icon-text"><span class="icon"><i class="mdi mdi-forum"></i></span> <span>{{ __('Comments') }} ({{ \App\Models\Comment::pending()->count() }})</span></span>
         </a>
     </li>
     <li>
