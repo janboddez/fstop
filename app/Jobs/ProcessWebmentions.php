@@ -159,8 +159,14 @@ class ProcessWebmentions implements ShouldQueue
         }
 
         // Update author URL.
-        if (! empty($hentry['properties']['author'][0]['properties']['url'][0])) {
-            $data['website'] = $hentry['properties']['author'][0]['properties']['url'][0];
+        if (
+            ! empty($hentry['properties']['author'][0]['properties']['url'][0]) &&
+            filter_var($hentry['properties']['author'][0]['properties']['url'][0], FILTER_VALIDATE_URL)
+        ) {
+            $data['author_url'] = filter_var(
+                $hentry['properties']['author'][0]['properties']['url'][0],
+                FILTER_SANITIZE_URL
+            );
         }
 
         // Update comment datetime.
