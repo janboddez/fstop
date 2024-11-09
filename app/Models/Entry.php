@@ -186,11 +186,10 @@ class Entry extends Model
     protected function summary(): Attribute
     {
         return Attribute::make(
-            get: function (string $value = null, array $attributes) {
+            get: function (string $value = null) {
                 if (empty($value) && ! request()->is('admin/*') && ! app()->runningInConsole()) {
                     // Autogenerate a summary, on the front end only.
-                    // $value = strip_tags($this->content);
-                    $value = strip_tags($attributes['content']);
+                    $value = strip_tags($this->content);
                     $value = Str::words($value, 30, ' […]');
                 }
 
