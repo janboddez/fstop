@@ -72,12 +72,14 @@ class SyndicateToMastodon implements ShouldQueue
             }
         }
 
+        $url = $this->entry->shortlink ?? $this->entry->permalink;
+
         if ($this->entry->type === 'note') {
             $content = $this->entry->content ?? '';
             $content = html_entity_decode(strip_tags($content));
-            $content .= "\n\n{$this->entry->permalink}";
+            $content .= "\n\n{$url}";
         } else {
-            $content = "{$this->entry->name} {$this->entry->permalink}";
+            $content = "{$this->entry->name} {$url}";
         }
 
         if (empty($content)) {

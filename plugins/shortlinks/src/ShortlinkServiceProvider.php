@@ -1,17 +1,17 @@
 <?php
 
-namespace Plugins\SyndicateToMastodon;
+namespace Plugins\Shortlinks;
 
 use App\Models\Entry;
 use Illuminate\Support\ServiceProvider;
-use Plugins\SyndicateToMastodon\Jobs\SyndicateToMastodon;
+use Plugins\Shortlinks\Jobs\GetShortlink;
 
-class SyndicateToMastodonServiceProvider extends ServiceProvider
+class ShortlinkServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
         $this->publishes([
-            __DIR__ . '/../config/mastodon.php' => config_path('mastodon.php'),
+            __DIR__ . '/../config/shortlinks.php' => config_path('shortlinks.php'),
         ]);
 
         $this->registerHooks();
@@ -21,7 +21,7 @@ class SyndicateToMastodonServiceProvider extends ServiceProvider
     {
         /** todo Use a proper observer class, rather than "action hooks." */
         add_action('entries.saved', function (Entry $entry) {
-            SyndicateToMastodon::dispatch($entry);
+            GetShortlink::dispatch($entry);
         });
     }
 }

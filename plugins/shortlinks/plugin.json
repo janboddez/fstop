@@ -1,0 +1,14 @@
+{
+    "name": "janboddez/shortlinks",
+    "description": "Short URLs for no good reason.",
+    "extra": {
+        "laravel": {
+            "providers": ["Plugins\\Shortlinks\\ShortlinkServiceProvider"]
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Plugins\\Shortlinks\\": "src"
+        }
+    }
+}
