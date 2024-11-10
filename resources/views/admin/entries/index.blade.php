@@ -36,17 +36,17 @@
     <table class="table is-fullwidth is-striped">
         <thead>
             <tr>
-                <th style="width: {{ $type === 'page' ? '30%' : '50%' }};">{{ __('Name') }}</th>
+                <th style="width: 30%;">{{ __('Name') }}</th>
 
                 @if ($type === 'page')
-                    <th class="is-hidden-mobile" style="width: 30%;">{{ __('Slug') }}</th>
+                    <th class="is-hidden-mobile" style="width: 20%;">{{ __('Slug') }}</th>
                 @endif
 
                 <th class="is-hidden-mobile">{{ __('Status') }}</th>
                 <th class="is-hidden-mobile">{{ __('Visibility') }}</th>
 
                 @if ($type !== 'page')
-                    <th style="text-align: center;">{{ __('Comments') }}</th>
+                    <th style="text-align: center;"><span class="icon-text"><span class="icon"><i class="mdi mdi-comment-multiple"></i></span><span class="is-sr-only"> {{ __('Comments') }}</span></span></th>
                     <th class="is-hidden-mobile">{{ __('Tags') }}</th>
                 @endif
 
