@@ -19,7 +19,7 @@ class SyndicateToMastodonServiceProvider extends ServiceProvider
 
     protected function registerHooks(): void
     {
-        /** todo Use a proper observer class, rather than "action hooks." */
+        /** @todo Use a proper observer class, rather than "action hooks." */
         add_action('entries.saved', function (Entry $entry) {
             SyndicateToMastodon::dispatch($entry);
         });

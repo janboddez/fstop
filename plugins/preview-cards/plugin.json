@@ -1,0 +1,14 @@
+{
+    "name": "janboddez/preview-cards",
+    "description": "Add link “preview cards.”",
+    "extra": {
+        "laravel": {
+            "providers": ["Plugins\\PreviewCards\\PreviewCardServiceProvider"]
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Plugins\\PreviewCards\\": "src"
+        }
+    }
+}

@@ -1,19 +1,15 @@
 <?php
 
-namespace Plugins\Shortlinks;
+namespace Plugins\PreviewCards;
 
 use App\Models\Entry;
 use Illuminate\Support\ServiceProvider;
-use Plugins\Shortlinks\Jobs\GetShortlink;
+use Plugins\PreviewCards\Jobs\GetPreviewCard;
 
-class ShortlinkServiceProvider extends ServiceProvider
+class PreviewCardServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        $this->publishes([
-            __DIR__ . '/../config/shortlinks.php' => config_path('shortlinks.php'),
-        ]);
-
         $this->registerHooks();
     }
 
@@ -21,7 +17,7 @@ class ShortlinkServiceProvider extends ServiceProvider
     {
         /** @todo Use a proper observer class, rather than "action hooks." */
         add_action('entries.saved', function (Entry $entry) {
-            GetShortlink::dispatch($entry);
+            GetPreviewCard::dispatch($entry);
         });
     }
 }
