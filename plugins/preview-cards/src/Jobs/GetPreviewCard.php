@@ -78,10 +78,15 @@ class GetPreviewCard implements ShouldQueue
 
         // Parse for a title, possible thumnail.
         $crawler = new Crawler($body);
-        $name = $crawler->filterXPath('//title')?->text(null);
+        $nodes = $crawler->filterXPath('//title');
+        $name = $nodes->count() > 0
+            ? $nodes->text(null)
+            : null;
 
-        $thumbnailUrl = $crawler->filterXPath('//meta[@property="og:image"]')?->attr('content', null)
-            ?? $crawler->filterXPath('//meta[@property="twitter:image"]')?->attr('content', null);
+        $nodes = $crawler->filterXPath('//meta[@property="og:image"] | //meta[@property="twitter:image"]');
+        $thumbnailUrl = $nodes->count() > 0
+            ? $nodes->attr('content', null)
+            : null;
 
         // If a thumbnail was found, save it locally.
         $localThumbnailUrl = $thumbnailUrl

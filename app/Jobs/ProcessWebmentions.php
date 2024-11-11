@@ -84,6 +84,7 @@ class ProcessWebmentions implements ShouldQueue
                 'website' => parse_url($webmention->source, PHP_URL_SCHEME) . '://' .
                     parse_url($webmention->source, PHP_URL_HOST),
                 'content' => __('&hellip; mentioned this.'),
+                'status' => 'pending',
                 'type' => 'mention',
                 'published' => Carbon::now(),
             ];
