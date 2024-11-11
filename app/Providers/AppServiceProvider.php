@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Comment;
 use App\Models\Entry;
 use App\Models\Option;
+use App\Observers\CommentObserver;
 use App\Observers\EntryObserver;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -64,6 +66,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Entry::observe(EntryObserver::class);
+        Comment::observe(CommentObserver::class);
 
         // DB::listen(function ($query) {
         //     Log::debug(

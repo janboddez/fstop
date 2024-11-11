@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class CommentController extends Controller
 {
@@ -68,10 +69,17 @@ class CommentController extends Controller
 
     public function destroy(Comment $comment)
     {
+        if (session()->previousUrl() === route('admin.comments.edit', $comment)) {
+            $comment->delete();
+
+            return redirect()
+                ->route('admin.comments.index')
+                ->withSuccess(__('Deleted!'));
+        }
+
         $comment->delete();
 
-        return redirect()
-            ->route('admin.comments.index')
+        return back()
             ->withSuccess(__('Deleted!'));
     }
 
