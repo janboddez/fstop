@@ -3,7 +3,10 @@
 <channel>
     <title>{{ site_name() }} &ndash; {{ ! empty($type) ? ucfirst(Str::plural($type)) : __('Feed') }}</title>
 
-    {{-- <description>{{ __('On Web Development, WordPress, and More') }}</description> --}}
+    @if (site_tagline() !== '')
+        <description>{{ site_tagline() }}</description>
+    @endif
+
     <link>{{ url('/') }}</link>
 
     @if (! empty($type))
@@ -12,8 +15,7 @@
         <atom:link href="{{ url('/feed') }}" rel="self" type="application/rss+xml" />
     @endif
 
-    <language>en-us</language>
-    {{-- <managingEditor>jan@janboddez.be (Jan Boddez)</managingEditor> --}}
+    <language>{{ str_replace('_', '-', app()->getLocale()) }}</language>
 
     @foreach ($entries as $entry)
         @php
@@ -31,7 +33,8 @@
             <dc:creator><![CDATA[{{ $entry->user->name }}]]></dc:creator>
         @endif
 
-        @if ($type === 'article')
+        @if ($entry->type === 'article')
+            {{-- @todo Either make this filterable, or have short-form entries baked in. --}}
             <title><![CDATA[{{ $entry->name }}]]></title>
         @endif
 
