@@ -38,6 +38,7 @@ class CommentPending extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage())
+            ->from(config('mail.from.address'), site_name())
             ->line(__('A new comment on “:entry” is awaiting moderation.', ['entry' => $this->comment->entry->name]))
             ->action(__('View Comment'), route('admin.comments.edit', $this->comment));
     }
