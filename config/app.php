@@ -13,8 +13,9 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
-    'version' => '0.1.0',
+    'name' => env('APP_NAME', 'F-Stop'),
+    'version' => '0.1.0.5',
+    'charset' => env('APP_CHARSET', 'utf-8'),
 
     /*
     |--------------------------------------------------------------------------

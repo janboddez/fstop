@@ -60,7 +60,10 @@ class SendWebmention implements ShouldQueue
                 continue;
             }
 
-            $results[md5($target)] = WebmentionSender::send($this->entry->permalink, $target);
+            $result = WebmentionSender::send($this->entry->permalink, $target);
+            if ($result) {
+                $results[md5($target)] = $result;
+            }
         }
 
         if (! empty($results)) {

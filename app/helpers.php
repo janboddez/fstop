@@ -2,7 +2,9 @@
 
 use App\Models\Entry;
 use App\Models\Option;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 function is_archive(string $type = null): bool
@@ -175,8 +177,18 @@ function get_site_settings(): array
         return $settings;
     }
 
-    $option = Option::where('key', 'site_settings')
-        ->first();
+    try {
+        DB::connection()
+            ->getPdo();
+
+        // Prevent code from running before migrations have run.
+        if (Schema::hasTable('options')) {
+            $option = Option::where('key', 'site_settings')
+                ->first();
+        }
+    } catch (\Exception $exception) {
+        // Do nothing.
+    }
 
     $settings = $option->value ?? [];
 
@@ -191,7 +203,7 @@ function site_name(): string
         return $settings['name'];
     }
 
-    return config('app.name');
+    return (string) config('app.name');
 }
 
 function site_tagline(): string

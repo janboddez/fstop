@@ -32,6 +32,6 @@ class FeedController extends Controller
         $entries = $entries->get();
 
         return response()->view('theme::entries.feed', compact('entries', 'type'))
-            ->header('Content-Type', 'application/rss+xml');
+            ->header('Content-Type', 'application/rss+xml; charset=' . config('app.charset', 'utf-8'));
     }
 }
