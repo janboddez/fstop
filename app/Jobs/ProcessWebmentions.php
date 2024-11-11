@@ -3,7 +3,6 @@
 namespace App\Jobs;
 
 use App\Models\Comment;
-use App\Models\Entry;
 use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -47,13 +46,13 @@ class ProcessWebmentions implements ShouldQueue
                 /** @todo Check if this comment doesn't already exist, and delete it if it was removed. I.e., handle deletes. */
 
                 // Something like this? Except we should probably only do this if we got a 404 or 410.
-                Log::info("Deleting webmention [source: {$webmention->source}, target: {$webmention->target}]");
-
                 $deleted = Comment::where('meta->target', $webmention->target)
                     ->where('meta->source', $webmention->source)
                     ->delete();
 
                 if ($deleted) {
+                    Log::info("Deleted webmention [source: {$webmention->source}, target: {$webmention->target}]");
+
                     DB::update(
                         'UPDATE webmentions SET status = ? WHERE id = ?',
                         ['deleted', $webmention->id]
