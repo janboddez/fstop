@@ -80,7 +80,7 @@ class GetLocation implements ShouldQueue
     protected function getAddress(float $lon, float $lat): ?string
     {
         // Attempt to retrieve from cache.
-        $response = Cache::remember("location:$lon:$lat", 3600, function () use ($lon, $lat) {
+        $data = Cache::remember("location:$lon:$lat", 3600, function () use ($lon, $lat) {
             // Reverse geocode `[$lon, $lat]` instead.
             $response = Http::withHeaders([
                     'User-Agent' => Eventy::filter(
@@ -102,10 +102,8 @@ class GetLocation implements ShouldQueue
                 return null;
             }
 
-            return $response;
+            return $response->json();
         });
-
-        $data = $response->json();
 
         if (! empty($data['error'])) {
             Log::error("[Location] {$data['error']} ($lat, $lon)");

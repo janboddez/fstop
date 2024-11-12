@@ -201,6 +201,8 @@
                     </div>
                 </div>
             </div>
+
+            @action('admin.entries.edit', $entry, $type)
         </div>
     </div>
 </form>

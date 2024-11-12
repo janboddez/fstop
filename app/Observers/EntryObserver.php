@@ -5,10 +5,11 @@ namespace App\Observers;
 use App\Jobs\SendWebmention;
 use App\Models\Entry;
 use Carbon\Carbon;
+use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
 use Illuminate\Support\Str;
 use TorMorten\Eventy\Facades\Events as Eventy;
 
-class EntryObserver
+class EntryObserver implements ShouldHandleEventsAfterCommit
 {
     /**
      * Runs whenever an entry is saved (created, updated ...), except when it is saved or updated "quietly."
