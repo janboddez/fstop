@@ -39,7 +39,7 @@ class LocationServiceProvider extends ServiceProvider
          * processed after entries are saved and would otherwise get overwritten. The obvious downside is it doesn't
          * actually show until you explicitly refresh the page once more after clicking "Create" or "Update."
          *
-         * @todo Make "core" use the `saving` event instead.
+         * @todo Make "core" use the `saving` event instead. Or make sure this actually runs after meta first processed.
          */
         add_action('entries.saved', function (Entry $entry) {
             // Store location data, if any.
