@@ -48,19 +48,30 @@ class LocationServiceProvider extends ServiceProvider
             $address = request()->input('geo_address');
 
             $meta = $entry->meta;
-
             $meta['geo'] = $meta['geo'] ?? [];
 
-            if (! empty($lon) && is_numeric($lon)) {
+            if (is_numeric($lon)) {
                 $meta['geo']['lon'] = round((float) $lon, 8);
+            } else {
+                $meta['geo']['lon'] = null;
             }
 
-            if (! empty($lat) && is_numeric($lat)) {
+            if (is_numeric($lat)) {
                 $meta['geo']['lat'] = round((float) $lon, 8);
+            } else {
+                $meta['geo']['lat'] = null;
             }
 
             if (! empty($address)) {
                 $meta['geo']['address'] = strip_tags((string) $address);
+            } else {
+                $meta['geo']['address'] = null;
+            }
+
+            $meta['geo'] = array_filter($meta['geo']);
+
+            if (empty($meta['geo'])) {
+                unset($meta['geo']);
             }
 
             $entry->meta = $meta;
@@ -71,10 +82,6 @@ class LocationServiceProvider extends ServiceProvider
          * When needed, queue a reverse geocoding job.
          */
         add_action('entries.saved', function (Entry $entry) {
-            if (! empty($entry->meta['geo']['address'])) {
-                return;
-            }
-
             // Get an "address," i.e., city or municipality.
             GetLocation::dispatch($entry);
         }, 50);
