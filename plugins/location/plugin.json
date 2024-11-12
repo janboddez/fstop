@@ -1,0 +1,14 @@
+{
+    "name": "janboddez/location",
+    "description": "Store location and weather metadata.",
+    "extra": {
+        "laravel": {
+            "providers": ["Plugins\\Location\\LocationServiceProvider"]
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Plugins\\Location\\": "src"
+        }
+    }
+}
