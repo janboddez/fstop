@@ -73,14 +73,14 @@ class GetLocation implements ShouldQueue
     }
 
     /**
-     * Given a latitude and longitude, returns address data (i.e., reverse geolocation).
+     * Given a latitude and longitude, returns a location name ("address").
      *
      * Uses OSM's Nominatim for geocoding.
      */
     protected function getAddress(float $lon, float $lat): ?string
     {
-        // Attempt to retrieve "address" from cache.
-        $value = Cache::remember('entries:location:address', 3600, function () use ($lon, $lat) {
+        // Attempt to retrieve from cache.
+        $response = Cache::remember("location:$lon:$lat", 3600, function () use ($lon, $lat) {
             // Reverse geocode `[$lon, $lat]` instead.
             $response = Http::withHeaders([
                     'User-Agent' => Eventy::filter(
@@ -102,25 +102,25 @@ class GetLocation implements ShouldQueue
                 return null;
             }
 
-            $location = $response->json();
-
-            if (! empty($location['error'])) {
-                Log::error("[Location] {$location['error']} ($lat, $lon)");
-                return null;
-            }
-
-            $address = $location['address']['town']
-                ?? $location['address']['city']
-                ?? $location['address']['municipality']
-                ?? null;
-
-            if (is_string($address) && ! empty($location['address']['country_code'])) {
-                $address .= ', ' . strtoupper($location['address']['country_code']);
-            }
-
-            return $address;
+            return $response;
         });
 
-        return $value;
+        $data = $response->json();
+
+        if (! empty($data['error'])) {
+            Log::error("[Location] {$data['error']} ($lat, $lon)");
+            return null;
+        }
+
+        $address = $data['address']['town']
+            ?? $data['address']['city']
+            ?? $data['address']['municipality']
+            ?? null;
+
+        if (is_string($address) && ! empty($data['address']['country_code'])) {
+            $address .= ', ' . strtoupper($data['address']['country_code']);
+        }
+
+        return $address;
     }
 }
