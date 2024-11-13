@@ -41,6 +41,8 @@ class GetLocation implements ShouldQueue
             return;
         }
 
+        /** @todo Bail if a post isn't recent! We don't want to add possibly long locations way after the fact. */
+
         $meta = $this->entry->meta;
 
         if (! empty($meta['geo']['address'])) {
@@ -80,7 +82,7 @@ class GetLocation implements ShouldQueue
     protected function getAddress(float $lat, float $lon): ?string
     {
         // Attempt to retrieve from cache.
-        $data = Cache::remember("location:$lat:$lon", 3600, function () use ($lat, $lon) {
+        $data = Cache::remember("location:$lat:$lon", 60 * 60 * 24 * 7, function () use ($lat, $lon) {
             // Reverse geocode `[$lat, $lon]` instead.
             $response = Http::withHeaders([
                     'User-Agent' => Eventy::filter(
