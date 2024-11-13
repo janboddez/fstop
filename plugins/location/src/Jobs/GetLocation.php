@@ -59,8 +59,8 @@ class GetLocation implements ShouldQueue
             $meta['geo'],
             [
                 'address' => $this->getAddress(
-                    (float) $meta['geo']['lon'],
-                    (float) $meta['geo']['lat']
+                    (float) $meta['geo']['lat'],
+                    (float) $meta['geo']['lon']
                 ),
             ]
         ));
@@ -77,11 +77,11 @@ class GetLocation implements ShouldQueue
      *
      * Uses OSM's Nominatim for geocoding.
      */
-    protected function getAddress(float $lon, float $lat): ?string
+    protected function getAddress(float $lat, float $lon): ?string
     {
         // Attempt to retrieve from cache.
-        $data = Cache::remember("location:$lon:$lat", 3600, function () use ($lon, $lat) {
-            // Reverse geocode `[$lon, $lat]` instead.
+        $data = Cache::remember("location:$lat:$lon", 3600, function () use ($lat, $lon) {
+            // Reverse geocode `[$lat, $lon]` instead.
             $response = Http::withHeaders([
                     'User-Agent' => Eventy::filter(
                         'location.user-agent',

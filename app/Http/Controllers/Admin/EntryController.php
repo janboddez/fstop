@@ -98,17 +98,48 @@ class EntryController extends Controller
         $validated = $request->validate([
             'name' => 'nullable|max:250',
             'slug' => 'nullable|max:250',
-            'content' => 'required',
-            'summary' => 'nullable',
+            'content' => 'required|string',
+            'summary' => 'nullable|string',
             'created_at' => 'nullable|date_format:Y-m-d',
             'status' => 'in:draft,published',
             'visibility' => 'in:public,unlisted,private',
             'type' => 'in:' . implode(',', array_keys(Entry::getRegisteredTypes())),
             'featured' => 'nullable|url',
+            'meta_keys' => 'nullable|array',
+            'meta_values' => 'nullable|array',
+            'meta_keys.*' => 'max:250',
+            'meta_values.*' => 'nullable|string',
         ]);
 
-        $entry = Entry::create(array_merge($validated, ['user_id' => $request->user()->id]));
+        // Parse in user ID.
+        $validated['user_id'] = $request->user()->id;
 
+        // Convert `featured`, which isn't actually a fillable property, to `attachment_id`.
+        if (! empty($validated['featured'])) {
+            $relativePath = preg_replace(
+                '~^' . rtrim(Storage::disk('public')->url(''), '/') . '/~',
+                '',
+                $validated['featured']
+            );
+
+            $featured = Attachment::where('path', $relativePath)
+                ->first();
+
+            $validated['attachment_id'] = $featured->id;
+        }
+
+        // Add any metadata.
+        if (
+            ! empty($validated['meta_keys']) &&
+            ! empty($validated['meta_values']) &&
+            count($validated['meta_keys']) === count($validated['meta_values'])
+        ) {
+            $validated['meta'] = Entry::prepareMeta($validated['meta_keys'], $validated['meta_values']);
+        }
+
+        $entry = Entry::create($validated);
+
+        // Sync tags, if any.
         if ($request->filled('tags')) {
             $tags = explode(',', trim($request->input('tags'), ','));
             $tagIds = [];
@@ -126,30 +157,6 @@ class EntryController extends Controller
 
             $entry->tags()->sync($tagIds);
         }
-
-        if ($request->filled('meta_keys') && $request->filled('meta_values')) {
-            $entry->updateMeta(
-                $request->input('meta_keys'),
-                $request->input('meta_values')
-            );
-        }
-
-        if ($request->filled('featured')) {
-            $relativePath = preg_replace(
-                '~^' . rtrim(Storage::disk('public')->url(''), '/') . '/~',
-                '',
-                $request->input('featured')
-            );
-
-            $featured = Attachment::where('path', $relativePath)
-                ->first();
-
-            $entry->attachment_id = $featured->id;
-        } else {
-            $entry->attachment_id = null;
-        }
-
-        $entry->saveQuietly();
 
         return redirect()->route('admin.entries.edit', compact('entry'))
             ->with('success', __('Created!'));
@@ -170,14 +177,42 @@ class EntryController extends Controller
         $validated = $request->validate([
             'name' => 'nullable|max:250',
             'slug' => 'nullable|max:250',
-            'content' => 'required',
-            'summary' => 'nullable',
+            'content' => 'required|string',
+            'summary' => 'nullable|string',
             'created_at' => 'nullable|date_format:Y-m-d',
             'status' => 'in:draft,published',
             'visibility' => 'in:public,unlisted,private',
             'type' => 'in:' . implode(',', array_keys(Entry::getRegisteredTypes())),
             'featured' => 'nullable|url',
+            'meta_keys' => 'nullable|array',
+            'meta_values' => 'nullable|array',
+            'meta_keys.*' => 'max:250',
+            'meta_values.*' => 'nullable|string',
         ]);
+
+        if (! empty($validated['featured'])) {
+            $relativePath = preg_replace(
+                '~^' . rtrim(Storage::disk('public')->url(''), '/') . '/~',
+                '',
+                $validated['featured']
+            );
+
+            $featured = Attachment::where('path', $relativePath)
+                ->first();
+
+            $validated['attachment_id'] = $featured->id;
+        }
+
+        if (
+            ! empty($validated['meta_keys']) &&
+            ! empty($validated['meta_values']) &&
+            count($validated['meta_keys']) === count($validated['meta_values'])
+        ) {
+            $validated['meta'] = array_merge(
+                $entry->meta ?? [],
+                Entry::prepareMeta($validated['meta_keys'], $validated['meta_values'])
+            );
+        }
 
         $entry->update($validated);
 
@@ -198,32 +233,6 @@ class EntryController extends Controller
 
             $entry->tags()->sync($tagIds);
         }
-
-        if ($request->filled('meta_keys') && $request->filled('meta_values')) {
-            $entry->updateMeta(
-                $request->input('meta_keys'),
-                $request->input('meta_values')
-            );
-        }
-
-        if ($request->filled('featured')) {
-            $relativePath = preg_replace(
-                '~^' . rtrim(Storage::disk('public')->url(''), '/') . '/~',
-                '',
-                $request->input('featured')
-            );
-
-            $featured = Attachment::where('path', $relativePath)
-                ->first();
-        }
-
-        if (! empty($featured)) {
-            $entry->attachment_id = $featured->id;
-        } else {
-            $entry->attachment_id = null;
-        }
-
-        $entry->saveQuietly();
 
         return back()
             ->withSuccess(__('Changes saved!'));

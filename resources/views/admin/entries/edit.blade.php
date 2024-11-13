@@ -202,7 +202,7 @@
                 </div>
             </div>
 
-            @action('admin.entries.edit', $entry, $type)
+            @action('admin.entries.edit', $entry ?? null, $type)
         </div>
     </div>
 </form>

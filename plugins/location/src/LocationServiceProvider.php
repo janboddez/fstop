@@ -19,14 +19,14 @@ class LocationServiceProvider extends ServiceProvider
         /**
          * Display "Location" "meta box."
          */
-        add_action('admin.entries.edit', function (Entry $entry, string $type = null) {
+        add_action('admin.entries.edit', function (Entry $entry = null, string $type = null) {
             if (! in_array($type, ['article', 'note'], true)) {
                 return;
             }
 
             $geo = [
-                'lon' => $entry->meta['geo']['lon'] ?? '',
                 'lat' => $entry->meta['geo']['lat'] ?? '',
+                'lon' => $entry->meta['geo']['lon'] ?? '',
                 'address' => $entry->meta['geo']['address'] ?? '',
             ];
 
@@ -35,55 +35,50 @@ class LocationServiceProvider extends ServiceProvider
         }, 20, 2);
 
         /**
-         * Stores location data. Tied to `entries.saved` rather than `entries.saving` because meta is (currently)
-         * processed after entries are saved and would otherwise get overwritten. The obvious downside is it doesn't
-         * actually show until you explicitly refresh the page once more after clicking "Create" or "Update."
+         * Store location data, from input form fields, to entry meta.
          *
-         * @todo Make "core" use the `saving` event instead. Or make sure this actually runs after meta first processed.
+         * Runs before an entry is saved.
          */
-        add_action('entries.saved', function (Entry $entry) {
-            // Store location data, if any.
-            $lon = request()->input('geo_lon');
+        add_action('entries.saving', function (Entry $entry) {
             $lat = request()->input('geo_lat');
+            $lon = request()->input('geo_lon');
             $address = request()->input('geo_address');
 
             $meta = $entry->meta;
             $meta['geo'] = $meta['geo'] ?? [];
 
+            if (is_numeric($lat)) {
+                $meta['geo']['lat'] = round((float) $lat, 8);
+            } else {
+                unset($meta['geo']['lat']);
+            }
+
             if (is_numeric($lon)) {
                 $meta['geo']['lon'] = round((float) $lon, 8);
             } else {
-                $meta['geo']['lon'] = null;
-            }
-
-            if (is_numeric($lat)) {
-                $meta['geo']['lat'] = round((float) $lon, 8);
-            } else {
-                $meta['geo']['lat'] = null;
+                unset($meta['geo']['lon']);
             }
 
             if (! empty($address)) {
                 $meta['geo']['address'] = strip_tags((string) $address);
             } else {
-                $meta['geo']['address'] = null;
+                unset($meta['geo']['address']);
             }
 
-            $meta['geo'] = array_filter($meta['geo']);
-
-            if (empty($meta['geo'])) {
-                unset($meta['geo']);
-            }
-
-            $entry->meta = $meta;
-            $entry->saveQuietly();
-        }, 40);
+            $entry->meta = array_filter($meta);
+        });
 
         /**
          * When needed, queue a reverse geocoding job.
+         *
+         * Runs after an entry is saved.
+         *
+         * @todo Prevent race conditions, as multiple jobs may alter the same entry at once.
+         *       Either use a separate meta table or lock jobs.
          */
         add_action('entries.saved', function (Entry $entry) {
             // Get an "address," i.e., city or municipality.
             GetLocation::dispatch($entry);
-        }, 50);
+        }, 99);
     }
 }
