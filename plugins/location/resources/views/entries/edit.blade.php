@@ -24,3 +24,23 @@
         </div>
     </div>
 </div>
+
+<script>
+// Have the browser fill out empty latitude and longitude fields.
+const geoLat = document.getElementById('geo_lat');
+const geoLon = document.getElementById('geo_lon');
+
+navigator.geolocation.getCurrentPosition(
+    (position) => {
+        if (geoLat && ! geoLat.value) {
+            geoLat.value = position.coords.latitude.toString();
+        }
+
+        if (geoLon && ! geoLon.value) {
+            geoLon.value = position.coords.longitude.toString();
+        }
+    }, (error) => {
+        console.log(error);
+    }
+);
+</script>
