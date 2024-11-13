@@ -28,13 +28,6 @@ class SyndicateToMastodon implements ShouldQueue
      */
     public function handle(): void
     {
-        /** @todo Make smarter. */
-        if ($this->entry->created_at->lt(Carbon::now()->subHours(2))) {
-            // Prevent syndicating "old" posts.
-            Log::debug("[SyndicateToMastodon] Skipping entry {$this->entry->id}: too old");
-            return;
-        }
-
         if ($this->entry->status !== 'published') {
             return;
         }
@@ -57,14 +50,13 @@ class SyndicateToMastodon implements ShouldQueue
             return;
         }
 
-        $meta = $this->entry->meta;
-
-        if (empty($meta['syndicate_to_mastodon'])) {
+        if (empty($this->entry->meta['syndicate_to_mastodon'])) {
             return;
         }
 
-        if (! empty($meta['syndication'])) {
-            foreach ($meta['syndication'] as $url) {
+        /** @todo Somehow force reload this data, as it may be stale. */
+        if (! empty($this->entry->meta['syndication'])) {
+            foreach ($this->entry->meta['syndication'] as $url) {
                 if (strpos($url, $host) !== false) {
                     Log::debug('[SyndicateToMastodon] Entry got syndicated before');
                     return;
@@ -100,20 +92,23 @@ class SyndicateToMastodon implements ShouldQueue
 
         if (! empty($response['error'])) {
             Log::debug("[SyndicateToMastodon] Something went wrong: {$response['error']}");
-            $meta['syndicate_to_mastodon_error'] = [$response['error']];
+            $this->entry->forceFill([
+                'meta->syndicate_to_mastodon_error' => (array) $response['error'],
+            ]);
         }
 
         if (! empty($response['url']) && filter_var($response['url'], FILTER_VALIDATE_URL)) {
-            // Delete previous errors, if any.
-            unset($meta['syndicate_to_mastodon_error']);
-
-            $meta['syndication'] = array_merge(
-                $meta['syndication'] ?? [],
+            $syndication = array_merge(
+                $this->entry->meta['syndication'] ?? [],
                 [filter_var($response['url'], FILTER_SANITIZE_URL)]
             );
         }
 
-        $this->entry->meta = $meta;
+        $this->entry->forceFill([
+            'meta->syndicate_to_mastodon_error' => [], /** @todo Properly delete this key. */
+            'meta->syndication' => $syndication,
+        ]);
+
         $this->entry->saveQuietly();
     }
 }

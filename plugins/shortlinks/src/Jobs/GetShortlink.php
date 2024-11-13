@@ -45,13 +45,11 @@ class GetShortlink implements ShouldQueue
             return;
         }
 
-        $meta = $this->entry->meta;
-
-        if (! empty($meta['short_url'])) {
+        if (! empty($this->entry->meta['short_url'])) {
             return;
         }
 
-        // Send the thing.
+        // Request short URL.
         $response = Http::withHeaders([
                 'Authorization' => "Bearer $token",
             ])
@@ -62,8 +60,10 @@ class GetShortlink implements ShouldQueue
             ->body();
 
         if (! empty($response) && filter_var($response, FILTER_VALIDATE_URL)) {
-            $meta['short_url'] = (array) filter_var($response, FILTER_SANITIZE_URL);
-            $this->entry->meta = $meta;
+            $this->entry->forceFill([
+                'meta->short_url' => (array) filter_var($response, FILTER_SANITIZE_URL),
+            ]);
+
             $this->entry->saveQuietly();
         }
     }

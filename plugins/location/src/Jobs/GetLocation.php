@@ -43,33 +43,26 @@ class GetLocation implements ShouldQueue
 
         /** @todo Bail if a post isn't recent! We don't want to add possibly long locations way after the fact. */
 
-        $meta = $this->entry->meta;
-
-        if (! empty($meta['geo']['address'])) {
+        if (! empty($this->entry->meta['geo']['address'])) {
             return;
         }
 
-        if (empty($meta['geo']['lat'])) {
+        if (empty($this->entry->meta['geo']['lat'])) {
             return;
         }
 
-        if (empty($meta['geo']['lon'])) {
+        if (empty($this->entry->meta['geo']['lon'])) {
             return;
         }
 
-        $meta['geo'] = array_filter(array_merge(
-            $meta['geo'],
-            [
-                'address' => $this->getAddress(
-                    (float) $meta['geo']['lat'],
-                    (float) $meta['geo']['lon']
-                ),
-            ]
-        ));
+        $address = $this->getAddress(
+            (float) $this->entry->meta['geo']['lat'],
+            (float) $this->entry->meta['geo']['lon']
+        );
 
-        $this->entry->meta = $meta; // Shouldn't we worry about race conditions here?
-
-        /** @todo Look into the `WithoutOverlapping` job middleware. */
+        $this->entry->forceFill([
+            'meta->geo->address' => $address,
+        ]);
 
         $this->entry->saveQuietly();
     }

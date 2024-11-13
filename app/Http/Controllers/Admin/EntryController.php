@@ -208,10 +208,7 @@ class EntryController extends Controller
             ! empty($validated['meta_values']) &&
             count($validated['meta_keys']) === count($validated['meta_values'])
         ) {
-            $validated['meta'] = array_merge(
-                $entry->meta ?? [],
-                Entry::prepareMeta($validated['meta_keys'], $validated['meta_values'])
-            );
+            $validated['meta'] = Entry::prepareMeta($validated['meta_keys'], $validated['meta_values']);
         }
 
         $entry->update($validated);

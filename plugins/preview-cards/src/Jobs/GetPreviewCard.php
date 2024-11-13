@@ -49,8 +49,7 @@ class GetPreviewCard implements ShouldQueue
             return;
         }
 
-        $meta = $this->entry->meta;
-        if (! empty($meta['preview_card'])) {
+        if (! empty($this->entry->meta['preview_card'])) {
             return;
         }
 
@@ -88,20 +87,19 @@ class GetPreviewCard implements ShouldQueue
             ? $nodes->attr('content', null)
             : null;
 
-        // If a thumbnail was found, save it locally.
-        $localThumbnailUrl = $thumbnailUrl
-            ? $this->cacheThumbnail($thumbnailUrl)
-            : null;
-
-        /** @todo Not overwrite the image if it exists and is sufficiently recent. */
-
-        $meta['preview_card'] = array_filter([
+        $previewCard = array_filter([
             'url' => $urls[0],
             'title' => $name,
-            'thumbnail' => $localThumbnailUrl,
+            // If a thumbnail was found, save it locally.
+            'thumbnail' => $thumbnailUrl
+                ? $this->cacheThumbnail($thumbnailUrl)
+                : null,
         ]);
 
-        $this->entry->meta = $meta;
+        $this->entry->forceFill([
+            'meta->preview_card' => $previewCard,
+        ]);
+
         $this->entry->saveQuietly();
     }
 
