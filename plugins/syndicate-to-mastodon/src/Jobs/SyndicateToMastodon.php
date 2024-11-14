@@ -3,7 +3,6 @@
 namespace Plugins\SyndicateToMastodon\Jobs;
 
 use App\Models\Entry;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -12,6 +11,11 @@ use Illuminate\Support\Facades\Log;
 class SyndicateToMastodon implements ShouldQueue
 {
     use Queueable;
+
+    /**
+     * The number of times the job may be attempted.
+     */
+    public int $tries = 1;
 
     public Entry $entry;
 
@@ -98,16 +102,14 @@ class SyndicateToMastodon implements ShouldQueue
         }
 
         if (! empty($response['url']) && filter_var($response['url'], FILTER_VALIDATE_URL)) {
-            $syndication = array_merge(
-                $this->entry->meta['syndication'] ?? [],
-                [filter_var($response['url'], FILTER_SANITIZE_URL)]
-            );
-        }
+            $syndication = $this->entry->meta['syndication'] ?? [];
+            $syndication[] = filter_var($response['url'], FILTER_SANITIZE_URL);
 
-        $this->entry->forceFill([
-            'meta->syndicate_to_mastodon_error' => [], /** @todo Properly delete this key. */
-            'meta->syndication' => $syndication,
-        ]);
+            $this->entry->forceFill([
+                'meta->syndicate_to_mastodon_error' => (array) '', /** @todo Properly delete this key. */
+                'meta->syndication' => $syndication,
+            ]);
+        }
 
         $this->entry->saveQuietly();
     }

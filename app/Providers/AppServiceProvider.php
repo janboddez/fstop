@@ -35,7 +35,7 @@ class AppServiceProvider extends ServiceProvider
 
         if (
             request()->hasCookie(config('session.cookie')) ||
-            request()->is('admin/*') ||
+            request()->is('admin*') ||
             request()->is('login')
         ) {
             $this->app['router']->pushMiddlewareToGroup(
@@ -56,6 +56,28 @@ class AppServiceProvider extends ServiceProvider
             );
         }
 
+        if (request()->is('indieauth*')) {
+            $this->app['router']->pushMiddlewareToGroup(
+                'web',
+                \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class
+            );
+            $this->app['router']->pushMiddlewareToGroup(
+                'web',
+                \Illuminate\Session\Middleware\StartSession::class
+            );
+            $this->app['router']->pushMiddlewareToGroup(
+                'web',
+                \Illuminate\View\Middleware\ShareErrorsFromSession::class
+            );
+
+            if (! request()->has('code')) {
+                $this->app['router']->pushMiddlewareToGroup(
+                    'web',
+                    \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class
+                );
+            }
+        }
+
         Eventy::addAction('admin.partials.menu', function () {
             echo Eventy::filter('admin.menu', view('admin.partials.menu')->render());
         });
@@ -74,5 +96,7 @@ class AppServiceProvider extends ServiceProvider
         //         $query->bindings
         //     );
         // });
+
+        // Log::debug(config('sanctum.stateful'));
     }
 }
