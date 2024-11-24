@@ -45,7 +45,8 @@ class GetShortlink implements ShouldQueue
             return;
         }
 
-        if (! empty($this->entry->meta['short_url'])) {
+        if ($this->entry->meta->firstWhere('key', 'short_url')) {
+            // A short URL already exists.
             return;
         }
 
@@ -60,11 +61,10 @@ class GetShortlink implements ShouldQueue
             ->body();
 
         if (! empty($response) && filter_var($response, FILTER_VALIDATE_URL)) {
-            $this->entry->forceFill([
-                'meta->short_url' => (array) filter_var($response, FILTER_SANITIZE_URL),
-            ]);
-
-            $this->entry->saveQuietly();
+            $this->entry->meta()->updateOrCreate(
+                ['key' => 'short_url'],
+                ['value' => (array) filter_var($response, FILTER_SANITIZE_URL)]
+            );
         }
     }
 }

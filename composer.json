@@ -9,6 +9,7 @@
         "janboddez/laravel-indieauth": "@dev",
         "janboddez/laravel-webmention": "@dev",
         "laravel/framework": "^11.9",
+        "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
         "michelf/php-markdown": "^1.9",
         "michelf/php-smartypants": "^1.8",

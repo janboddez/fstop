@@ -4,13 +4,11 @@ namespace App\Providers;
 
 use App\Models\Comment;
 use App\Models\Entry;
-use App\Models\Option;
 use App\Observers\CommentObserver;
 use App\Observers\EntryObserver;
+use App\Jobs\SendWebmention;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use TorMorten\Eventy\Facades\Events as Eventy;
 
@@ -78,16 +76,24 @@ class AppServiceProvider extends ServiceProvider
             }
         }
 
-        Eventy::addAction('admin.partials.menu', function () {
-            echo Eventy::filter('admin.menu', view('admin.partials.menu')->render());
+        Eventy::addAction('admin:menu', function () {
+            echo Eventy::filter('admin:menu', view('admin.partials.menu')->render());
         });
 
-        Eventy::addAction('layout.head', function () {
+        Eventy::addAction('theme:layout:head', function () {
             echo '<link rel="alternate" type="application/rss+xml" title="' . site_name() . ' &ndash; Feed" href="' .
                 url('feed') . '">' . "\n";
         });
 
         Entry::observe(EntryObserver::class);
+
+        // Serves a similar purpose as the `EntryObserver::saved()` method, but runs *after tags and metadata are
+        // saved*, too.
+        /** @todo Use a "proper" event? */
+        Eventy::addAction('entries:saved', function (Entry $entry) {
+            SendWebmention::dispatch($entry);
+        });
+
         Comment::observe(CommentObserver::class);
 
         // DB::listen(function ($query) {
@@ -96,7 +102,5 @@ class AppServiceProvider extends ServiceProvider
         //         $query->bindings
         //     );
         // });
-
-        // Log::debug(config('sanctum.stateful'));
     }
 }

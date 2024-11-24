@@ -8,11 +8,21 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use TorMorten\Eventy\Facades\Events as Eventy;
 
 class ProcessWebmentions implements ShouldQueue
 {
     use Queueable;
+
+    /**
+     * The number of times the job may be attempted.
+     *
+     * If for whatever reason the job fails, the webmentions table will likely not have been updated, and the next run
+     * should (eventually) pick up any unprocessed mentions anyway.
+     */
+    public int $tries = 1;
 
     /**
      * Execute the job.
@@ -30,28 +40,42 @@ class ProcessWebmentions implements ShouldQueue
             return;
         }
 
-        /** @todo Convert to Guzzle. */
-        $context = stream_context_create(['http' => [
-            'follow_location' => true,
-            'ignore_errors' => true, // Don't choke on HTTP (4xx, 5xx) errors.
-            'timeout' => 15,
-        ]]);
-
         foreach ($webmentions as $webmention) {
-            $html = Cache::remember("html:{$webmention->source}", 3600, function () use ($webmention, $context) {
-                return file_get_contents($webmention->source, false, $context);
+            list($html, $status) = Cache::remember("html:{$webmention->source}", 60 * 60, function () use ($webmention) {
+                $response = Http::withHeaders([
+                        'User-Agent' => Eventy::filter(
+                            'webmention:user_agent',
+                            'F-Stop/' . config('app.version') . '; ' . url('/'),
+                            $webmention->source
+                        ),
+                    ])
+                    ->get($webmention->source);
+
+                if (! $response->successful()) {
+                    Log::error("[Webmention] Failed to retrieve the page at {$webmention->source}");
+                    return null;
+                }
+
+                return [$response->body(), $response->status()];
             });
 
-            if (strpos($html, $webmention->target) === false) {
-                /** @todo Check if this comment doesn't already exist, and delete it if it was removed. I.e., handle deletes. */
-
-                // Something like this? Except we should probably only do this if we got a 404 or 410.
-                $deleted = Comment::where('meta->target', $webmention->target)
-                    ->where('meta->source', $webmention->source)
-                    ->delete();
+            if (in_array($status, [404, 410], true) || strpos($html, $webmention->target) === false) {
+                // The source page no longer exists or simply does not mention our "target." Attempt to delete previous
+                // mentions, if any.
+                $deleted = Comment::whereHas('meta', function ($query) use ($webmention) {
+                    $query->where('key', 'target')
+                        ->where('value', json_encode((array) $webmention->target));
+                })
+                ->whereHas('meta', function ($query) use ($webmention) {
+                    $query->where('key', 'source')
+                        ->where('value', json_encode((array) $webmention->source));
+                })
+                ->delete();
 
                 if ($deleted) {
-                    Log::info("Deleted webmention [source: {$webmention->source}, target: {$webmention->target}]");
+                    Log::info(
+                        "Deleted webmention for source {$webmention->source} and target {$webmention->target}"
+                    );
 
                     DB::update(
                         'UPDATE webmentions SET status = ? WHERE id = ?',
@@ -86,21 +110,35 @@ class ProcessWebmentions implements ShouldQueue
                 'content' => __('&hellip; mentioned this.'),
                 'status' => 'pending',
                 'type' => 'mention',
-                'published' => Carbon::now(),
+                'created_at' => now(),
             ];
 
             // Parse in any microformats.
             $this->parseMicroformats($data, $html, $webmention);
-            $comment = $entry->comments()->updateOrCreate(
-                // We use a bit of a backwards meta format, where everything is an array.
-                ['meta->source' => json_encode([$webmention->source])],
-                $data
-            );
 
-            $comment->updateMeta(
-                ['source', 'target'],
-                [$webmention->source, $webmention->target]
-            );
+            $comment = $entry->comments()
+                ->whereHas('meta', function ($query) use ($webmention) {
+                    $query->where('key', 'source')
+                        ->where('value', json_encode((array) $webmention->source));
+                })
+                ->first();
+
+            if ($comment) {
+                $comment->update($data);
+            } else {
+                $comment = $entry->comments()->create($data);
+            }
+
+            // Store source and target in comment meta.
+            $comment->meta()->updateOrCreate([
+                'key' => 'source',
+                'value' => (array) $webmention->source,
+            ]);
+
+            $comment->meta()->updateOrCreate([
+                'key' => 'target',
+                'value' => (array) $webmention->target,
+            ]);
 
             DB::update(
                 'UPDATE webmentions SET status = ?, updated_at = NOW() WHERE id = ?',
@@ -171,7 +209,7 @@ class ProcessWebmentions implements ShouldQueue
 
         // Update comment datetime.
         if (! empty($hentry['properties']['published'][0])) {
-            $data['published'] = date('Y-m-d H:i:s', strtotime($hentry['properties']['published'][0]));
+            $data['created_at'] = (new Carbon($hentry['properties']['published'][0]));
         }
 
         $postType = 'mention';
@@ -303,8 +341,8 @@ class ProcessWebmentions implements ShouldQueue
                 }
 
                 $marker = '<wpcontext>' . $context[1] . '</wpcontext>'; // Set up our marker.
-                $excerpt = str_replace($context[0], $marker, $excerpt);  // Swap out the link for our marker.
-                $excerpt = strip_tags($excerpt, '<wpcontext>');          // Strip all tags but our context marker.
+                $excerpt = str_replace($context[0], $marker, $excerpt); // Swap out the link for our marker.
+                $excerpt = strip_tags($excerpt, '<wpcontext>');         // Strip all tags but our context marker.
                 $excerpt = trim($excerpt);
                 $preg_marker = preg_quote($marker, '|');
                 $excerpt = preg_replace("|.*?\s(.{0,200}$preg_marker.{0,200})\s.*|s", '$1', $excerpt);

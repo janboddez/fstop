@@ -46,7 +46,7 @@ class TagController extends Controller
         $tag->update($validated);
 
         return back()
-            ->with('success', 'Changes saved!');
+            ->withSuccess('Changes saved!');
     }
 
     public function destroy(Tag $tag)
@@ -54,6 +54,6 @@ class TagController extends Controller
         $tag->delete();
 
         return back()
-            ->with('success', 'Deleted!');
+            ->withSuccess('Deleted!');
     }
 }

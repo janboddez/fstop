@@ -23,9 +23,10 @@
             @if ($entry->type === 'article')
                 <div class="entry-meta">
                     <a class="u-url" href="{{ $entry->permalink }}" rel="bookmark"><time class="dt-published" datetime="{{ $entry->created_at->format('c') }}">{{ $entry->created_at->format('M j, Y') }}</time></a>
-                    @if (! empty($entry->shortlink) && ($shortUrl = parse_url($entry->shortlink)) !== false)
+
+                    @if (($shortUrl = $entry->meta->firstWhere('key', 'short_url')) && ($parts = parse_url($shortUrl->value[0])) !== false)
                         &bull;
-                        <a href="{{ $entry->shortlink }}">{{ $shortUrl['host'] . $shortUrl['path'] }}</a>
+                        <a href="{{ $shortUrl->value[0] }}">{{ $parts['host'] . $parts['path'] }}</a>
                     @endif
 
                     @auth
@@ -93,20 +94,15 @@
         </p>
     @endif
 
-    @if (! empty($entry->meta['card']['title']) && ! empty($entry->meta['card']['url']))
-        {{-- Preview card, if any. --}}
-        @include('theme::entries.partials.card')
-    @endif
-
     @if (! in_array($entry->type, ['article', 'page'], true))
         {{-- Date, location or client info, and syndication links. --}}
         <footer class="entry-footer">
             <div class="entry-meta">
                 <a class="u-url" href="{{ route(Str::plural($entry->type) . '.show', $entry->slug) }}" rel="bookmark"><time class="dt-published" datetime="{{ $entry->created_at->format('c') }}">{{ $entry->created_at->format('M j, Y') }}</time></a>
 
-                @if (! empty($entry->shortlink) && ($shortUrl = parse_url($entry->shortlink)) !== false)
+                @if (($shortUrl = $entry->meta->firstWhere('key', 'short_url')) && ($parts = parse_url($shortUrl->value[0])) !== false)
                     &bull;
-                    <a href="{{ $entry->shortlink }}">{{ $shortUrl['host'] . $shortUrl['path'] }}</a>
+                    <a href="{{ $shortUrl->value[0] }}">{{ $parts['host'] . $parts['path'] }}</a>
                 @endif
 
                 @auth
@@ -114,14 +110,15 @@
                     <a href="{{ route('admin.entries.edit', $entry) }}">{{ __('Edit :type', ['type' => $entry->type]) }}</a>
                 @endauth
             </div>
-            <div class="client">
-                @if (! empty($entry->meta['geo']['address']))
-                    <span class="h-geo">
-                        <span class="p-name">{{ $entry->meta['geo']['address'] }}</span>
 
-                        @if (isset($entry->meta['weather']['temperature']))
+            <div class="client">
+                @if (($geo = $entry->meta->firstWhere('key', 'geo')) && ! empty($geo->value['address']))
+                    <span class="h-geo">
+                        <span class="p-name">{{ $geo->value['address'] }}</span>
+
+                        @if (($weather = $entry->meta->firstWhere('key', 'weather')) && isset($weather->value['temperature']))
                             @php
-                                $temperature = $entry->meta['weather']['temperature'];
+                                $temperature = $weather->value['temperature'];
                                 if ($temperature > 100) {
                                     // Anything above 100 must be in Kelvin.
                                     $temperature -= 273.15;
@@ -130,31 +127,32 @@
                             &bull; {{ round($temperature) }}&nbsp;&deg;C
                         @endif
 
-                        @if (isset($entry->meta['weather']['description']))
-                            &bull; {{ $entry->meta['weather']['description'] }}
+                        @if (isset($weather->value['description']))
+                            &bull; {{ $weather->value['description'] }}
                         @endif
                     </span>
-                @elseif (! empty($entry->meta['client']))
-                    <span>{{ $entry->meta['client'] }}</span>
+                @elseif (($client = $entry->meta->firstWhere('key', 'client')) && ! empty($client->value[0]))
+                    <span>{{ $client->value[0] }}</span>
                 @endif
             </div>
+
             <div class="also-on">{!! (! blank($entry->syndication) ? __('Also on :syndication', ['syndication' => $entry->syndication]) : '') !!}</div>
         </footer>
 
-        @if (! empty($entry->preview_card))
-            <a class="card{{ (! empty($entry->preview_card['thumbnail']) ? ' has-thumbnail' : '' ) }}" href="{{ $entry->preview_card['url'] }}" target="_blank" rel="nofollow noopener noreferrer">
+        @if (($card = $entry->meta->firstWhere('key', 'preview_card')) && ! empty($card->value['url']))
+            <a class="card{{ (! empty($card->value['thumbnail']) ? ' has-thumbnail' : '' ) }}" href="{{ $card->value['url'] }}" target="_blank" rel="nofollow noopener noreferrer">
                 <div class="thumbnail">
-                    @if (! empty($entry->preview_card['thumbnail']))
-                        <img src="{{ $entry->preview_card['thumbnail'] }}" width="100" height="100" alt="">
+                    @if (! empty($card->value['thumbnail']))
+                        <img src="{{ $card->value['thumbnail'] }}" width="100" height="100" alt="">
                     @endif
                 </div>
 
                 <dl class="summary">
-                    @if (! empty($entry->preview_card['title']))
-                        <dt>{!! \Michelf\SmartyPants::defaultTransform(Str::limit($entry->preview_card['title'], 120, '&hellip;'), \Michelf\SmartyPants::ATTR_LONG_EM_DASH_SHORT_EN) !!}</dt>
+                    @if (! empty($card->value['title']))
+                        <dt>{!! \Michelf\SmartyPants::defaultTransform(Str::limit($card->value['title'], 120, '&hellip;'), \Michelf\SmartyPants::ATTR_LONG_EM_DASH_SHORT_EN) !!}</dt>
                     @endif
 
-                    <dd><svg class="icon icon-link" aria-hidden="true" role="img" width="14" height="14"><use href="#icon-link"></use></svg> {{ parse_url($entry->preview_card['url'] , PHP_URL_HOST) }}</dd>
+                    <dd><svg class="icon icon-link" aria-hidden="true" role="img" width="14" height="14"><use href="#icon-link"></use></svg> {{ parse_url($card->value['url'] , PHP_URL_HOST) }}</dd>
                 </dl>
             </a>
         @endif

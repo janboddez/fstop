@@ -76,10 +76,16 @@
                 </thead>
                 <tbody>
                     @forelse ($webmentions as $webmention)
-                        @forelse ($webmention->meta['webmention'] as $data)
+                        {{-- This is a bit of a misnomer. These `$webmentions` are *entries*. --}}
+                        @php
+                            // Get the actual mentions for (or rather, by) each entry.
+                            $mentions = $webmention->meta->firstWhere('key', 'webmention');
+                        @endphp
+
+                        @forelse ($mentions->value as $hash => $mention)
                             <tr>
-                                <td style="width: 67%;"><a href="{{ route('admin.entries.edit', $webmention) }}">{{ preg_replace('~^https?://~', '', $data['endpoint']) }}</a></td>
-                                <td class="has-text-right-desktop"><time{!! ! empty($data['status']) ? ' title="' . $data['status'] . '"' : '' !!}>{{ Carbon\Carbon::parse($data['sent'])->format('M j, Y') }}</td>
+                                <td style="width: 67%;"><a href="{{ route('admin.entries.edit', $webmention) }}">{{ preg_replace('~^https?://~', '', $mention['endpoint']) }}</a></td>
+                                <td class="has-text-right-desktop"><time{!! ! empty($mention['status']) ? ' title="' . $mention['status'] . '"' : '' !!}>{{ Carbon\Carbon::parse($mention['sent'])->format('M j, Y') }}</td>
                             </tr>
                         @empty
                         @endforelse
@@ -149,6 +155,11 @@
                 </thead>
                 <tbody>
                     @forelse ($comments as $comment)
+                        @php
+                        if (empty($comment->entry)) {
+                            continue;
+                        }
+                        @endphp
                         <tr>
                             <td>
                                 <a href="{{ route('admin.comments.edit', $comment) }}">{{ $comment->author }} &ndash; {!! Str::words(strip_tags($comment->content), 10, ' […]') !!}</a>

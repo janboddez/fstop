@@ -39,6 +39,6 @@ class SettingController extends Controller
         $option->save();
 
         return back()
-            ->with('success', __('Changes saved!'));
+            ->withSuccess(__('Changes saved!'));
     }
 }

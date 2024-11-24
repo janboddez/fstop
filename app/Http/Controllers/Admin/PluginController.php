@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Option;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 
 class PluginController extends Controller
 {
@@ -62,8 +63,14 @@ class PluginController extends Controller
         $option->value = $plugins;
         $option->save();
 
+        // Update route and view caches. Note that not everyone might want this ...
+        /** @todo Do this in the plugin itself, in a sort of `activate` hook. */
+        Artisan::call('route:cache');
+        Artisan::call('view:cache');
+        Artisan::call('queue:restart');
+
         return back()
-            ->with('success', __('Changes saved!'));
+            ->withSuccess(__('Changes saved!'));
     }
 
     /**

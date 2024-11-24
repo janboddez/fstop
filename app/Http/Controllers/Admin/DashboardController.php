@@ -49,15 +49,20 @@ class DashboardController extends Controller
         $comments_count = Comment::where('status', 'pending')
             ->count();
 
-        // Not the 10 most recently sent webmentions, but the 10 most recent
-        // entries for which sending a webmention was attempted.
-        $webmentions = Entry::whereNotNull('meta->webmention')
-            ->orderBy('created_at', 'desc')
-            ->orderBy('id', 'desc')
-            ->limit(5)
-            ->get();
-
-        $webmentions->map(fn ($webmention) => $webmention->meta['webmention'], true);
+        // Not the 10 most recently sent webmentions, but the 10 most recent entries for which sending a webmention was
+        // attempted.
+        $webmentions = Entry::whereHas('meta', function ($query) {
+            $query->where('key', 'webmention')
+                ->where(function ($query) {
+                    /** @todo Now that meta got their own table, shouldn't this just be multiple rows? */
+                    $query->whereRaw('json_extract(`value`, "$.*.result") = "[true]"')
+                        ->orWhereRaw('json_extract(`value`, "$.*.result") is null'); // 'Cause legacy?
+                });
+        })
+        ->orderBy('created_at', 'desc')
+        ->orderBy('id', 'desc')
+        ->limit(10)
+        ->get();
 
         return view('admin.dashboard', compact(
             'articles',

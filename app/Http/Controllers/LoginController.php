@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -18,11 +19,8 @@ class LoginController extends Controller
 
     /**
      * Handle an authentication attempt.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
      */
-    public function authenticate(Request $request)
+    public function authenticate(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
             'email' => 'required|email',
@@ -42,7 +40,7 @@ class LoginController extends Controller
             ])->onlyInput('email');
     }
 
-    public function logout()
+    public function logout(): RedirectResponse
     {
         Auth::logout();
 

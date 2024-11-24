@@ -14,12 +14,14 @@
     <link rel="webmention" href="/webmention">
     <link rel="authorization_endpoint" href="/indieauth">
     <link rel="token_endpoint" href="/indieauth/token">
+    <link rel="micropub" href="/micropub">
+    <link rel="micropub_media" href="/micropub/media">
 
     <link rel="stylesheet" href="/css/normalize.css?v={{ config('app.version') }}">
     <link rel="stylesheet" href="/css/highlight.css?v={{ config('app.version') }}" media="screen">
     <link rel="stylesheet" href="/css/fonts.css?v={{ config('app.version') }}">
 
-    @action('layout.head')
+    @action('theme:layout:head')
 </head>
 
 <body class="{{ body_class() }}" data-instant-allow-query-string>

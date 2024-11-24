@@ -41,30 +41,35 @@ class GetLocation implements ShouldQueue
             return;
         }
 
-        /** @todo Bail if a post isn't recent! We don't want to add possibly long locations way after the fact. */
+        $meta = $this->entry->meta->firstWhere('key', 'geo');
 
-        if (! empty($this->entry->meta['geo']['address'])) {
+        if (! empty($meta->value['address'])) {
             return;
         }
 
-        if (empty($this->entry->meta['geo']['lat'])) {
+        if (empty($meta->value['lat'])) {
             return;
         }
 
-        if (empty($this->entry->meta['geo']['lon'])) {
+        if (empty($meta->value['lon'])) {
             return;
         }
 
         $address = $this->getAddress(
-            (float) $this->entry->meta['geo']['lat'],
-            (float) $this->entry->meta['geo']['lon']
+            (float) $meta->value['lat'],
+            (float) $meta->value['lon']
         );
 
-        $this->entry->forceFill([
-            'meta->geo->address' => $address,
+        $meta = array_filter([
+            'lat' => $meta->value['lat'],
+            'lon' => $meta->value['lon'],
+            'address' => $address,
         ]);
 
-        $this->entry->saveQuietly();
+        $this->entry->meta()->updateOrCreate(
+            ['key' => 'geo'],
+            ['value' => $meta]
+        );
     }
 
     /**
@@ -79,7 +84,7 @@ class GetLocation implements ShouldQueue
             // Reverse geocode `[$lat, $lon]` instead.
             $response = Http::withHeaders([
                     'User-Agent' => Eventy::filter(
-                        'location.user-agent',
+                        'location:user_agent',
                         'F-Stop/' . config('app.version') . '; ' . url('/'),
                         $this->entry
                     ),

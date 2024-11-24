@@ -15,9 +15,9 @@ class PreviewCardServiceProvider extends ServiceProvider
 
     protected function registerHooks(): void
     {
-        /** @todo Use a proper observer class, rather than "action hooks." */
-        add_action('entries.saved', function (Entry $entry) {
-            GetPreviewCard::dispatch($entry);
+        add_action('entries:saved', function (Entry $entry) {
+            GetPreviewCard::dispatch($entry)
+                ->delay(now()->addMinute());
         });
     }
 }

@@ -36,21 +36,21 @@
     <table class="table is-fullwidth is-striped">
         <thead>
             <tr>
-                <th style="width: 30%;">{{ __('Name') }}</th>
+                <th>{{ __('Name') }}</th>
 
                 @if ($type === 'page')
                     <th class="is-hidden-mobile" style="width: 20%;">{{ __('Slug') }}</th>
                 @endif
 
-                <th class="is-hidden-mobile">{{ __('Status') }}</th>
-                <th class="is-hidden-mobile">{{ __('Visibility') }}</th>
+                <th class="is-hidden-mobile" style="width: 10%;">{{ __('Status') }}</th>
+                <th class="is-hidden-mobile" style="width: 10%;">{{ __('Visibility') }}</th>
 
                 @if ($type !== 'page')
-                    <th style="text-align: center;"><span class="icon-text"><span class="icon"><i class="mdi mdi-comment-multiple"></i></span><span class="is-sr-only"> {{ __('Comments') }}</span></span></th>
-                    <th class="is-hidden-mobile">{{ __('Tags') }}</th>
+                    <th style="width: 5%; text-align: center;"><span class="icon-text"><span class="icon"><i class="mdi mdi-comment-multiple"></i></span><span class="is-sr-only"> {{ __('Comments') }}</span></span></th>
+                    <th class="is-hidden-mobile" style="width: 15%;">{{ __('Tags') }}</th>
                 @endif
 
-                <th>{{ __('Date') }}</th>
+                <th class="column-date" style="width: 30%;">{{ __('Date') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -104,7 +104,7 @@
                     </td>
 
                     @if ($type === 'page')
-                        <td class="is-hidden-mobile" style="width: 30%;">{{ $entry->slug }}</td>
+                        <td class="is-hidden-mobile">{{ $entry->slug }}</td>
                     @endif
 
                     <td class="is-hidden-mobile">{{ ucfirst($entry->status) }}</td>

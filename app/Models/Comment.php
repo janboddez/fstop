@@ -2,14 +2,12 @@
 
 namespace App\Models;
 
-use App\Traits\HasMeta;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Comment extends Model
 {
-    use HasMeta;
-
     /**
      * The attributes that are mass assignable.
      *
@@ -22,17 +20,19 @@ class Comment extends Model
         'content',
         'status',
         'type',
-        'meta',
         'created_at',
     ];
 
-    protected $casts = [
-        'meta' => 'array',
-    ];
+    protected $with = ['meta'];
 
     public function entry()
     {
         return $this->belongsTo(Entry::class);
+    }
+
+    public function meta(): MorphMany
+    {
+        return $this->morphMany(Meta::class, 'metable', 'metable_type', 'metable_id');
     }
 
     public function scopeApproved($query)
@@ -53,11 +53,8 @@ class Comment extends Model
                     return $value;
                 }
 
-                if (! empty($this->meta['source'][0])) {
-                    return $this->meta['source'][0];
-                }
-
-                return null;
+                // Fall back to source.
+                return $this->source;
             }
         )->shouldCache();
     }
@@ -65,13 +62,9 @@ class Comment extends Model
     protected function source(): Attribute
     {
         return Attribute::make(
-            get: function () {
-                if (! empty($this->meta['source'][0])) {
-                    return $this->meta['source'][0];
-                }
-
-                return null;
-            }
+            get: fn () =>$source = ($meta = $this->meta->firstWhere('key', 'source'))
+                ? $meta->value[0]
+                : null
         )->shouldCache();
     }
 }

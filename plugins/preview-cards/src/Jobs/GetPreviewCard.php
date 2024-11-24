@@ -49,14 +49,14 @@ class GetPreviewCard implements ShouldQueue
             return;
         }
 
-        if (! empty($this->entry->meta['preview_card'])) {
+        if ($this->entry->meta->firstWhere('key', 'preview_card')) {
             return;
         }
 
         // Fetch the remote page.
         $response = Http::withHeaders([
                 'User-Agent' => Eventy::filter(
-                    'preview-cards.user-agent',
+                    'preview-cards:user_agent',
                     'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0',
                     $this->entry
                 ),
@@ -96,11 +96,10 @@ class GetPreviewCard implements ShouldQueue
                 : null,
         ]);
 
-        $this->entry->forceFill([
-            'meta->preview_card' => $previewCard,
-        ]);
-
-        $this->entry->saveQuietly();
+        $this->entry->meta()->updateOrCreate(
+            ['key' => 'preview_card'],
+            ['value' => $previewCard]
+        );
     }
 
     /**
@@ -111,7 +110,7 @@ class GetPreviewCard implements ShouldQueue
         // Download image.
         $response = Http::withHeaders([
                 'User-Agent' => Eventy::filter(
-                    'preview-cards.user-agent',
+                    'preview-cards:user_agent',
                     'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0',
                     $this->entry
                 ),

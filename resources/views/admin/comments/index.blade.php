@@ -6,7 +6,7 @@
 <header class="mt-4 mb-5 is-clearfix">
     <h1 class="title is-pulled-left mr-3">@yield('title')</h1>
 
-    <form class="is-pulled-right" action="{{ url()->current() }}" method="get">
+    <form class="is-pulled-right is-hidden-mobile" action="{{ url()->current() }}" method="get">
         <div class="field has-addons" style="margin-bottom: -1rem;">
             <div class="control">
                 <input class="input" type="text" name="s" id="s" value="{{ request()->input('s') }}">
@@ -32,16 +32,16 @@
     <table class="table is-fullwidth is-striped">
         <thead>
             <tr>
-                <th style="width: 25%;">{{ __('Author') }}</th>
-                <th style="width: 50%;">{{ __('Comment') }}</th>
-                <th>{{ __('Status') }}</th>
-                <th>{{ __('Date') }}</th>
+                <th style="width: 20%;">{{ __('Author') }}</th>
+                <th>{{ __('Comment') }}</th>
+                <th class="is-hidden-mobile" style="width: 10%;">{{ __('Status') }}</th>
+                <th class="column-date" style="width: 25%;">{{ __('Date') }}</th>
             </tr>
         </thead>
         <tbody>
             @forelse ($comments as $comment)
                 <tr>
-                    <td style="width: 25%;">
+                    <td>
                         <a href="{{ route('admin.comments.edit', $comment) }}">{{ $comment->author }}</a>
                         <br>
                         <small>
@@ -66,8 +66,8 @@
                             </form>
                         </small>
                     </td>
-                    <td style="width: 50%;">{!! Str::words(strip_tags($comment->content), 10, ' […]') !!}</td>
-                    <td>{{ ucfirst($comment->status) }}</td>
+                    <td>{!! Str::words(strip_tags($comment->content), 10, ' […]') !!}</td>
+                    <td class="is-hidden-mobile">{{ ucfirst($comment->status) }}</td>
                     <td><time>{{ $comment->created_at->format('M j, Y') }}<br><small>{{ $comment->created_at->format('h:i A') }}</small></time></td>
                 </tr>
             @empty

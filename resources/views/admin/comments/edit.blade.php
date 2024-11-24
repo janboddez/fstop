@@ -51,21 +51,21 @@
 
                 <div class="card-content">
                     <div class="field">
-                        @if (! empty($comment->meta))
-                            @foreach ($comment->meta as $key => $value)
+                        @if (! blank($comment->meta))
+                            @foreach ($comment->meta as $meta)
                                 <div class="columns">
                                     <div class="column">
                                         <div class="control">
-                                            <input type="text" class="input" name="meta_keys[]" value="{{ $key }}">
+                                            <input type="text" class="input" name="meta_keys[]" value="{{ $meta->key }}">
                                         </div>
                                     </div>
 
                                     <div class="column">
                                         <div class="control">
                                             <textarea class="textarea" id="summary" name="meta_values[]" rows="1">{{
-                                                is_array($value) && count($value) > 1
-                                                    ? json_encode($value)
-                                                    : $value[0] ?? $value
+                                                ! empty($meta->value[0]) && ! is_array($meta->value[0])
+                                                    ? $meta->value[0]
+                                                    : json_encode($meta->value, JSON_UNESCAPED_SLASHES)
                                             }}</textarea>
                                         </div>
                                     </div>

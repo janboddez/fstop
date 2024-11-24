@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Option;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 
 class ThemeController extends Controller
 {
@@ -58,8 +59,11 @@ class ThemeController extends Controller
         $option->value = $themes;
         $option->save();
 
+        // Update view cache. Note that not everyone might want this ...
+        Artisan::call('view:cache');
+
         return back()
-            ->with('success', __('Changes saved!'));
+            ->withSuccess(__('Changes saved!'));
     }
 
     /**

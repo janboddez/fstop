@@ -9,7 +9,7 @@
 
     <link href="{{ url('css/bulma.min.css') }}?v=0.9.4" rel="stylesheet">
     <link href="{{ url('css/materialdesignicons.min.css') }}?v=6.9.96" rel="stylesheet">
-    <link href="{{ url('css/admin.css') }}?v=0.1.0" rel="stylesheet">
+    <link href="{{ url('css/admin.css') }}?v={{ config('app.version') }}" rel="stylesheet">
 </head>
 <body data-instant-allow-query-string>
     <div class="columns is-desktop is-gapless my-0">
@@ -33,8 +33,8 @@
                 </div>
 
                 <div class="navbar-menu" id="nav-menu">
-                    {{-- Rather than include this partial directly, we call an action that allows it to be filtered and then echoes the outcome. --}}
-                    @action('admin.partials.menu')
+                    {{-- Rather than include the menu partial directly, we call an action that allows it to be filtered and then echoes the outcome. --}}
+                    @action('admin:menu')
                 </div>
             </nav>
         </div>

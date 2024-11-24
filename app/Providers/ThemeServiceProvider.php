@@ -17,7 +17,7 @@ class ThemeServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Add default CSS. A "theme" could remove this action.
-        Eventy::addAction('layout.head', [self::class, 'printDefaultStylesheet']);
+        Eventy::addAction('theme:layout:head', [self::class, 'printDefaultStylesheet']);
 
         try {
             DB::connection()

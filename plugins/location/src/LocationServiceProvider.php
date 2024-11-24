@@ -5,12 +5,18 @@ namespace Plugins\Location;
 use App\Models\Entry;
 use Illuminate\Support\ServiceProvider;
 use Plugins\Location\Jobs\GetLocation;
+use Plugins\Location\Jobs\GetWeather;
 
 class LocationServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
+        $this->publishes([
+            __DIR__ . '/../config/location.php' => config_path('location.php'),
+        ]);
+
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'location');
+
         $this->registerHooks();
     }
 
@@ -19,66 +25,80 @@ class LocationServiceProvider extends ServiceProvider
         /**
          * Display "Location" "meta box."
          */
-        add_action('admin.entries.edit', function (Entry $entry = null, string $type = null) {
+        add_action('admin:entries:edit', function (Entry $entry = null, string $type = null) {
             if (! in_array($type, ['article', 'note'], true)) {
                 return;
             }
 
+            if ($entry) {
+                $meta = $entry->meta->firstWhere('key', 'geo');
+            }
+
             $geo = [
-                'lat' => $entry->meta['geo']['lat'] ?? '',
-                'lon' => $entry->meta['geo']['lon'] ?? '',
-                'address' => $entry->meta['geo']['address'] ?? '',
+                'lat' => $meta->value['lat'] ?? '',
+                'lon' => $meta->value['lon'] ?? '',
+                'address' => $meta->value['address'] ?? '',
             ];
 
             // Render a "meta box."
-            echo view('location::entries.edit', compact('geo'))->render();
+            echo view('location::entries.edit', compact('entry', 'geo'))->render();
         }, 20, 2);
 
         /**
          * Store location data, from input form fields, to entry meta.
-         *
-         * Runs before an entry is saved.
          */
-        add_action('entries.saving', function (Entry $entry) {
+        add_action('entries:saved', function (Entry $entry) {
+            if (! request()->is('admin*')) {
+                return;
+            }
+
+            $geo = ($meta = $entry->meta->firstWhere('key', 'geo'))
+                ? $meta->value
+                : [];
+
             $lat = request()->input('geo_lat');
             $lon = request()->input('geo_lon');
             $address = request()->input('geo_address');
 
-            $meta = $entry->meta;
-            $meta['geo'] = $meta['geo'] ?? [];
-
             if (is_numeric($lat)) {
-                $meta['geo']['lat'] = round((float) $lat, 8);
+                $geo['lat'] = round((float) $lat, 8);
             } else {
-                unset($meta['geo']['lat']);
+                unset($geo['lat']);
             }
 
             if (is_numeric($lon)) {
-                $meta['geo']['lon'] = round((float) $lon, 8);
+                $geo['lon'] = round((float) $lon, 8);
             } else {
-                unset($meta['geo']['lon']);
+                unset($geo['lon']);
             }
 
             if (! empty($address)) {
-                $meta['geo']['address'] = strip_tags((string) $address);
+                $geo['address'] = strip_tags((string) $address);
             } else {
-                unset($meta['geo']['address']);
+                unset($geo['address']);
             }
 
-            $entry->meta = array_filter($meta);
+            if (empty($geo)) {
+                $entry->meta()->where('key', 'geo')->delete();
+
+                return;
+            }
+
+            $entry->meta()->updateOrCreate(
+                ['key' => 'geo'],
+                ['value' => $geo]
+            );
         });
 
         /**
          * When needed, queue a reverse geocoding job.
          *
-         * Runs after an entry is saved.
-         *
-         * @todo Prevent race conditions, as multiple jobs may alter the same entry at once.
-         *       Either use a separate meta table or lock jobs.
+         * Runs after an entry, its tags, and possible metadata are saved.
          */
-        add_action('entries.saved', function (Entry $entry) {
+        add_action('entries:saved', function (Entry $entry) {
             // Get an "address," i.e., city or municipality.
             GetLocation::dispatch($entry);
-        }, 99);
+            GetWeather::dispatch($entry);
+        });
     }
 }

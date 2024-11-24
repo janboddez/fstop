@@ -5,10 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Entry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Response;
 
 class FeedController extends Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke(Request $request): Response
     {
         // Determine the post type from the URL.
         $type = $request->segment(1) !== 'feed'
@@ -21,12 +22,14 @@ class FeedController extends Controller
             ->public()
             ->with('featured')
             ->with('tags')
+            ->with('user')
             ->limit(15);
 
+        /** @todo Use `when()`? */
         if ($type) {
             $entries->ofType($type);
         } else {
-            $entries->whereIn('type', array_diff(array_keys(Entry::getRegisteredTypes()), ['page']));
+            $entries->whereIn('type', get_registered_entry_types('slug', 'page'));
         }
 
         $entries = $entries->get();

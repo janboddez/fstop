@@ -3,7 +3,6 @@
 namespace App\Jobs;
 
 use App\Models\Entry;
-use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -30,7 +29,7 @@ class SendWebmention implements ShouldQueue
     {
         // Prevent sending mentions for "old" posts.
         /** @todo Make smarter. */
-        if ($this->entry->created_at->lt(Carbon::now()->subHours(2))) {
+        if ($this->entry->created_at->lt(now()->subHours(2))) {
             Log::debug("[Webmention] Skipping sending mentions for entry {$this->entry->id}: too old");
             return;
         }
@@ -67,9 +66,9 @@ class SendWebmention implements ShouldQueue
         }
 
         if (! empty($results)) {
-            $this->entry->updateMeta(
-                ['webmention'],
-                [array_merge($previousMentions, $results)]
+            $this->entry->meta()->updateOrCreate(
+                ['key' => 'webmention'],
+                ['value' => array_merge($previousMentions, $results)]
             );
         }
     }

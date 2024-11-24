@@ -59,17 +59,33 @@ class CommentController extends Controller
             'content' => 'required',
             'status' => 'required|in:pending,approved',
             'created_at' => 'required|date_format:Y-m-d',
+            'meta_keys' => 'nullable|array',
+            'meta_values' => 'array',
+            'meta_keys.*' => 'nullable|string|max:250',
+            'meta_values.*' => 'nullable|string',
         ]);
 
         $comment->update($validated);
 
+        // Add any metadata.
+        if (
+            ! empty($validated['meta_keys']) &&
+            ! empty($validated['meta_values']) &&
+            count($validated['meta_keys']) === count($validated['meta_values'])
+        ) {
+            foreach (prepare_meta($validated['meta_keys'], $validated['meta_values'], $comment) as $key => $value) {
+                $comment->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+            }
+        }
+
         return redirect()->route('admin.comments.edit', compact('comment'))
-            ->with('success', __('Changes saved!'));
+            ->withSuccess(__('Changes saved!'));
     }
 
     public function destroy(Comment $comment)
     {
-        if (session()->previousUrl() === route('admin.comments.edit', $comment)) {
+        if (url()->previous() === route('admin.comments.edit', $comment)) {
+            $comment->meta()->delete();
             $comment->delete();
 
             return redirect()
@@ -77,6 +93,7 @@ class CommentController extends Controller
                 ->withSuccess(__('Deleted!'));
         }
 
+        $comment->meta()->delete();
         $comment->delete();
 
         return back()
@@ -88,7 +105,7 @@ class CommentController extends Controller
         $comment->update(['status' => 'approved']);
 
         return back()
-            ->with('success', __('Approved!'));
+            ->withSuccess(__('Approved!'));
     }
 
     public function unapprove(Comment $comment)
@@ -96,6 +113,6 @@ class CommentController extends Controller
         $comment->update(['status' => 'pending']);
 
         return back()
-            ->with('success', __('Unapproved!'));
+            ->withSuccess(__('Unapproved!'));
     }
 }

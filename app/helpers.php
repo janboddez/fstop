@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use TorMorten\Eventy\Facades\Events as Eventy;
 
 function is_archive(string $type = null): bool
 {
@@ -41,7 +42,7 @@ function is_archive(string $type = null): bool
         return true;
     }
 
-    foreach (array_keys(Entry::getRegisteredTypes()) as $type) {
+    foreach (get_registered_entry_types() as $type) {
         if (Route::currentRouteName() === Str::plural($type) . '.index') {
             return true;
         }
@@ -98,7 +99,7 @@ function is_singular(string $type = null): bool
         return false;
     }
 
-    foreach (array_keys(Entry::getRegisteredTypes()) as $type) {
+    foreach (get_registered_entry_types() as $type) {
         if (Route::currentRouteName() === Str::plural($type) . '.show') {
             return true;
         }
@@ -127,7 +128,7 @@ function body_class(): string
         $classes[] = 'tag';
     }
 
-    foreach (array_keys(Entry::getRegisteredTypes()) as $type) {
+    foreach (get_registered_entry_types() as $type) {
         if (Route::currentRouteName() === Str::plural($type) . '.index') {
             $classes[] = $type;
         }
@@ -153,7 +154,30 @@ function random_slug(): string
     return $slug;
 }
 
-function url_to_entry(string $url): Entry
+/**
+ * From Laravel's `Str::slug()`.
+ *
+ * The one difference is that this here method allows forward slashes, too.
+ */
+function slugify(string $value, string $separator = '-', string $language = 'en'): string
+{
+    $flip = $separator === '-' ? '_' : '-';
+
+    $value = $language ? Str::ascii($value, $language) : $value;
+    $value = preg_replace('![' . preg_quote($flip) . ']+!u', $separator, $value);
+    $value = str_replace('@', "$separator'at'$separator", $value);
+
+    // Allow forward slashes, too.
+    // $value = preg_replace('![^'.preg_quote($separator).'\pL\pN\s]+!u', '', Str::lower($value));
+    $value = preg_replace('![^' . preg_quote($separator) . '\pL\pN\s/]+!u', '', Str::lower($value));
+
+    $value = preg_replace('![' . preg_quote($separator) . '\s]+!u', $separator, $value);
+    $value = trim($value, $separator);
+
+    return $value;
+}
+
+function url_to_entry(string $url): ?Entry
 {
     if (! filter_var($url, FILTER_VALIDATE_URL)) {
         return null;
@@ -166,7 +190,38 @@ function url_to_entry(string $url): Entry
     $entry = Entry::where('slug', $slug)
         ->first();
 
-    return Eventy::filter('entries.url_to_entry', $entry, $url);
+    // $entry = Eventy::filter('entries:url_to_entry', $entry, $url);
+
+    // \Log::debug(print_r($entry, true));
+
+    // $entry = unserialize($entry);
+
+    // \Log::debug(print_r($entry, true));
+
+    return $entry;
+}
+
+function get_registered_entry_types(string $returnType = null, mixed $exclude = null): array
+{
+    /** @todo Refactor this to allow for labels, icons. */
+    $types = (array) Eventy::filter('entries:registered_types', Entry::TYPES);
+
+    if ($exclude) {
+        $types = array_diff_key($types, array_flip((array) $exclude));
+    }
+
+    if (! empty($types['page'])) {
+        // Ensure the `page` type is listed last.
+        $page = $types['page'];
+        unset($types['page']);
+        $types['page'] = $page;
+    }
+
+    if ($returnType === 'object') {
+        return $types;
+    }
+
+    return array_keys($types);
 }
 
 function get_site_settings(): array
@@ -270,4 +325,30 @@ function list_pages(int $number = 5): string
     }
 
     return $html;
+}
+
+/**
+ * @todo Can't we do this in an observer class, just prior to saving? Except the `delete()` part ...
+ */
+function prepare_meta(array $keys, array $values, $metable): array
+{
+    $temp = [];
+
+    foreach (array_combine($keys, $values) as $key => $value) {
+        if (empty($key)) {
+            continue;
+        }
+
+        if (empty($value)) {
+            $metable->meta()->where('key', $key)->delete();
+            unset($temp[$key]);
+        } elseif (Str::isJson($value)) {
+            // *Every* meta field is saved as an array, even if it's single-value.
+            $temp[$key] = (array) json_decode($value, true);
+        } else {
+            $temp[$key] = (array) $value;
+        }
+    }
+
+    return $temp;
 }

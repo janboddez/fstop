@@ -2,13 +2,22 @@
 
 namespace App\Models;
 
-use App\Traits\HasMeta;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\Storage;
 
 class Attachment extends Model
 {
-    use HasMeta;
+    /**
+     * Predefined thumbnail sizes.
+     */
+    public const SIZES = [
+        'large' => 1024,
+        'medium_large' => 768,
+        'medium' => 300,
+        'thumbnail' => 150,
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -24,20 +33,21 @@ class Attachment extends Model
         'user_id',
     ];
 
-    protected $casts = [
-        'meta' => 'array',
-    ];
+    /**
+     * Always autoload meta.
+     *
+     * @var array
+     */
+    protected $with = ['meta'];
 
-    public const SIZES = [
-        'large' => 1024,
-        'medium_large' => 768,
-        'medium' => 300,
-        'thumbnail' => 150,
-    ];
+    public function meta(): MorphMany
+    {
+        return $this->morphMany(Meta::class, 'metable');
+    }
 
     public function entry()
     {
-        // While an attachment can be the featured image of many entries, return but the oldest (by ID) one.
+        // While an attachment can be the featured image of many entries, return but the oldest one.
         return $this->hasOne(Entry::class)->oldestOfMany();
     }
 
@@ -46,75 +56,93 @@ class Attachment extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function getPathAttribute(string $value): string
+    protected function path(): Attribute
     {
-        return ltrim($value, '/');
+        return Attribute::make(
+            get: fn (string $value) => ltrim($value, '/')
+        )->shouldCache();
     }
 
-    public function getUrlAttribute(): string
+    protected function url(): Attribute
     {
-        return Storage::disk('public')->url($this->path);
+        return Attribute::make(
+            get: fn () => Storage::disk('public')->url($this->path)
+        )->shouldCache();
     }
 
-    public function getWidthAttribute(): int
+    protected function width(): Attribute
     {
-        if (isset($this->meta['width'][0])) {
-            return (int) $this->meta['width'][0];
-        }
+        return Attribute::make(
+            get: function () {
+                $width = $this->meta->firstWhere('key', 'width');
 
-        if (isset($this->meta['sizes'])) {
-            foreach ($this->meta['sizes'] as $key => $url) {
-                return self::SIZES[$key];
+                if ($width) {
+                    return (int) $width->value[0];
+                }
+
+                if ($sizes = $this->meta->firstWhere('key', 'sizes')) {
+                    foreach ($sizes as $key => $url) {
+                        return self::SIZES[$key];
+                    }
+                }
+
+                return self::SIZES['large'];
             }
-        }
-
-        return self::SIZES['large'];
-    }
-
-    public function getHeightAttribute(): ?int
-    {
-        if (isset($this->meta['height'][0])) {
-            return (int) $this->meta['height'][0];
-        }
-
-        return null;
-    }
-
-    public function getThumbnailAttribute(): string
-    {
-        if (isset($this->meta['sizes']['thumbnail'])) {
-            return Storage::disk('public')->url($this->meta['sizes']['thumbnail']);
-        }
-
-        return $this->url;
-    }
-
-    public function getLargeAttribute(): string
-    {
-        if (isset($this->meta['sizes']['large'])) {
-            return Storage::disk('public')->url($this->meta['sizes']['large']);
-        }
-
-        return $this->url;
-    }
-
-    public function getSrcsetAttribute(): string
-    {
-        if (empty($this->meta['sizes'])) {
-            return '';
-        }
-
-        // Exclude thumbnails.
-        $sizes = $this->meta['sizes'];
-        unset($sizes['thumbnail']);
-
-        return implode(
-            ', ',
-            array_map(
-                fn ($size, $url) => Storage::disk('public')->url($url) . ' ' . static::SIZES[$size] . 'w',
-                array_keys($sizes),
-                $sizes
-            )
         );
+    }
+
+    protected function height(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => ($meta = $this->meta->firstWhere('key', 'height'))
+                ? (int) $meta->value[0]
+                : null
+        );
+    }
+
+    protected function thumbnail(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => ($meta = $this->meta->firstWhere('key', 'sizes')) && isset($meta->value['thumbnail'])
+                ? Storage::disk('public')->url($meta->value['thumbnail'])
+                : $this->url
+        )->shouldCache();
+    }
+
+    public function large(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => ($meta = $this->meta->firstWhere('key', 'sizes')) && isset($meta->value['large'])
+                ? Storage::disk('public')->url($meta->value['large'])
+                : $this->url
+        )->shouldCache();
+    }
+
+    public function srcset(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $sizes = $this->meta->firstWhere('key', 'sizes');
+
+                if (! $sizes) {
+                    return null;
+                }
+
+                $sizes = $sizes->value;
+
+                unset($sizes['thumbnail']);
+
+                return implode(
+                    ', ',
+                    array_map(
+                        function ($size, $relativePath) {
+                            return Storage::disk('public')->url($relativePath) . ' ' . static::SIZES[$size] . 'w';
+                        },
+                        array_keys($sizes),
+                        $sizes
+                    )
+                );
+            }
+        )->shouldCache();
     }
 }

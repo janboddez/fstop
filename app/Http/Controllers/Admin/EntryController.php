@@ -9,6 +9,7 @@ use App\Models\Tag;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use TorMorten\Eventy\Facades\Events as Eventy;
 
 class EntryController extends Controller
 {
@@ -16,7 +17,7 @@ class EntryController extends Controller
     {
         $type = $request->input('type');
 
-        abort_unless(in_array($type, array_keys(Entry::getRegisteredTypes()), true), 404);
+        abort_unless(in_array($type, get_registered_entry_types(), true), 404);
 
         $entries = Entry::ofType($type)
             ->with('tags')
@@ -88,7 +89,7 @@ class EntryController extends Controller
     {
         $type = $request->input('type');
 
-        abort_unless(in_array($type, array_keys(Entry::getRegisteredTypes()), true), 404);
+        abort_unless(in_array($type, get_registered_entry_types(), true), 404);
 
         return view('admin.entries.edit', compact('type'));
     }
@@ -103,12 +104,13 @@ class EntryController extends Controller
             'created_at' => 'nullable|date_format:Y-m-d',
             'status' => 'in:draft,published',
             'visibility' => 'in:public,unlisted,private',
-            'type' => 'in:' . implode(',', array_keys(Entry::getRegisteredTypes())),
+            'type' => 'in:' . implode(',', get_registered_entry_types()),
             'featured' => 'nullable|url',
             'meta_keys' => 'nullable|array',
-            'meta_values' => 'nullable|array',
-            'meta_keys.*' => 'max:250',
+            'meta_values' => 'array',
+            'meta_keys.*' => 'nullable|string|max:250',
             'meta_values.*' => 'nullable|string',
+            'tags' => 'nullable|string',
         ]);
 
         // Parse in user ID.
@@ -116,11 +118,7 @@ class EntryController extends Controller
 
         // Convert `featured`, which isn't actually a fillable property, to `attachment_id`.
         if (! empty($validated['featured'])) {
-            $relativePath = preg_replace(
-                '~^' . rtrim(Storage::disk('public')->url(''), '/') . '/~',
-                '',
-                $validated['featured']
-            );
+            $relativePath = Str::replaceStart(Storage::disk('public')->url(''), '', $validated['featured']);
 
             $featured = Attachment::where('path', $relativePath)
                 ->first();
@@ -128,20 +126,11 @@ class EntryController extends Controller
             $validated['attachment_id'] = $featured->id;
         }
 
-        // Add any metadata.
-        if (
-            ! empty($validated['meta_keys']) &&
-            ! empty($validated['meta_values']) &&
-            count($validated['meta_keys']) === count($validated['meta_values'])
-        ) {
-            $validated['meta'] = Entry::prepareMeta($validated['meta_keys'], $validated['meta_values']);
-        }
-
         $entry = Entry::create($validated);
 
         // Sync tags, if any.
-        if ($request->filled('tags')) {
-            $tags = explode(',', trim($request->input('tags'), ','));
+        if (! empty($validated['tags'])) {
+            $tags = explode(',', trim($validated['tags'], ','));
             $tagIds = [];
 
             foreach ($tags as $name) {
@@ -158,8 +147,22 @@ class EntryController extends Controller
             $entry->tags()->sync($tagIds);
         }
 
+        // Add any metadata.
+        if (
+            ! empty($validated['meta_keys']) &&
+            ! empty($validated['meta_values']) &&
+            count($validated['meta_keys']) === count($validated['meta_values'])
+        ) {
+            foreach (prepare_meta($validated['meta_keys'], $validated['meta_values'], $entry) as $key => $value) {
+                $entry->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+            }
+        }
+
+        /** @todo Use an actual Laravel event. */
+        Eventy::action('entries:saved', $entry);
+
         return redirect()->route('admin.entries.edit', compact('entry'))
-            ->with('success', __('Created!'));
+            ->withSuccess(__('Created!'));
     }
 
     public function edit(Request $request, Entry $entry)
@@ -182,20 +185,17 @@ class EntryController extends Controller
             'created_at' => 'nullable|date_format:Y-m-d',
             'status' => 'in:draft,published',
             'visibility' => 'in:public,unlisted,private',
-            'type' => 'in:' . implode(',', array_keys(Entry::getRegisteredTypes())),
+            'type' => 'in:' . implode(',', get_registered_entry_types()),
             'featured' => 'nullable|url',
             'meta_keys' => 'nullable|array',
-            'meta_values' => 'nullable|array',
-            'meta_keys.*' => 'max:250',
+            'meta_values' => 'array',
+            'meta_keys.*' => 'nullable|string|max:250',
             'meta_values.*' => 'nullable|string',
+            'tags' => 'nullable|string',
         ]);
 
         if (! empty($validated['featured'])) {
-            $relativePath = preg_replace(
-                '~^' . rtrim(Storage::disk('public')->url(''), '/') . '/~',
-                '',
-                $validated['featured']
-            );
+            $relativePath = Str::replaceStart(Storage::disk('public')->url(''), '', $validated['featured']);
 
             $featured = Attachment::where('path', $relativePath)
                 ->first();
@@ -203,17 +203,9 @@ class EntryController extends Controller
             $validated['attachment_id'] = $featured->id;
         }
 
-        if (
-            ! empty($validated['meta_keys']) &&
-            ! empty($validated['meta_values']) &&
-            count($validated['meta_keys']) === count($validated['meta_values'])
-        ) {
-            $validated['meta'] = Entry::prepareMeta($validated['meta_keys'], $validated['meta_values']);
-        }
-
         $entry->update($validated);
 
-        if ($request->filled('tags')) {
+        if (! empty($validated['tags'])) {
             $tags = explode(',', trim($request->input('tags'), ','));
             $tagIds = [];
 
@@ -231,6 +223,18 @@ class EntryController extends Controller
             $entry->tags()->sync($tagIds);
         }
 
+        if (
+            ! empty($validated['meta_keys']) &&
+            ! empty($validated['meta_values']) &&
+            count($validated['meta_keys']) === count($validated['meta_values'])
+        ) {
+            foreach (prepare_meta($validated['meta_keys'], $validated['meta_values'], $entry) as $key => $value) {
+                $entry->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+            }
+        }
+
+        Eventy::action('entries:saved', $entry);
+
         return back()
             ->withSuccess(__('Changes saved!'));
     }
@@ -239,16 +243,31 @@ class EntryController extends Controller
     {
         $type = $entry->type;
 
+        if (session()->previousUrl() === route('admin.entries.edit', $entry)) {
+            if ($entry->trashed()) {
+                $entry->comments()->delete(); /** @todo Cascade on delete? */
+                $entry->meta()->delete();
+                $entry->forceDelete();
+                $entry->tags()->detach();
+            } else {
+                $entry->delete();
+            }
+
+            return redirect()
+                ->route('admin.entries.index', ['type' => $type])
+                ->withSuccess(__('Deleted!'));
+        }
+
         if ($entry->trashed()) {
+            $entry->comments()->delete(); /** @todo Cascade on delete? */
+            $entry->meta()->delete();
             $entry->forceDelete();
-        } else {
-            $entry->comments()->delete(); // @todo Soft-delete comments.
             $entry->tags()->detach();
+        } else {
             $entry->delete();
         }
 
-        return redirect()
-            ->route('admin.entries.index', ['type' => $type])
+        return back()
             ->withSuccess(__('Deleted!'));
     }
 

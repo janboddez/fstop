@@ -25,22 +25,32 @@
     </div>
 </div>
 
-<script>
-// Have the browser fill out empty latitude and longitude fields.
-const geoLat = document.getElementById('geo_lat');
-const geoLon = document.getElementById('geo_lon');
+@if (empty($entry) || $entry->created_at->gte(now()->subMinutes(30)))
+    {{--
+        Fill out current coordinates only for new or recently created entries. Might eventually also add a checkbox and
+        update coordinates only when it's checked.
+    --}}
+    <script>
+    document.addEventListener('DOMContentLoaded', function(event) {
+        if ('geolocation' in navigator) {
+            // Have the browser fill *empty* latitude and longitude fields.
+            const geoLat = document.getElementById('geo_lat');
+            const geoLon = document.getElementById('geo_lon');
 
-navigator.geolocation.getCurrentPosition(
-    (position) => {
-        if (geoLat && ! geoLat.value) {
-            geoLat.value = position.coords.latitude.toString();
-        }
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    if (geoLat && ! geoLat.value) {
+                        geoLat.value = position.coords.latitude.toString();
+                    }
 
-        if (geoLon && ! geoLon.value) {
-            geoLon.value = position.coords.longitude.toString();
+                    if (geoLon && ! geoLon.value) {
+                        geoLon.value = position.coords.longitude.toString();
+                    }
+                }, (error) => {
+                    console.log(error);
+                }
+            );
         }
-    }, (error) => {
-        console.log(error);
-    }
-);
-</script>
+    });
+    </script>
+@endif

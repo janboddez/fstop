@@ -2,19 +2,24 @@
 
 namespace App\Models;
 
-use App\Traits\HasMeta;
+use App\Traits\SupportsMicropub;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Michelf\MarkdownExtra;
 use Michelf\SmartyPants;
-use TorMorten\Eventy\Facades\Events as Eventy;
 
 class Entry extends Model
 {
-    use HasMeta;
     use SoftDeletes;
+    use SupportsMicropub;
+
+    public const TYPES = [
+        'article' => ['icon' => 'mdi mdi-newspaper-variant-outline'],
+        'page' => ['icon' => 'mdi mdi-file-document-outline'],
+    ];
 
     protected $fillable = [
         'name',
@@ -24,24 +29,31 @@ class Entry extends Model
         'status',
         'visibility',
         'type',
-        'meta',
         'attachment_id',
         'user_id',
         'created_at',
     ];
 
-    protected $casts = [
-        'meta' => 'array',
-    ];
+    protected $with = ['meta'];
 
-    public const TYPES = [
-        'article' => ['icon' => 'mdi mdi-newspaper-variant-outline'],
-        'page' => ['icon' => 'mdi mdi-file-document-outline'],
-    ];
+    public function meta(): MorphMany
+    {
+        return $this->morphMany(Meta::class, 'metable');
+    }
 
     public function tags()
     {
         return $this->belongsToMany(Tag::class);
+    }
+
+    public function featured()
+    {
+        return $this->belongsTo(Attachment::class, 'attachment_id');
+    }
+
+    public function attachments()
+    {
+        return $this->hasMany(Attachment::class);
     }
 
     public function user()
@@ -54,19 +66,6 @@ class Entry extends Model
         return $this->hasMany(Comment::class)
             ->orderBy('created_at', 'asc')
             ->orderBy('id', 'asc');
-    }
-
-    public function featured()
-    {
-        return $this->belongsTo(Attachment::class, 'attachment_id');
-    }
-
-    /**
-     * So, an entry can have many attached images (or other documents).
-     */
-    public function attachments()
-    {
-        return $this->hasMany(Attachment::class);
     }
 
     public function scopeDraft($query)
@@ -93,7 +92,7 @@ class Entry extends Model
     {
         return Attribute::make(
             // phpcs:ignore Generic.Files.LineLength.TooLong
-            get: fn (string $value = null) => ($value === null || ! in_array($value, array_keys(static::getRegisteredTypes()), true))
+            get: fn (string $value = null) => ($value === null || ! in_array($value, get_registered_entry_types(), true))
                 ? array_keys(self::TYPES)[0] // Treat "unsupported" types as, in this case, articles.
                 : $value
         )->shouldCache();
@@ -103,8 +102,8 @@ class Entry extends Model
     {
         return Attribute::make(
             // phpcs:ignore Generic.Files.LineLength.TooLong
-            get: fn (string $value = null, array $attributes) => route(Str::plural($this->type) . '.show', $attributes['slug'])
-        )->shouldCache();
+            get: fn () => route(Str::plural($this->type) . '.show', $this->slug)
+        );
     }
 
     protected function name(): Attribute
@@ -208,20 +207,20 @@ class Entry extends Model
                 }
 
                 // "Legacy" format.
-                if (! empty($this->meta['featured'][0])) {
-                    return $this->meta['featured'][0];
-                }
+                $meta = $this->meta->firstWhere('key', 'featured');
 
-                return null;
+                return $meta->value[0] ?? null;
             }
-        )->shouldCache();
+        );
     }
 
     protected function syndication(): Attribute
     {
         return Attribute::make(
             get: function () {
-                if (empty($this->meta['syndication'])) {
+                $meta = $this->meta->firstWhere('key', 'syndication');
+
+                if (empty($meta->value)) {
                     return null;
                 }
 
@@ -240,75 +239,9 @@ class Entry extends Model
                         $url,
                         $supportedPlatforms[parse_url($url, PHP_URL_HOST)] ?? parse_url($url, PHP_URL_HOST)
                     ),
-                    $this->meta['syndication']
+                    $meta->value
                 ));
             }
         )->shouldCache();
-    }
-
-    protected function shortlink(): Attribute
-    {
-        return Attribute::make(
-            // phpcs:ignore Generic.Files.LineLength.TooLong
-            get: function () {
-                if (! empty($this->meta['short_url'][0])) {
-                    return $this->meta['short_url'][0];
-                }
-
-                return null;
-            }
-        )->shouldCache();
-    }
-
-    protected function previewCard(): Attribute
-    {
-        return Attribute::make(
-            // phpcs:ignore Generic.Files.LineLength.TooLong
-            get: function () {
-                if (! empty($this->meta['preview_card']['url'])) {
-                    return $this->meta['preview_card'];
-                }
-
-                return null;
-            }
-        )->shouldCache();
-    }
-
-    /**
-     * From Laravel's `Str::slug()`.
-     *
-     * The one difference is that this here method allows forward slashes, too.
-     */
-    public static function slug(string $value, string $separator = '-', string $language = 'en'): string
-    {
-        $flip = $separator === '-' ? '_' : '-';
-
-        $value = $language ? Str::ascii($value, $language) : $value;
-        $value = preg_replace('![' . preg_quote($flip) . ']+!u', $separator, $value);
-        $value = str_replace('@', "$separator'at'$separator", $value);
-
-        // Allow forward slashes, too.
-        // $value = preg_replace('![^'.preg_quote($separator).'\pL\pN\s]+!u', '', Str::lower($value));
-        $value = preg_replace('![^' . preg_quote($separator) . '\pL\pN\s/]+!u', '', Str::lower($value));
-
-        $value = preg_replace('![' . preg_quote($separator) . '\s]+!u', $separator, $value);
-        $value = trim($value, $separator);
-
-        return $value;
-    }
-
-    public static function getRegisteredTypes(): array
-    {
-        /** @todo Refactor this to allow for labels, icons. */
-        $types = (array) Eventy::filter('entries.registered_types', static::TYPES);
-
-        if (! empty($types['page'])) {
-            // Ensure the `page` type is listed last.
-            $page = $types['page'];
-            unset($types['page']);
-            $types['page'] = $page;
-        }
-
-        return $types;
     }
 }

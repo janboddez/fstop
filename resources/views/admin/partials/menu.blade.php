@@ -5,7 +5,7 @@
         </a>
     </li>
 
-    @forelse(App\Models\Entry::getRegisteredTypes() as $type => $attributes)
+    @forelse(get_registered_entry_types('object') as $type => $attributes)
         @if ($type === 'page')
             {{-- Sqeeuze in tags. --}}
             <li>

@@ -64,21 +64,21 @@
 
                 <div class="card-content">
                     <div class="field">
-                        @if (! empty($entry->meta))
-                            @foreach ($entry->meta as $key => $value)
+                        @if (isset($entry) && ! blank($entry->meta))
+                            @foreach ($entry->meta as $meta)
                                 <div class="columns">
                                     <div class="column">
                                         <div class="control">
-                                            <input type="text" class="input" name="meta_keys[]" value="{{ $key }}">
+                                            <input type="text" class="input" name="meta_keys[]" value="{{ $meta->key }}">
                                         </div>
                                     </div>
 
                                     <div class="column">
                                         <div class="control">
                                             <textarea class="textarea" id="summary" name="meta_values[]" rows="1">{{
-                                                ! empty($value[0]) && ! is_array($value[0])
-                                                    ? $value[0]
-                                                    : json_encode($value, JSON_UNESCAPED_SLASHES)
+                                                ! empty($meta->value[0]) && ! is_array($meta->value[0])
+                                                    ? $meta->value[0]
+                                                    : json_encode($meta->value, JSON_UNESCAPED_SLASHES)
                                             }}</textarea>
                                         </div>
                                     </div>
@@ -145,7 +145,7 @@
                         <label class="title is-6 is-block mb-2" for="type">{{ __('Type') }}</label>
                         <div class="select">
                             <select type="text" name="type" id="type">
-                                @foreach (array_keys(App\Models\Entry::getRegisteredTypes()) as $possibleType)
+                                @foreach (get_registered_entry_types() as $possibleType)
                                     <option value="{{ $possibleType }}"{{ $possibleType === $type ? ' selected' : '' }}>{{ ucfirst($possibleType) }}</option>
                                 @endforeach
                             </select>
@@ -202,7 +202,7 @@
                 </div>
             </div>
 
-            @action('admin.entries.edit', $entry ?? null, $type)
+            @action('admin:entries:edit', $entry ?? null, $type)
         </div>
     </div>
 </form>

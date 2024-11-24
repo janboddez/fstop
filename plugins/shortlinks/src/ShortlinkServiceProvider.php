@@ -20,8 +20,8 @@ class ShortlinkServiceProvider extends ServiceProvider
     protected function registerHooks(): void
     {
         /** @todo Use a proper observer class, rather than "action hooks." */
-        add_action('entries.saved', function (Entry $entry) {
-            GetShortlink::dispatch($entry);
+        add_action('entries:saved', function (Entry $entry) {
+            GetShortlink::dispatchSync($entry); // Run job inline rather than queued.
         });
     }
 }
