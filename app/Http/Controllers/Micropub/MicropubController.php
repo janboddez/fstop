@@ -54,14 +54,30 @@ class MicropubController extends Controller
 
                 $entries = Entry::orderBy('created_at', 'desc')
                     ->orderBy('id', 'desc')
-                    ->limit($request->filled('limit') ? (int) $request->input('limit') : 10)
-                    ->whereIn('type', get_registered_entry_types('slug', 'page'))
-                    ->get();
+                    ->limit($request->filled('limit') ? (int) $request->input('limit') : 10);
 
-                $entries = $entries->map(fn ($entry) => ['type' => 'h-entry', 'properties' => $entry->getProperties()]);
+                if (
+                    $request->filled('post-type') &&
+                    in_array($request->input('post-type'), get_registered_entry_types(), true)
+                ) {
+                    // Note that we support only article, and (but only when the "entry types" plugin is active) note
+                    // and like. Bookmarks, reposts, and the like, get converted to "notes." So you can't actually
+                    // filter for them this way; not yet, at least.
+                    $entries = $entries->ofType($request->input('post-type'));
+                } else {
+                    // Just return all currently active entry types.
+                    $entries = $entries->whereIn('type', get_registered_entry_types('slug', 'page'));
+                }
+
+                // Not that we return also draft and private, etc., entries. Given that, well, this is Micropub. We may
+                // want to eventually restrict by user/author, though.
+                $entries = $entries->get();
 
                 return response()->json([
-                    'items' => $entries,
+                    'items' => $entries->map(fn ($entry) => [
+                        'type' => 'h-entry',
+                        'properties' => $entry->getProperties(),
+                    ]),
                 ]);
         }
 
