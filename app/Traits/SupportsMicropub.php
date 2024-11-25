@@ -45,9 +45,9 @@ trait SupportsMicropub
         $properties = array_filter($properties);
 
         if (empty($properties)) {
-            $properties = $this->supportedProperties;
+            $properties = static::$supportedProperties;
         } else {
-            $properties = array_intersect($properties, $this->supportedProperties);
+            $properties = array_intersect($properties, static::$supportedProperties);
         }
 
         $properties = Arr::flatten($properties);
