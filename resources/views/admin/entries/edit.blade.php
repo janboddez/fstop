@@ -158,11 +158,9 @@
                                 <button class="button is-success">{{ __('Update') }}</button>
                             </div>
 
-                            @if ($entry->status === 'published')
-                                <div class="control">
-                                    <a class="button" href="{{ $entry->permalink }}" rel="noopener noreferrer" target="_blank">{{ __('View :Type', ['type' => $type]) }}</a>
-                                </div>
-                            @endif
+                            <div class="control">
+                                <a class="button" href="{{ $entry->permalink }}" rel="noopener noreferrer" target="_blank">{{ __('View :Type', ['type' => $type]) }}</a>
+                            </div>
 
                             <div class="control">
                                 <button class="button is-danger" type="submit" form="delete-form">{{ __('Trash') }}</button>

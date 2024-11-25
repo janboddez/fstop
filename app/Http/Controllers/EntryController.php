@@ -37,17 +37,25 @@ class EntryController extends Controller
     {
         // The `pages.show` route allows for forward slashes, so we do this bit manually (for all entry types, for now)
         // rather than rely on implicit model binding.
-        $entry = Entry::where('slug', $slug) // Slugs are unique across all types; no need to take type along.
-            ->whereIn('type', get_registered_entry_types()) // Include only registered entry types.
+        $entry = Entry::whereIn('type', get_registered_entry_types()) // Include only registered entry types.
             ->with('featured')
             ->with('tags')
             ->with('user')
             ->with(['comments' => function ($query) {
                 $query->where('status', 'approved');
-            }])
-            ->firstOrFail();
+            }]);
 
-        if ($entry->status !== 'published' || ($entry->visibility === 'private' && ! Auth::check())) {
+        /** @todo Use `when()`? */
+        if ($request->input('preview') === 'true') {
+            // To be honest, even draft entries get a slug, so there's no actual reason to search by ID other than that
+            // it, like the `preview=true` query argument, may help set previews apart.
+            $entry = $entry->findOrFail((int) $slug);
+        } else {
+            $entry = $entry->where('slug', $slug)
+                ->firstOrFail();
+        }
+
+        if (($entry->status !== 'published' || $entry->visibility === 'private') && ! Auth::check()) {
             // "Hide" draft and "private" entries. ("Unlisted" entries can still be accessed directly.)
             abort(404);
         }

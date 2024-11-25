@@ -101,8 +101,13 @@ class Entry extends Model
     protected function permalink(): Attribute
     {
         return Attribute::make(
-            // phpcs:ignore Generic.Files.LineLength.TooLong
-            get: fn () => route(Str::plural($this->type) . '.show', $this->slug)
+            get: function () {
+                if ($this->status !== 'published') {
+                    return route(Str::plural($this->type) . '.show', ['slug' => $this->id, 'preview' => 'true']);
+                }
+
+                return route(Str::plural($this->type) . '.show', $this->slug);
+            }
         );
     }
 
