@@ -31,48 +31,26 @@ class AppServiceProvider extends ServiceProvider
             $this->app['request']->server->set('HTTPS', 'on');
         }
 
+        // phpcs:disable Generic.Files.LineLength.TooLong
         if (
             request()->hasCookie(config('session.cookie')) ||
             request()->is('admin*') ||
             request()->is('login')
         ) {
-            $this->app['router']->pushMiddlewareToGroup(
-                'web',
-                \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class
-            );
-            $this->app['router']->pushMiddlewareToGroup(
-                'web',
-                \Illuminate\Session\Middleware\StartSession::class
-            );
-            $this->app['router']->pushMiddlewareToGroup(
-                'web',
-                \Illuminate\View\Middleware\ShareErrorsFromSession::class
-            );
-            $this->app['router']->pushMiddlewareToGroup(
-                'web',
-                \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class
-            );
+            $this->app['router']->pushMiddlewareToGroup('web', \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class);
+            $this->app['router']->pushMiddlewareToGroup('web', \Illuminate\Session\Middleware\StartSession::class);
+            $this->app['router']->pushMiddlewareToGroup('web', \Illuminate\View\Middleware\ShareErrorsFromSession::class);
+            $this->app['router']->pushMiddlewareToGroup('web', \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
         }
 
         if (request()->is('indieauth*')) {
-            $this->app['router']->pushMiddlewareToGroup(
-                'web',
-                \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class
-            );
-            $this->app['router']->pushMiddlewareToGroup(
-                'web',
-                \Illuminate\Session\Middleware\StartSession::class
-            );
-            $this->app['router']->pushMiddlewareToGroup(
-                'web',
-                \Illuminate\View\Middleware\ShareErrorsFromSession::class
-            );
+            $this->app['router']->pushMiddlewareToGroup('web', \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class);
+            $this->app['router']->pushMiddlewareToGroup('web', \Illuminate\Session\Middleware\StartSession::class);
+            $this->app['router']->pushMiddlewareToGroup('web', \Illuminate\View\Middleware\ShareErrorsFromSession::class);
 
             if (! request()->has('code')) {
-                $this->app['router']->pushMiddlewareToGroup(
-                    'web',
-                    \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class
-                );
+                // Add CSRF protection only if this isn't a code exchange request from a 3rd-party IndieAuth client.
+                $this->app['router']->pushMiddlewareToGroup('web', \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
             }
         }
 
