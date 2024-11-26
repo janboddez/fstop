@@ -9,7 +9,7 @@
 
 @include('admin.partials.flash-message')
 
-<form action="{{ route('admin.themes.index') }}" method="POST">
+<form action="{{ route('admin.themes.update') }}" method="POST">
     @method('PUT')
     @csrf
 
