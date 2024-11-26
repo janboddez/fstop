@@ -25,7 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->prependToGroup('api', [
-            // Certain requests "require" a JSON answer.
+            // Require a JSON response.
             \App\Http\Middleware\EnsureJsonResponse::class,
         ]);
 
