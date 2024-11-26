@@ -66,7 +66,7 @@ class EntryTypesServiceProvider extends ServiceProvider
             $name = strip_tags($entry->content); // Strip tags.
             $name = Str::words($name, 10, ' …'); // Shorten.
             $name = html_entity_decode($name); // Decode quotes, etc. (We escape on output.)
-            $name = Str::replaceEnd('~… …$~', '…', $name);
+            $name = Str::replaceEnd('… …', '…', $name);
             $name = preg_replace('~\s+~', ' ', $name); // Get rid of excess whitespace.
             $name = Str::limit($name, 250, '…'); // Shorten (again).
 
