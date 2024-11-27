@@ -15,7 +15,7 @@ cp .env.example .env
 Edit `.env` like you normally would; fill out app name, database details, etc.
 
 You may want to [set up Supervisor](https://laravel.com/docs/11.x/queues#supervisor-configuration) to keep a (Redis or database) queue worker running.
-Or keep `QUEUE_CONNECTION` set to `sync` (which may slow down the application).
+Or simply keep `QUEUE_CONNECTION` set to `sync` (which may slow down the _back end_, but only slightly).
 
 Let's not forget to actually install all dependencies, and generate an application key.
 ```
@@ -23,7 +23,7 @@ composer install --no-dev
 php artisan key:generate
 ```
 
-By default, media uploads are stored in `fstop/storage/app/public`. To make them publicly available, create a symbolic link in `fstop/public`.
+By default, media uploads are stored in `storage/app/public`. To make them publicly available, create a symbolic link in `public`.
 ```
 php artisan storage:link
 ```
