@@ -243,7 +243,7 @@ class EntryController extends Controller
     {
         $type = $entry->type;
 
-        if (session()->previousUrl() === route('admin.entries.edit', $entry)) {
+        if (app('redirect')->getUrlGenerator()->previous() === route('admin.entries.edit', $entry)) {
             if ($entry->trashed()) {
                 $entry->comments()->delete(); /** @todo Cascade on delete? */
                 $entry->meta()->delete();
