@@ -28,10 +28,8 @@ class AttachmentController extends Controller
         ]);
 
         $filename = $validated['file']->getClientOriginalName();
-        $originalExtension = $validated['file']->getClientOriginalExtension();
-
         $filename = Str::limit(
-            Str::replaceEnd(".$originalExtension", '', $filename),
+            Str::replaceEnd('.' . $validated['file']->getClientOriginalExtension(), '', $filename),
             250,
             ''
         );
