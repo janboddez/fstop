@@ -4,17 +4,14 @@ use App\Http\Controllers\Admin\AttachmentController;
 use App\Http\Controllers\Admin\CommentController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EntryController as EntryAdminController;
-use App\Http\Controllers\Admin\PluginController;
-use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\TagController as TagAdminController;
-use App\Http\Controllers\Admin\ThemeController;
 use App\Http\Controllers\EntryController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\TagController;
-use App\Models\Entry;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 
 /*
 |--------------------------------------------------------------------------
@@ -75,29 +72,25 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin', 'as' => 'admin.'], fu
             ->name('unapprove');
     });
 
-    Route::group(['prefix' => 'themes', 'as' => 'themes.'], function () {
-        Route::get('/', [ThemeController::class, 'index'])
-            ->name('index');
+    // Route::group(['prefix' => 'profile', 'as' => 'profile.'], function () {
+    //     Route::get('/', [ProfileController::class, 'index'])
+    //         ->name('index');
 
-        Route::put('/', [ThemeController::class, 'update'])
-            ->name('update');
-    });
+    //     Route::put('/', [ProfileController::class, 'update'])
+    //         ->name('update');
+    // });
 
-    Route::group(['prefix' => 'plugins', 'as' => 'plugins.'], function () {
-        Route::get('/', [PluginController::class, 'index'])
-            ->name('index');
+    foreach (['profile', 'themes', 'plugins', 'settings'] as $name) {
+        $controller = '\\App\\Http\\Controllers\\Admin\\' . ucfirst(Str::singular($name)) . 'Controller';
 
-        Route::put('/', [PluginController::class, 'update'])
-            ->name('update');
-    });
+        Route::group(['prefix' => $name, 'as' => "$name."], function () use ($controller) {
+            Route::get('/', [$controller, 'index'])
+                ->name('index');
 
-    Route::group(['prefix' => 'settings', 'as' => 'settings.'], function () {
-        Route::get('/', [SettingController::class, 'index'])
-            ->name('index');
-
-        Route::put('/', [SettingController::class, 'update'])
-            ->name('update');
-    });
+            Route::put('/', [$controller, 'update'])
+                ->name('update');
+        });
+    }
 });
 
 /**

@@ -42,7 +42,13 @@
                 @endauth
             @endif
 
-            <span class="sr-only p-author h-card"><a href="{{ url('/') }}" class="u-url p-name fn" rel="author">{{ $entry->user->name }}</a></span>
+            <span class="sr-only p-author h-card">
+                @if ($avatar = $entry->user->meta->firstWhere('key', 'avatar'))
+                    <img class="u-photo" src="{{ $avatar->value[0] }}" alt="{{ $entry->user->name }}">
+                @endif
+
+                <a href="{{ url('/') }}" class="u-url p-name fn" rel="author">{{ $entry->user->name }}</a>
+            </span>
         </header>
     @else
         {{-- One of the short-form entry formats. --}}
@@ -53,7 +59,13 @@
                 <h2 class="sr-only"><a class="u-url" href="{{ $entry->permalink }}" rel="bookmark">{{ $entry->name }}</a></h2>
             @endif
 
-            <span class="sr-only p-author h-card"><a href="{{ url('/') }}" class="u-url p-name fn" rel="author">{{ $entry->user->name }}</a></span>
+            <span class="sr-only p-author h-card">
+                @if ($avatar = $entry->user->meta->firstWhere('key', 'avatar'))
+                    <img class="u-photo" src="{{ $avatar->value[0] }}" alt="{{ $entry->user->name }}">
+                @endif
+
+                <a href="{{ url('/') }}" class="u-url p-name fn" rel="author">{{ $entry->user->name }}</a>
+            </span>
         </header>
     @endif
 

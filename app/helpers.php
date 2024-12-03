@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Attachment;
 use App\Models\Entry;
 use App\Models\Option;
 use Illuminate\Support\Facades\DB;
@@ -177,6 +178,29 @@ function slugify(string $value, string $separator = '-', string $language = 'en'
     return $value;
 }
 
+function url_to_attachment(string $url): ?Attachment
+{
+    if (! filter_var($url, FILTER_VALIDATE_URL)) {
+        return null;
+    }
+
+    if (! $path = parse_url($url, PHP_URL_PATH)) {
+        return null;
+    }
+
+    // Remove the `storage/` bit (or whatever it's set to).
+    $path = Str::replaceStart(
+        Storage::disk('public')->url(''),
+        '',
+        url($path)
+    );
+
+    $attachment = Attachment::where('path', $path)
+        ->first();
+
+    return $attachment;
+}
+
 function url_to_entry(string $url): ?Entry
 {
     if (! filter_var($url, FILTER_VALIDATE_URL)) {
@@ -189,14 +213,6 @@ function url_to_entry(string $url): ?Entry
 
     $entry = Entry::where('slug', $slug)
         ->first();
-
-    // $entry = Eventy::filter('entries:url_to_entry', $entry, $url);
-
-    // \Log::debug(print_r($entry, true));
-
-    // $entry = unserialize($entry);
-
-    // \Log::debug(print_r($entry, true));
 
     return $entry;
 }

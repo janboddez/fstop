@@ -24,7 +24,7 @@
             <tbody>
                 @forelse ($settings as $key => $value)
                     <tr>
-                        <td style="width: 20%;"><label for="{{ $key }}">{{ $key }}</label></td>
+                        <td style="width: 20%;"><label for="{{ $key }}">{{ Str::headline($key) }}</label></td>
                         <td>
                             <div class="field">
                                 <div class="control">

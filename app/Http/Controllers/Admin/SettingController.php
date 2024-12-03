@@ -10,7 +10,7 @@ class SettingController extends Controller
 {
     public function index(Request $request)
     {
-        // Fetch known themes.
+        // Fetch site settings.
         $option = Option::firstOrCreate(
             ['key' => 'site_settings'],
             ['value' => []]
@@ -30,8 +30,8 @@ class SettingController extends Controller
             ->first();
 
         $validated = $request->validate([
-            'name' => 'nullable|max:250',
-            'tagline' => 'nullable|max:250',
+            'name' => 'nullable|string|max:250',
+            'tagline' => 'nullable|string|max:250',
         ]);
 
         // Save.

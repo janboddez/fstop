@@ -37,6 +37,11 @@
         </a>
     </li>
     <li class="mt-3">
+        <a{!! request()->is('admin/profile*') ? ' class="is-active"' : '' !!} href="{{ route('admin.profile.index') }}">
+            <span class="icon-text"><span class="icon"><i class="mdi mdi-account"></i></span> <span>{{ __('Profile') }}</span></span>
+        </a>
+    </li>
+    <li class="mt-3">
         <a{!! request()->is('admin/themes*') ? ' class="is-active"' : '' !!} href="{{ route('admin.themes.index') }}">
             <span class="icon-text"><span class="icon"><i class="mdi mdi-palette-outline"></i></span> <span>{{ __('Themes') }}</span></span>
         </a>

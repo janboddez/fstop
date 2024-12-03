@@ -1,6 +1,6 @@
 @extends('admin.layout')
 
-@section('title', __('Plugins'))
+@section('title', __('Profile'))
 
 @section('content')
 <header class="mt-4 mb-5 is-clearfix">
@@ -9,7 +9,7 @@
 
 @include('admin.partials.flash-message')
 
-<form action="{{ route('admin.plugins.update') }}" method="POST">
+<form action="{{ route('admin.profile.update') }}" method="POST">
     @method('PUT')
     @csrf
 
@@ -17,21 +17,25 @@
         <table class="table is-fullwidth is-striped">
             <thead>
                 <tr>
-                    <th style="width: 2.5%;"><span class="is-hidden">{{ __('Enabled?') }}</span></th>
                     <th style="width: 20%;">{{ __('Name') }}</th>
-                    <th>{{ __('Description') }}</th>
+                    <th>{{ __('Value') }}</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse ($plugins as $plugin => $attributes)
+                @forelse ($settings as $key => $value)
                     <tr>
-                        <td style="width: 2.5%;"><input type="checkbox" name="plugin_{{ $plugin }}" id="plugin_{{ $plugin }}" value="1"{{ old('plugin_'.$plugin, $attributes['active']) ? ' checked' : '' }}></td>
-                        <td style="width: 20%;"><label for="plugin_{{ $plugin }}">{{ Str::headline($plugin) }}</label></td>
-                        <td>{{ $attributes['description'] ?? __('—') }}</td>
+                        <td style="width: 20%;"><label for="{{ $key }}">{{ Str::headline($key) }}</label></td>
+                        <td>
+                            <div class="field">
+                                <div class="control">
+                                    <textarea class="input{{ $errors->has($key) ? ' is-danger': '' }}" id="{{ $key }}" name="{{ $key }}">{{ old($key, $value ?? '') }}</textarea>
+                                </div>
+                            </div>
+                        </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="3">{{ __('No plugins found.') }}</td>
+                        <td colspan="2">{{ __('Nothing here.') }}</td>
                     </tr>
                 @endforelse
             </tbody>

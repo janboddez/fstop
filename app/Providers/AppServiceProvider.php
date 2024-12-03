@@ -53,6 +53,7 @@ class AppServiceProvider extends ServiceProvider
                 $this->app['router']->pushMiddlewareToGroup('web', \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
             }
         }
+        // phpcs:enable Generic.Files.LineLength.TooLong
 
         Eventy::addAction('admin:menu', function () {
             echo Eventy::filter('admin:menu', view('admin.partials.menu')->render());
