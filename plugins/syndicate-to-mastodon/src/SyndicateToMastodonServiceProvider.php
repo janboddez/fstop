@@ -40,7 +40,6 @@ class SyndicateToMastodonServiceProvider extends ServiceProvider
 
         /** @todo Use a proper observer class, rather than "action hooks." */
         add_action('entries:saved', function (Entry $entry) {
-            \Log::debug('Running ... 1');
             SyndicateToMastodon::dispatch($entry);
         });
     }

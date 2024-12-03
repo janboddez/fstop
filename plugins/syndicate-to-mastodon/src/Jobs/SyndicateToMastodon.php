@@ -36,8 +36,6 @@ class SyndicateToMastodon implements ShouldQueue
      */
     public function handle(): void
     {
-        \Log::debug('Running ... 2');
-
         if ($this->entry->status !== 'published') {
             return;
         }

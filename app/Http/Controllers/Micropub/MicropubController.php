@@ -177,8 +177,6 @@ class MicropubController extends Controller
 
             $properties['type'] = [$type ?? 'note'];
 
-            \Log::debug($properties);
-
             $properties['created_at'] = [
                 ! empty($properties['published'][0])
                     ? new Carbon($properties['published'][0])
@@ -191,8 +189,6 @@ class MicropubController extends Controller
                 fn ($value) => reset($value),
                 array_filter($properties)
             ));
-
-            \Log::debug($properties);
 
             abort_unless($entry, 500, __('Oops, something went wrong.'));
 

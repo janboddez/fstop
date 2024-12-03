@@ -41,7 +41,6 @@ class ConvertToJsonSyntax
         $properties['content'] = (array) ($properties['content'][0]['html'] ?? $properties['content'] ?? null);
 
         $request->merge(['properties' => $properties]);
-        \Log::debug($request->input('properties'));
 
         return $next($request);
     }
