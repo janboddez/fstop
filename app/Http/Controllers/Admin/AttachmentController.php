@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver as GdDriver;
+use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
 
 class AttachmentController extends Controller
 {
@@ -99,19 +102,22 @@ class AttachmentController extends Controller
 
     public static function createThumbnails(Attachment $attachment): void
     {
-        if (! class_exists('Imagick')) {
-            Log::error('Imagick not found');
+        if (extension_loaded('imagick') && class_exists('Imagick')) {
+            $manager = new ImageManager(new ImagickDriver());
+        } elseif (extension_loaded('gd') && function_exists('gd_info')) {
+            $manager = new ImageManager(new GdDriver());
+        } else {
+            Log::error('Imagick nor GD installed');
             return;
         }
 
         $fullPath = Storage::disk('public')->path($attachment->path);
 
         // Load image.
-        $imagick = new \Imagick();
-        $imagick->readimage($fullPath);
+        $image = $manager->read($fullPath);
 
-        $width = $imagick->getImageWidth();
-        $height = $imagick->getImageHeight();
+        $width = $image->width();
+        $height = $image->height();
 
         $sizes = [];
 
@@ -121,18 +127,16 @@ class AttachmentController extends Controller
                 continue;
             }
 
-            $copy = clone $imagick;
+            $copy = clone $image;
 
             if ($size === 'thumbnail') {
                 // Always crop thumbnails.
                 $newHeight = $newWidth;
-                $copy->cropThumbnailImage($newWidth, $newHeight);
+                $copy->cover($newWidth, $newHeight);
             } else {
                 $newHeight = (int) $height * $newWidth / $width;
-                $copy->resizeImage($newWidth, $newHeight, \Imagick::FILTER_CATROM, 1);
+                $copy->resize($newWidth, $newHeight); // Could use `::scale()` but we anyway need `$newHeight`.
             }
-
-            $copy->setImagePage(0, 0, 0, 0);
 
             $fullThumbnailPath = sprintf(
                 '%s-%dx%d.%s',
@@ -142,15 +146,19 @@ class AttachmentController extends Controller
                 pathinfo($fullPath, PATHINFO_EXTENSION)
             );
 
-            $copy->writeImage($fullThumbnailPath);
-            $copy->destroy();
+            $copy->save($fullThumbnailPath);
+
+            // Free up memory.
+            unset($copy);
 
             $sizes[$size] = static::getRelativePath($fullThumbnailPath);
         }
 
-        $imagick->destroy();
+        // Free up memory.
+        unset($image);
 
         foreach (prepare_meta(['width', 'height', 'sizes'], [$width, $height, $sizes], $attachment) as $key => $value) {
+            // May be able to use `saveMany()`?
             $attachment->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
         }
     }
