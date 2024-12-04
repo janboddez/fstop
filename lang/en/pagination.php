@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'previous' => '&larr; Newer Entries',
-    'next' => 'Older Entries &rarr;',
+    'previous' => '&larr; Previous',
+    'next' => 'Next &rarr;',
 
 ];
