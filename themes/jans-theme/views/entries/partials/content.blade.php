@@ -69,28 +69,28 @@
         </header>
     @endif
 
-    @if (is_archive() && in_array($entry->type, ['article', 'page'], true))
-        <div class="p-summary">
-            <p>
+    <div class="entry-content">
+        @if (is_archive() && in_array($entry->type, ['article', 'page'], true))
+            <p class="p-summary">
                 @if (! empty($entry->summary))
                     {{ $entry->summary }}
                 @else
                     {{ Str::limit(strip_tags($entry->content), 150, '…') }}
                 @endif
-
-                <a class="u-url" href="{{ $entry->permalink }}" rel="bookmark">{!! __('Continue reading :title', ['title' => '<span class="sr-only">' . $entry->name . '</span>']) !!} →</a>
             </p>
-        </div>
-    @else
-        {{-- Only define `e-content` if it doesn't already exist. --}}
-        @if (preg_match('~class=("|\')?e-content("|\')?~', $entry->content))
-            {!! $entry->content !!}
+
+            <a class="u-url" href="{{ $entry->permalink }}" rel="bookmark">{!! __('Continue reading :title →', ['title' => '<span class="sr-only">' . e($entry->name) . '</span>']) !!}</a>
         @else
-            <div class="e-content">
+            {{-- Only define `e-content` if it doesn't already exist. --}}
+            @if (preg_match('~class=("|\')?e-content("|\')?~', $entry->content))
                 {!! $entry->content !!}
-            </div>
+            @else
+                <div class="e-content">
+                    {!! $entry->content !!}
+                </div>
+            @endif
         @endif
-    @endif
+    </div>
 
     @if (! blank($entry->tags))
         <p class="entry-meta">

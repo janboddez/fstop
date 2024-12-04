@@ -57,6 +57,14 @@ hr::before {
     margin: 1.875rem 0;
 }
 
+.entry-content {
+    margin-block: 1rem;
+}
+
+.p-summary {
+    display: inline;
+}
+
 /* ==========================================================================
  *  Headings
  * ========================================================================== */
@@ -964,7 +972,7 @@ a.sr-only:focus {
     }
 
     body:not(.single) .article.has-thumbnail .entry-header,
-    body:not(.single) .article.has-thumbnail .p-summary,
+    body:not(.single) .article.has-thumbnail .entry-content,
     body:not(.single) .article.has-thumbnail .entry-footer,
     body:not(.single) .article.has-thumbnail .entry-meta {
         padding-inline: 2rem;

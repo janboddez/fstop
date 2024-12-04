@@ -14,7 +14,7 @@ return [
     */
 
     'name' => env('APP_NAME', 'F-Stop'),
-    'version' => '0.1.0.5',
+    'version' => '0.1.0.10',
     'charset' => env('APP_CHARSET', 'utf-8'),
 
     /*
