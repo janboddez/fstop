@@ -171,8 +171,7 @@ class ProcessWebmentions implements ShouldQueue
                 return;
             }
 
-            // Loop through its children, and parse (only) the first h-entry we
-            // encounter.
+            // Loop through its children, and parse (only) the first h-entry we encounter.
             foreach ($mf['items'][0]['children'] as $child) {
                 if (empty($child['type'][0])) {
                     continue;
@@ -249,17 +248,14 @@ class ProcessWebmentions implements ShouldQueue
         switch ($postType) {
             case 'bookmark':
                 $content = '&hellip; bookmarked this!';
-
                 break;
 
             case 'like':
                 $content = '&hellip; liked this!';
-
                 break;
 
             case 'repost':
                 $content = '&hellip; reposted this!';
-
                 break;
 
             case 'mention':
@@ -271,6 +267,7 @@ class ProcessWebmentions implements ShouldQueue
                     mb_strlen($hentry['properties']['content'][0]['value'], 'UTF-8') <= config('max_length', 500)
                 ) {
                     // If the mention is short enough, store it in its entirety.
+                    /** @todo Allow some tags. */
                     $content = strip_tags($hentry['properties']['content'][0]['html']);
                 } elseif (! empty($hentry['properties']['content'][0]['html'])) {
                     // Fetch the bit of text surrounding the link to our page.
@@ -290,12 +287,14 @@ class ProcessWebmentions implements ShouldQueue
 
         $data['content'] = $content;
         $data['type'] = $postType;
+
+        /** @todo Also store a reference to the author avatar, if any. And, better yet, cache it locally. */
     }
 
     /**
      * Looks for a link to `$target`, and returns some of the text surrounding it.
      *
-     * Heavily inspired by WordPress' ` wp_xmlrpc_server` class.
+     * Heavily inspired by WordPress' `wp_xmlrpc_server` class.
      *
      * @link https://github.com/WordPress/WordPress/blob/master/wp-includes/class-wp-xmlrpc-server.php.
      *
