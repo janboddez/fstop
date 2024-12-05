@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver as GdDriver;
+use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
 use TorMorten\Eventy\Facades\Events as Eventy;
 
 class ProcessWebmentions implements ShouldQueue
@@ -41,6 +45,7 @@ class ProcessWebmentions implements ShouldQueue
         }
 
         foreach ($webmentions as $webmention) {
+            // phpcs:ignore Generic.Files.LineLength.TooLong
             list($html, $status) = Cache::remember("html:{$webmention->source}", 60 * 60, function () use ($webmention) {
                 $response = Http::withHeaders([
                         'User-Agent' => Eventy::filter(
@@ -129,6 +134,14 @@ class ProcessWebmentions implements ShouldQueue
                 $comment = $entry->comments()->create($data);
             }
 
+            if (! empty($data['avatar'])) {
+                // Store local avatar URL in comment meta.
+                $comment->meta()->updateOrCreate([
+                    'key' => 'avatar',
+                    'value' => (array) $data['avatar'],
+                ]);
+            }
+
             // Store source and target in comment meta.
             $comment->meta()->updateOrCreate([
                 'key' => 'source',
@@ -204,6 +217,29 @@ class ProcessWebmentions implements ShouldQueue
                 $hentry['properties']['author'][0]['properties']['url'][0],
                 FILTER_SANITIZE_URL
             );
+        }
+
+        // Store author avatar, if any.
+        if (
+            ! empty($hentry['properties']['author'][0]['properties']['photo'][0]['value']) &&
+            filter_var($hentry['properties']['author'][0]['properties']['photo'][0]['value'], FILTER_VALIDATE_URL)
+        ) {
+            $avatarUrl = filter_var(
+                $hentry['properties']['author'][0]['properties']['photo'][0]['value'],
+                FILTER_SANITIZE_URL
+            );
+        } elseif (
+            ! empty($hentry['properties']['author'][0]['properties']['photo'][0]) &&
+            filter_var($hentry['properties']['author'][0]['properties']['photo'][0], FILTER_VALIDATE_URL)
+        ) {
+            $avatarUrl = filter_var(
+                $hentry['properties']['author'][0]['properties']['photo'][0],
+                FILTER_SANITIZE_URL
+            );
+        }
+
+        if (! empty($avatarUrl)) {
+            $data['avatar'] = static::storeAvatar($avatarUrl, $data['author_url'] ?? '');
         }
 
         // Update comment datetime.
@@ -287,8 +323,77 @@ class ProcessWebmentions implements ShouldQueue
 
         $data['content'] = $content;
         $data['type'] = $postType;
+    }
 
-        /** @todo Also store a reference to the author avatar, if any. And, better yet, cache it locally. */
+    protected function storeAvatar(string $avatarUrl, string $authorUrl = '', int $size = 150): ?string
+    {
+        // Download image.
+        $response = Http::withHeaders([
+            'User-Agent' => Eventy::filter(
+                'webmention:user_agent',
+                'F-Stop/' . config('app.version') . '; ' . url('/'),
+                $avatarUrl
+            )])
+            ->get($avatarUrl);
+
+        if (! $response->successful()) {
+            Log::warning('[Webmention] Something went wrong fetching the image at ' . $avatarUrl);
+            return null;
+        }
+
+        $blob = $response->body();
+
+        if (empty($blob)) {
+            Log::warning('[Webmention] Missing image data');
+            return null;
+        }
+
+        if (extension_loaded('imagick') && class_exists('Imagick')) {
+            $manager = new ImageManager(new ImagickDriver());
+        } elseif (extension_loaded('gd') && function_exists('gd_info')) {
+            $manager = new ImageManager(new GdDriver());
+        } else {
+            Log::warning('[Webmention] Imagick nor GD installed');
+            return null;
+        }
+
+        // Load image.
+        $image = $manager->read($blob);
+        $image->cover($size, $size);
+
+        // Generate filename.
+        $hash = md5(! empty($authorUrl) ? $authorUrl : $avatarUrl);
+        $relativeAvatarPath = 'webmention/' . substr($hash, 0, 2) . '/' . substr($hash, 2, 2) . '/' . $hash;
+        $fullAvatarPath = Storage::disk('public')->path($relativeAvatarPath);
+
+        if (! Storage::disk('public')->has($dir = dirname($relativeAvatarPath))) {
+            // Recursively create directory if it doesn't exist, yet.
+            Storage::disk('public')->makeDirectory($dir);
+        }
+
+        // Save image.
+        $image->save($fullAvatarPath);
+
+        unset($image);
+
+        if (! file_exists($fullAvatarPath)) {
+            Log::warning('[Webmention] Something went wrong saving the thumbnail');
+            return null;
+        }
+
+        // Try and apply a meaningful file extension.
+        $finfo = new \finfo(FILEINFO_EXTENSION);
+        $extension = explode('/', $finfo->file($fullAvatarPath))[0];
+        if (! empty($extension) && $extension !== '???') {
+            // Rename file.
+            Storage::disk('public')->move(
+                $relativeAvatarPath,
+                $relativeAvatarPath . ".$extension"
+            );
+        }
+
+        // Return the (absolute) local avatar URL.
+        return Storage::disk('public')->url($relativeAvatarPath . ".$extension");
     }
 
     /**
