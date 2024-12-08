@@ -24,10 +24,11 @@ Or simply keep `QUEUE_CONNECTION` set to `sync` (which may slow down the _back e
 
 If you _do_ choose to install Redis (or similar in-memory storage), you may want to use it as your session driver, too.
 
-Let's not forget to actually install all dependencies, and generate an application key.
+Let's not forget to actually install all dependencies, generate an application key, and run the database migrations.
 ```
 composer install --no-dev
 php artisan key:generate
+php artisan migrate
 ```
 
 By default, media uploads are stored in `storage/app/public`. To make them publicly available, create a symbolic link in `public`.
