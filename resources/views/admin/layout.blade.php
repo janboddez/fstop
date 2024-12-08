@@ -11,7 +11,7 @@
     <link href="{{ url('css/materialdesignicons.min.css') }}?v=6.9.96" rel="stylesheet">
     <link href="{{ url('css/admin.css') }}?v={{ config('app.version') }}" rel="stylesheet">
 </head>
-<body data-instant-allow-query-string>
+<body>
     <div class="columns is-desktop is-gapless my-0">
         <div class="column is-2-desktop">
             <nav id="menu">
@@ -79,7 +79,5 @@
 
     @section('scripts')
     @show
-
-    <script src="{{ url('js/instantpage-5.2.0.js') }}" type="module" defer></script>
 </body>
 </html>
