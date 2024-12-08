@@ -43,9 +43,12 @@ class GetPreviewCard implements ShouldQueue
         }
 
         $crawler = new Crawler($this->entry->content);
-        $urls = $crawler->filterXPath('//a[@href]')?->extract(['href']);
+        $nodes = $crawler->filterXPath('//a[starts-with(@href, "http")]');
+        if ($nodes->count() > 0) {
+            $url = $nodes->attr('href');
+        }
 
-        if (empty($urls)) {
+        if (empty($url)) {
             return;
         }
 
@@ -61,10 +64,10 @@ class GetPreviewCard implements ShouldQueue
                     $this->entry
                 ),
             ])
-            ->get($urls[0]);
+            ->get($url);
 
         if (! $response->successful()) {
-            Log::error('[Preview Cards] Failed to fetch the page at ' . $urls[0]);
+            Log::error('[Preview Cards] Failed to fetch the page at ' . $url);
             return;
         }
 
@@ -88,7 +91,7 @@ class GetPreviewCard implements ShouldQueue
             : null;
 
         $previewCard = array_filter([
-            'url' => $urls[0],
+            'url' => $url,
             'title' => $name,
             // If a thumbnail was found, save it locally.
             'thumbnail' => $thumbnailUrl
@@ -157,7 +160,7 @@ class GetPreviewCard implements ShouldQueue
             // Try and grab a meaningful file extension.
             $finfo = new \finfo(FILEINFO_EXTENSION);
             $extension = explode('/', $finfo->file($fullThumbnailPath))[0];
-            if (! empty($extension) && $extension != '???') {
+            if (! empty($extension) && $extension !== '???') {
                 Storage::disk('public')->move(
                     $relativeThumbnailPath,
                     $relativeThumbnailPath . ".$extension"
