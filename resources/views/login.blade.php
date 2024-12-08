@@ -2,10 +2,12 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
+    <title>{{ __('Log In') }} &ndash; {{ config('app.name') }}</title>
+
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>{{ __('Log In') }} &ndash; {{ config('app.name') }}</title>
+    <meta name="robots" content="noindex">
 
     <link rel="stylesheet" href="{{ url('css/bulma.min.css') }}?v=0.9.4">
     <link rel="stylesheet" href="{{ url('css/materialdesignicons.min.css') }}?v=6.9.96">
