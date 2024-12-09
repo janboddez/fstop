@@ -43,11 +43,10 @@
                         </small>
                     </td>
                     <td style="width: 8%;">{!! sprintf(
-                            '<img src="%s" width="%d" alt="%s"%s>',
-                            $attachment->url,
+                            '<img src="%s" width="%d" alt="%s">',
+                            $attachment->thumbnail,
                             '90',
-                            $attachment->alt,
-                            ! empty($attachment->srcset) ? ' srcset="' . $attachment->srcset . '"' : ''
+                            $attachment->alt
                         ) !!}</td>
 
                     @if (! blank($attachment->entry) && ! $attachment->entry->trashed())
