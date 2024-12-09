@@ -19,7 +19,9 @@ class EntryObserver implements ShouldHandleEventsAfterCommit
         // Ensure each entry gets a "title."
         if (empty($entry->name)) {
             // Generate a title off the (current) content.
-            $name = strip_tags($entry->content); // Strip tags.
+            $name = $entry->content;
+            $name = preg_replace('~<sup id="fnref:\d+">.*?</sup>~', '', $name); // Strip "footnote" `sup` tags.
+            $name = strip_tags($name); // Strip tags.
             $name = Str::words($name, 10, ' …'); // Shorten.
             $name = html_entity_decode($name); // Decode quotes, etc. (We escape on output.)
             $name = Str::replaceEnd('… …', '…', $name);

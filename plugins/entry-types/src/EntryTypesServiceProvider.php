@@ -63,7 +63,9 @@ class EntryTypesServiceProvider extends ServiceProvider
             }
 
             // Generate a title off the (current) content.
-            $name = strip_tags($entry->content); // Strip tags.
+            $name = $entry->content;
+            $name = preg_replace('~<sup.*?>.*?</sup>~', '', $name); // Strip "footnote" `sup` tags.
+            $name = strip_tags($name); // Strip tags.
             $name = Str::words($name, 10, ' …'); // Shorten.
             $name = html_entity_decode($name); // Decode quotes, etc. (We escape on output.)
             $name = Str::replaceEnd('… …', '…', $name);
