@@ -8,8 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use janboddez\Webmention\WebmentionSender;
 use Michelf\MarkdownExtra;
 use Michelf\SmartyPants;
+use Symfony\Component\DomCrawler\Crawler;
 
 class Entry extends Model
 {
@@ -142,6 +144,24 @@ class Entry extends Model
 
                 $value = preg_replace('~\R~u', "\n", $value);
                 $value = preg_replace('~\n\n+~u', "\n\n", $value);
+
+                if (request()->is('*/feed')) {
+                    // Try and avoid relative links inside feeds.
+                    $crawler = new Crawler($value);
+                    $nodes = $crawler->filterXPath('//a[not(starts-with(@href, "http"))]');
+
+                    if ($nodes->count() > 0) {
+                        $relativeLinks = $nodes->extract(['href']);
+
+                        foreach ($relativeLinks as $relativeLink) {
+                            $value = str_replace(
+                                $relativeLink,
+                                WebmentionSender::absolutizeUrl($relativeLink, $this->permalink),
+                                $value
+                            );
+                        }
+                    }
+                }
 
                 return trim($value);
             }
