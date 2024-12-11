@@ -8,6 +8,9 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver as GdDriver;
+use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
 use Symfony\Component\DomCrawler\Crawler;
 use TorMorten\Eventy\Facades\Events as Eventy;
 
@@ -58,12 +61,11 @@ class GetPreviewCard implements ShouldQueue
 
         // Fetch the remote page.
         $response = Http::withHeaders([
-                'User-Agent' => Eventy::filter(
-                    'preview-cards:user_agent',
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0',
-                    $this->entry
-                ),
-            ])
+            'User-Agent' => Eventy::filter(
+                'preview-cards:user_agent',
+                'F-Stop/' . config('app.version') . '; ' . url('/'),
+                $url
+            )])
             ->get($url);
 
         if (! $response->successful()) {
@@ -112,67 +114,72 @@ class GetPreviewCard implements ShouldQueue
     {
         // Download image.
         $response = Http::withHeaders([
-                'User-Agent' => Eventy::filter(
-                    'preview-cards:user_agent',
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0',
-                    $this->entry
-                ),
-            ])
+            'User-Agent' => Eventy::filter(
+                'preview-cards:user_agent',
+                'F-Stop/' . config('app.version') . '; ' . url('/'),
+                $thumbnailUrl
+            )])
             ->get($thumbnailUrl);
 
         if (! $response->successful()) {
-            Log::error('[Preview Cards] Something went wrong fetching the image at ' . $thumbnailUrl);
+            Log::warning('[Preview Cards] Something went wrong fetching the image at ' . $thumbnailUrl);
             return null;
         }
 
         $blob = $response->body();
 
         if (empty($blob)) {
-            Log::error('[Preview Cards] Missing image data');
+            Log::warning('[Preview Cards] Missing image data');
             return null;
         }
 
-        try {
-            // Resize and crop.
-            $imagick = new \Imagick();
-            $imagick->readImageBlob($blob);
-            $imagick->cropThumbnailImage($size, $size);
-            $imagick->setImagePage(0, 0, 0, 0);
-
-            // Generate filename.
-            $hash = md5($thumbnailUrl);
-            $relativeThumbnailPath = 'preview-cards/' . substr($hash, 0, 2) . '/' . substr($hash, 2, 2) . '/' . $hash;
-
-            // Save image.
-            Storage::disk('public')->put(
-                $relativeThumbnailPath,
-                $imagick->getImageBlob()
-            );
-
-            $imagick->destroy();
-
-            $fullThumbnailPath = Storage::disk('public')->path($relativeThumbnailPath);
-            if (! file_exists($fullThumbnailPath)) {
-                Log::error('[Preview Cards] Something went wrong saving the thumbnail');
-                return null;
-            }
-
-            // Try and grab a meaningful file extension.
-            $finfo = new \finfo(FILEINFO_EXTENSION);
-            $extension = explode('/', $finfo->file($fullThumbnailPath))[0];
-            if (! empty($extension) && $extension !== '???') {
-                Storage::disk('public')->move(
-                    $relativeThumbnailPath,
-                    $relativeThumbnailPath . ".$extension"
-                );
-            }
-
-            // Return the (absolute) local thumbnail URL.
-            return Storage::disk('public')->url($relativeThumbnailPath . ".$extension");
-        } catch (\Exception $exception) {
-            Log::error('[Preview Cards] Something went wrong: ' . $exception->getMessage());
+        if (extension_loaded('imagick') && class_exists('Imagick')) {
+            $manager = new ImageManager(new ImagickDriver());
+        } elseif (extension_loaded('gd') && function_exists('gd_info')) {
+            $manager = new ImageManager(new GdDriver());
+        } else {
+            Log::warning('[Preview Cards] Imagick nor GD installed');
+            return null;
         }
 
-        return null;
+        // Load image.
+        $image = $manager->read($blob);
+        $image->cover($size, $size);
+
+        // Generate filename.
+        $hash = md5($thumbnailUrl);
+        $relativeThumbnailPath = 'preview-cards/' . substr($hash, 0, 2) . '/' . substr($hash, 2, 2) . '/' . $hash;
+        $fullThumbnailPath = Storage::disk('public')->path($relativeThumbnailPath);
+
+        if (! Storage::disk('public')->has($dir = dirname($relativeThumbnailPath))) {
+            // Recursively create directory if it doesn't exist, yet.
+            Storage::disk('public')->makeDirectory($dir);
+        }
+
+        // Save image.
+        $image->save($fullThumbnailPath);
+
+        unset($image);
+
+        if (! file_exists($fullThumbnailPath)) {
+            Log::warning('[Preview Cards] Something went wrong saving the thumbnail');
+            return null;
+        }
+
+        // Try and apply a meaningful file extension.
+        $finfo = new \finfo(FILEINFO_EXTENSION);
+        $extension = explode('/', $finfo->file($fullThumbnailPath))[0];
+        if (! empty($extension) && $extension !== '???') {
+            // Rename file.
+            Storage::disk('public')->move(
+                $relativeThumbnailPath,
+                $relativeThumbnailPath . ".$extension"
+            );
+        }
+
+        /** @todo Check the move was successful and only then return the new URL? */
+
+        // Return the (absolute) local avatar URL.
+        return Storage::disk('public')->url($relativeThumbnailPath . ".$extension");
     }
 }
