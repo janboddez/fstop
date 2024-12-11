@@ -3,6 +3,8 @@
 namespace Plugins\Scrobbble;
 
 use App\Models\Entry;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 
@@ -13,7 +15,26 @@ class ScrobbbleServiceProvider extends ServiceProvider
         // Need to call this in the `register()` (rather than `boot()`) method in order to register our routes before
         // "core's" catch-all page route.
         $this->loadRoutesFrom(__DIR__ . '/../routes.php');
-        $this->registerHooks(); // For these, it doesn't really matter.
+    }
+
+    public function boot(): void
+    {
+        $this->publishes([
+            __DIR__ . '/../config/scrobbble.php' => config_path('scrobbble.php'),
+        ]);
+
+        // Case we want to run them, or roll 'em back, manually.
+        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+
+        if (! Schema::hasTable('scrobbble_sessions')) {
+            // Automatically run plugin migrations.
+            Artisan::call('migrate', [
+                '--path'  => '/plugins/scrobbble/database/migrations',
+                '--force' => true,
+            ]);
+        }
+
+        $this->registerHooks();
     }
 
     protected function registerHooks(): void
@@ -44,7 +65,9 @@ class ScrobbbleServiceProvider extends ServiceProvider
             }
 
             // Generate a title off the (current) content.
-            $name = strip_tags($entry->content); // Strip tags.
+            $name = $entry->content;
+            $name = preg_replace('~<sup.*?>.*?</sup>~', '', $name); // Strip "footnote" `sup` tags.
+            $name = strip_tags($name); // Strip tags.
             $name = Str::words($name, 10, ' …'); // Shorten.
             $name = html_entity_decode($name); // Decode quotes, etc. (We escape on output.)
             $name = Str::replaceEnd('… …', '…', $name);
