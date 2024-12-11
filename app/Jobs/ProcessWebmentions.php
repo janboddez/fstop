@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
@@ -78,9 +79,7 @@ class ProcessWebmentions implements ShouldQueue
                 ->delete();
 
                 if ($deleted) {
-                    Log::info(
-                        "Deleted webmention for source {$webmention->source} and target {$webmention->target}"
-                    );
+                    Log::info("Deleted webmention for source {$webmention->source} and target {$webmention->target}");
 
                     DB::update(
                         'UPDATE webmentions SET status = ? WHERE id = ?',
@@ -129,29 +128,31 @@ class ProcessWebmentions implements ShouldQueue
                 ->first();
 
             if ($comment) {
+                Log::debug("[Webmention] Found existing reaction to {$entry->permalink} for {$webmention->source}");
                 $comment->update($data);
             } else {
+                Log::debug("[Webmention] Creating new reaction to {$entry->permalink} for {$webmention->source}");
                 $comment = $entry->comments()->create($data);
             }
 
             if (! empty($data['avatar'])) {
                 // Store local avatar URL in comment meta.
-                $comment->meta()->updateOrCreate([
-                    'key' => 'avatar',
-                    'value' => (array) $data['avatar'],
-                ]);
+                $comment->meta()->updateOrCreate(
+                    ['key' => 'avatar'],
+                    ['value' => (array) $data['avatar']]
+                );
             }
 
             // Store source and target in comment meta.
-            $comment->meta()->updateOrCreate([
-                'key' => 'source',
-                'value' => (array) $webmention->source,
-            ]);
+            $comment->meta()->updateOrCreate(
+                ['key' => 'source'],
+                ['value' => (array) $webmention->source]
+            );
 
-            $comment->meta()->updateOrCreate([
-                'key' => 'target',
-                'value' => (array) $webmention->target,
-            ]);
+            $comment->meta()->updateOrCreate(
+                ['key' => 'target'],
+                ['value' => (array) $webmention->target]
+            );
 
             DB::update(
                 'UPDATE webmentions SET status = ?, updated_at = NOW() WHERE id = ?',
