@@ -34,6 +34,7 @@
             <tr>
                 <th style="width: 20%;">{{ __('Author') }}</th>
                 <th>{{ __('Comment') }}</th>
+                <th class="is-hidden-mobile" style="width: 20%;">{{ __('In Reply To …') }}</th>
                 <th class="is-hidden-mobile" style="width: 10%;">{{ __('Status') }}</th>
                 <th class="column-date" style="width: 25%;">{{ __('Date') }}</th>
             </tr>
@@ -67,6 +68,13 @@
                         </small>
                     </td>
                     <td>{!! Str::words(strip_tags($comment->content), 10, ' […]') !!}</td>
+                    <td class="is-hidden-mobile">
+                        @if (! empty($comment->entry))
+                            <a href="{{ route('admin.entries.edit', $comment->entry) }}">{{ $comment->entry->name }}</a>
+                        @else
+                            &mdash;
+                        @endif
+                    </td>
                     <td class="is-hidden-mobile">{{ ucfirst($comment->status) }}</td>
                     <td><time>{{ $comment->created_at->format('M j, Y') }}<br><small>{{ $comment->created_at->format('h:i A') }}</small></time></td>
                 </tr>
