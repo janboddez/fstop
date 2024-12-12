@@ -21,9 +21,7 @@ class EntryController extends Controller
 
         $entries = Entry::ofType($type)
             ->with('tags')
-            ->withCount(['comments' => function ($query) {
-                $query->where('status', 'approved');
-            }]);
+            ->withCount('comments');
 
         if ($type === 'page') {
             $entries = $entries->orderBy('slug', 'asc');
@@ -171,6 +169,7 @@ class EntryController extends Controller
 
         $entry->load('featured');
         $entry->load('tags');
+        $entry->loadCount('comments');
 
         return view('admin.entries.edit', compact('entry', 'type'));
     }

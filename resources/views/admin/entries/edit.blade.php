@@ -200,6 +200,18 @@
                 </div>
             </div>
 
+            @if (isset($entry) && $entry->comments_count)
+                <div class="card mt-5">
+                    <header class="card-header">
+                        <h2 class="card-header-title"><label for="featured">{{ __('Discussion') }}</label></h2>
+                    </header>
+
+                    <div class="card-content">
+                        <a href="{{ route('admin.comments.index', ['entry' => $entry->id]) }}">{{ trans_choice('There’s one comment.|There’s :count comments.', $entry->comments_count, ['count' => $entry->comments_count]) }}</a>
+                    </div>
+                </div>
+            @endif
+
             @action('admin:entries:edit', $entry ?? null, $type)
         </div>
     </div>
