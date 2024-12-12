@@ -9,47 +9,34 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\Response;
 use TorMorten\Eventy\Facades\Events as Eventy;
 
 class ScrobbleController
 {
-    /**
-     * @todo Return proper Laravel responses.
-     */
-    public function handshake(Request $request)
+    public function handshake(Request $request): Response
     {
-        header('Content-Type: text/plain; charset=UTF-8');
+        \Log::debug($request->all());
 
-        if (! $username = $request->input('u')) {
-            Log::error('[Scrobbble] Missing username');
-            die("FAILED\n");
-        }
+        abort_unless($request->filled('u'), 401, "FAILED\n", ['Content-Type' => 'text/plain; charset=UTF-8']);
 
-        $user = User::where('email', $username)
+        $user = User::where('email', $request->input('u'))
             ->first();
 
-        if (! $user) {
-            Log::error('[Scrobbble] Invalid username.');
-            die("FAILED\n");
-        }
+        abort_unless($user, 401, "FAILED\n", ['Content-Type' => 'text/plain; charset=UTF-8']);
 
-        $timestamp = $request->input('t');
-        $token = $request->input('a');
-        $client = $request->input('c');
         $sessionKey = $request->input('sk');
+        $token = $request->input('a');
+        $timestamp = $request->input('t');
 
-        $authenticated = false;
-        if ($sessionKey && $this->checkWebAuth($sessionKey, $user)) {
-            $authenticated = true;
-        } elseif ($this->checkStandardAuth($token, $timestamp, $user)) {
-            $authenticated = true;
-        }
+        $authenticated = ($sessionKey && $this->webAuth($sessionKey, $user))
+            || $this->standardAuth($token, $timestamp, $user);
 
-        if (! $authenticated) {
-            Log::error('[Scrobbble] Authentication failed.');
-            die("FAILED\n");
-        }
+        abort_unless($authenticated, 403, "FAILED\n", ['Content-Type' => 'text/plain; charset=UTF-8']);
 
+        /** @todo Do we ever get a session key but no token? */
+
+        $client = $request->input('c');
         $sessionId = md5($token . time());
 
         $result = DB::insert(
@@ -62,117 +49,98 @@ class ScrobbleController
             ]
         );
 
-        if (! $result) {
-            Log::error('[Scrobbble] Handshake failed.');
-            die("FAILED\n");
-        }
+        abort_unless($result, 500, "FAILED\n", ['Content-Type' => 'text/plain; charset=UTF-8']);
 
         Log::info('[Scrobbble] Handshake succeeded.');
 
-        echo "OK\n";
-        echo "$sessionId\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        echo url('scrobbble/v1/nowplaying') . "\n";
-        echo url('scrobbble/v1/submissions') . "\n";
-        exit;
+        $output = "OK\n" .
+            "$sessionId\n" .
+            url('scrobbble/v1/nowplaying') . "\n" .
+            url('scrobbble/v1/submissions') . "\n";
+
+        return response($output, 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
     }
 
-    /**
-     * @todo Return proper Laravel responses.
-     */
-    public function now(Request $request)
+    public function now(Request $request): Response
     {
         if ($request->isMethod('get')) {
+            // Return the "currently playing" track, if any.
             return response()->json(
-                Cache::get('scrobbble:nowplaying', [])
+                Cache::get('scrobbble:nowplaying', new \stdClass())
             );
         }
 
-        header('Content-Type: text/plain; charset=UTF-8');
+        \Log::debug($request->all());
 
-        $sessionKey = $request->input('s');
+        // Authenticate using session key.
+        abort_unless($request->filled('s'), 401, "FAILED\n", ['Content-Type' => 'text/plain; charset=UTF-8']);
+
+        $session = $this->getSession($request->input('s'));
+        $userId = ! empty($session->user_id)
+            ? (int) $session->user_id
+            : 0;
+
+        abort_unless($userId, 403, "FAILED\n", ['Content-Type' => 'text/plain; charset=UTF-8']);
+
         $title = $request->input('t');
         $artist = $request->input('a');
         $album = $request->input('b');
-        $mbid = $request->input('m');
+        $track = $request->filled('n') ? (int) $request->input('n') : null;
         $length = intval($request->input('l', 300));
+        $mbid = $request->input('m');
 
-        $session = $this->getSession($sessionKey);
-        $userId = ! empty($session->user_id)
-            ? $session->user_id
-            : 0;
-
-        if ($userId === 0) {
-            Log::error('[Scrobbble] Invalid session key');
-            die("FAILED\n");
-        }
-
-        \Log::debug('Now playing ...');
-        \Log::debug($request->all());
-
-        if (empty($artist) || empty($title)) {
-            Log::error('[Scrobbble] Incomplete scrobble');
-            die("FAILED\n");
-        }
-
-        if (! is_string($artist) || ! is_string($title)) {
-            Log::error('[Scrobbble] Incorrectly formatted data');
-            die("FAILED\n");
-        }
+        abort_unless(
+            is_string($artist) && is_string($title),
+            400,
+            "FAILED\n",
+            ['Content-Type' => 'text/plain; charset=UTF-8']
+        );
 
         $data = array_filter([
             'title' => Eventy::filter('scrobbble:title', strip_tags($title)),
             'artist' => Eventy::filter('scrobbble:artist', strip_tags($artist)),
             'album' => Eventy::filter('scrobbble:album', strip_tags($album)),
-            'mbid' => ! empty($mbid) ? static::sanitizeMbid($mbid) : '',
+            'track' => Eventy::filter('scrobbble:track', strip_tags($track)),
+            'mbid' => ! empty($mbid) ? $this->sanitizeMbid($mbid) : '',
         ]);
 
         if (Eventy::filter('scrobbble:skip_track', false, $data)) {
-            Cache::forget('scrobbble:nowplaying');
+            Cache::forget('scrobbble:nowplaying'); // Just in case.
+        } else {
+            // Cache for the duration of the track, with a maximum of 90 minutes. (Default to 10 minutes.)
+            Cache::put('scrobbble:nowplaying', $data, $length < 5400 ? $length : 600);
         }
 
-        Cache::put('scrobbble:nowplaying', $data, $length < 5400 ? $length : 600);
-
-        die("OK\n");
+        return response("OK\n", 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
     }
 
-    /**
-     * @todo Return proper Laravel responses.
-     */
-    public function scrobble(Request $request)
+    public function scrobble(Request $request): Response
     {
-        header('Content-Type: text/plain; charset=UTF-8');
-
-        $sessionKey = $request->input('s');
-        $titles = $request->input('t', []);
-        $artists = $request->input('a', []);
-        $albums = $request->input('b', []);
-        $mbids = $request->input('m', []);
-        $times = $request->input('i', []);
-
-        $session = $this->getSession($sessionKey);
-
-        $userId = ! empty($session->user_id)
-            ? $session->user_id
-            : 0;
-
-        if ($userId === 0) {
-            Log::error('[Scrobbble] Invalid session key');
-            die("FAILED\n");
-        }
-
-        \Log::debug('Scrobbling ...');
         \Log::debug($request->all());
 
-        if (empty($artists) || empty($titles) || empty($times)) {
-            Log::error('[Scrobbble] Incomplete scrobble');
-            die("FAILED\n");
-        }
+        // Authenticate using session key.
+        abort_unless($request->filled('s'), 401, "FAILED\n", ['Content-Type' => 'text/plain; charset=UTF-8']);
 
-        // phpcs:ignore Generic.Files.LineLength.TooLong
-        if (! is_array($artists) || ! is_array($titles) || ! is_array($times) || ! is_array($albums) || ! is_array($mbids)) {
-            Log::error('[Scrobbble] Incorrectly formatted data');
-            die("FAILED\n");
-        }
+        $session = $this->getSession($request->input('s'));
+        $userId = ! empty($session->user_id)
+            ? (int) $session->user_id
+            : 0;
+
+        abort_unless($userId, 403, "FAILED\n", ['Content-Type' => 'text/plain; charset=UTF-8']);
+
+        $artists = (array) $request->input('a', []);
+        $titles = (array) $request->input('t', []);
+        $albums = (array) $request->input('b', []);
+        $tracks = (array) $request->input('n', []);
+        $times = (array) $request->input('i', []);
+        $mbids = (array) $request->input('m', []);
+
+        abort_if(
+            empty($artists) || empty($titles) || empty($times), // These are required.
+            400,
+            "FAILED\n",
+            ['Content-Type' => 'text/plain; charset=UTF-8']
+        );
 
         $count = count($titles);
 
@@ -181,16 +149,17 @@ class ScrobbleController
             $artist = Eventy::filter('scrobbble:artist', strip_tags($artists[$i]));
 
             if (empty($title) || empty($artist)) {
-                // Skip.
+                // If after filtering either of these is "empty," skip.
                 continue;
             }
 
             $data = array_filter([
                 'title'  => $title,
                 'artist' => $artist,
-                'album' => Eventy::filter('scrobbble:album', strip_tags($albums[$i])),
+                'album' => Eventy::filter('scrobbble:album', isset($albums[$i]) ? strip_tags($albums[$i]) : ''),
+                'track' => Eventy::filter('scrobbble:track', isset($tracks[$i]) ? (int) $tracks[$i] : null),
                 'mbid' => isset($mbids[$i]) ? $this->sanitizeMbid($mbids[$i]) : null,
-                'time' => $times[$i] ?? time(),
+                'time' => $times[$i],
             ]);
 
             if (Eventy::filter('scrobbble:skip_track', false, $data)) {
@@ -201,7 +170,7 @@ class ScrobbleController
             $this->createEntry($data, $session);
         }
 
-        die("OK\n");
+        return response("OK\n", 201, ['Content-Type' => 'text/plain; charset=UTF-8']);
     }
 
     protected function createEntry(array $data, object $session): void
@@ -229,6 +198,7 @@ class ScrobbleController
             $data
         );
 
+        // `$data['time']` oughta be GMT, but our site (and database) may not be.
         $time = isset($data['time'])
             ? Carbon::createFromTimestamp($data['time'], config('app.timezone', env('APP_TIMEZONE', 'UTC')))
                 ->toDateTimeString()
@@ -256,7 +226,7 @@ class ScrobbleController
         }
     }
 
-    protected function checkWebAuth(
+    protected function webAuth(
         ?string $sessionKey,
         User $user
     ): bool {
@@ -274,7 +244,7 @@ class ScrobbleController
         return false;
     }
 
-    protected function checkStandardAuth(
+    protected function standardAuth(
         ?string $token,
         ?string $timestamp,
         User $user
@@ -283,6 +253,7 @@ class ScrobbleController
         $password = config('scrobbble.password', env('SCROBBBLE_PASS', null));
 
         if (empty($password)) {
+            Log::warning('[Scrobbble] No password in config. Check cache?');
             return false;
         }
 
