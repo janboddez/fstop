@@ -46,6 +46,10 @@ class ScrobbbleServiceProvider extends ServiceProvider
          * @return array  $types Filtered array of types.
          */
         add_filter('entries:registered_types', function ($types) {
+            if (request()->is('feed')) {
+                return $types;
+            }
+
             $types['listen'] = ['icon' => 'mdi mdi-playlist-music'];
 
             return $types;

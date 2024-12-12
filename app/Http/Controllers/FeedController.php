@@ -29,9 +29,7 @@ class FeedController extends Controller
         if ($type) {
             $entries->ofType($type);
         } else {
-            // Bit of a hack to exclude listens (which clearly are plugin territory) like this. Should eventually filter
-            // the list of registered entry types *based on whatever context we're in*.
-            $entries->whereIn('type', get_registered_entry_types('slug', ['page', 'listen']));
+            $entries->whereIn('type', get_registered_entry_types('slug', 'page'));
         }
 
         $entries = $entries->get();

@@ -217,9 +217,11 @@ function url_to_entry(string $url): ?Entry
     return $entry;
 }
 
+/**
+ * @param  string|array $exclude
+ */
 function get_registered_entry_types(string $returnType = null, mixed $exclude = null): array
 {
-    /** @todo Refactor this to allow for labels, icons. */
     $types = (array) Eventy::filter('entries:registered_types', Entry::TYPES);
 
     if ($exclude) {
@@ -237,6 +239,7 @@ function get_registered_entry_types(string $returnType = null, mixed $exclude = 
         return $types;
     }
 
+    // Return slugs only.
     return array_keys($types);
 }
 
