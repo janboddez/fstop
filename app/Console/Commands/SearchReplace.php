@@ -34,32 +34,34 @@ class SearchReplace extends Command
             return;
         }
 
-        $posts = Entry::all();
+        $entries = Entry::all();
 
-        foreach ($posts as $post) {
-            if (! empty($post->name)) {
-                $post->name = str_replace($search, $replace, $post->name);
+        foreach ($entries as $entry) {
+            if (! empty($entry->name)) {
+                $entry->name = str_replace($search, $replace, $entry->name);
             }
 
-            $post->content = str_replace($search, $replace, $post->content);
+            // $entry->content = str_replace($search, $replace, $entry->content);
+            $entry->content = str_replace($search, $replace, $entry->rawContent);
 
-            $meta = $post->meta;
-            if ($meta) {
+            foreach ($entry->meta as $meta) {
+                $value = (array) $meta->value;
+
                 array_walk_recursive(
-                    $meta,
-                    function (&$value) use ($search, $replace) {
-                        if (is_string($value)) {
-                            $value = str_replace($search, $replace, $value);
+                    $value,
+                    function (&$item) use ($search, $replace) {
+                        if (is_string($item)) {
+                            $item = str_replace($search, $replace, $item);
                         }
 
-                        return $value;
+                        return $item;
                     }
                 );
 
-                $post->meta = $meta;
+                $meta->update(['value' => (array) $value]);
             }
 
-            $post->saveQuietly();
+            $entry->saveQuietly();
         }
     }
 }
