@@ -52,6 +52,9 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin', 'as' => 'admin.'], fu
         ->withTrashed()
         ->name('entries.restore');
 
+    Route::post('entries/empty-trash', [EntryAdminController::class, 'emptyTrash'])
+        ->name('entries.empty-trash');
+
     Route::resource('tags', TagAdminController::class)
         ->except(['create', 'show']);
 

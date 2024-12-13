@@ -6,18 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Models\Attachment;
 use App\Models\Entry;
 use App\Models\Tag;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Response;
 use TorMorten\Eventy\Facades\Events as Eventy;
 
 class EntryController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $type = $request->input('type');
 
-        abort_unless(in_array($type, get_registered_entry_types(), true), 404);
+        abort_unless(in_array($type, get_registered_entry_types(), true), 400);
 
         $entries = Entry::ofType($type)
             ->with('tags')
@@ -83,7 +85,7 @@ class EntryController extends Controller
         return view('admin.entries.index', compact('entries', 'type', 'published', 'draft', 'trashed'));
     }
 
-    public function create(Request $request)
+    public function create(Request $request): View
     {
         $type = $request->input('type');
 
@@ -92,7 +94,7 @@ class EntryController extends Controller
         return view('admin.entries.edit', compact('type'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request): Response
     {
         $validated = $request->validate([
             'name' => 'nullable|max:250',
@@ -163,7 +165,7 @@ class EntryController extends Controller
             ->withSuccess(__('Created!'));
     }
 
-    public function edit(Request $request, Entry $entry)
+    public function edit(Request $request, Entry $entry): View
     {
         $type = $entry->type;
 
@@ -174,7 +176,7 @@ class EntryController extends Controller
         return view('admin.entries.edit', compact('entry', 'type'));
     }
 
-    public function update(Request $request, Entry $entry)
+    public function update(Request $request, Entry $entry): Response
     {
         $validated = $request->validate([
             'name' => 'nullable|max:250',
@@ -238,7 +240,7 @@ class EntryController extends Controller
             ->withSuccess(__('Changes saved!'));
     }
 
-    public function destroy(Entry $entry)
+    public function destroy(Entry $entry): Response
     {
         $type = $entry->type;
 
@@ -270,7 +272,28 @@ class EntryController extends Controller
             ->withSuccess(__('Deleted!'));
     }
 
-    public function restore(Entry $entry)
+    public function emptyTrash(Request $request): Response
+    {
+        $type = $request->input('type');
+
+        abort_unless(in_array($type, get_registered_entry_types(), true), 400);
+
+        $trashed = Entry::ofType($type)
+            ->onlyTrashed()
+            ->get();
+
+        /** @todo Should probably look at cascade on delete as this isn't very efficient ... */
+        foreach ($trashed as $entry) {
+            $entry->comments()->delete();
+            $entry->meta()->delete();
+            $entry->forceDelete();
+        }
+
+        return back()
+            ->withSuccess(__('Trash emptied!'));
+    }
+
+    public function restore(Entry $entry): Response
     {
         $entry->restore();
 

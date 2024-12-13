@@ -7,6 +7,14 @@
     <h1 class="title is-pulled-left mr-3">@yield('title')</h1>
     <a class="button is-small" href="{{ route('admin.entries.create', ['type' => $type]) }}">{{ __('New :Type', ['type' => $type]) }}</a>
 
+    @if (request()->input('trashed'))
+        <form class="is-inline" action="{{ route('admin.entries.empty-trash') }}" method="post">
+            @csrf
+            <input type="hidden" name="type" value="{{ $type }}">
+            <button class="button is-small is-danger" type="submit">{{ __('Empty Trash') }}</button>
+        </form>
+    @endif
+
     <form class="is-pulled-right is-hidden-mobile" action="{{ url()->current() }}" method="get">
         <input type="hidden" name="type" value="{{ $type }}">
         <div class="field has-addons" style="margin-bottom: -1rem;">
