@@ -71,14 +71,7 @@
 
     <div class="entry-content">
         @if (is_archive() && in_array($entry->type, ['article', 'page'], true))
-            <p class="p-summary">
-                @if (! empty($entry->summary))
-                    {{ $entry->summary }}
-                @else
-                    {{ Str::limit(strip_tags($entry->content), 150, '…') }}
-                @endif
-            </p>
-
+            <p class="p-summary">{{ $entry->summary }}</p>
             <a class="u-url" href="{{ $entry->permalink }}" rel="bookmark">{!! __('Continue reading :title →', ['title' => '<span class="sr-only">' . e($entry->name) . '</span>']) !!}</a>
         @else
             {{-- Only define `e-content` if it doesn't already exist. --}}
@@ -171,7 +164,6 @@
     @endif
 
     @if (is_singular() && ! blank($entry->comments))
-        {{-- Comments. --}}
         <h2 id="comments">{{ __('Reactions') }}</h2>
         <ol class="comments">
             @foreach ($entry->comments as $comment)

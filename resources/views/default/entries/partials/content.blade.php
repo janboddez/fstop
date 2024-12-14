@@ -2,7 +2,7 @@
     @if (is_archive() && ! empty($entry->thumbnail))
         <div class="post-thumbnail">
             {{-- @todo: Make responsive. --}}
-            <a class="u-url" href="{{ route(Str::plural($entry->type) . '.show', $entry->slug) }}" rel="bookmark"><img class="u-featured" src="{{ $entry->thumbnail }}" width="1600" height="720" alt="" loading="lazy"></a>
+            <a class="u-url" href="{{ $entry->permalink }}" rel="bookmark"><img class="u-featured" src="{{ $entry->thumbnail }}" width="1600" height="720" alt="" loading="lazy"></a>
         </div>
     @endif
 
@@ -11,12 +11,13 @@
             @if (is_singular())
                 <h1 class="entry-title p-name">{{ $entry->name }}</h1>
             @else
-                <h2 class="entry-title p-name"><a class="u-url" href="{{ route(Str::plural($entry->type) . '.show', $entry->slug) }}" rel="bookmark">{{ $entry->name }}</a></h2>
+                <h2 class="entry-title p-name"><a class="u-url" href="{{ $entry->permalink }}" rel="bookmark">{{ $entry->name }}</a></h2>
             @endif
 
             @if ($entry->type === 'article')
                 <div class="entry-meta">
-                    <a class="u-url" href="{{ route(Str::plural($entry->type) . '.show', $entry->slug) }}" rel="bookmark"><time class="dt-published" datetime="{{ $entry->created_at->format('c') }}">{{ $entry->created_at->format('M j, Y') }}</time></a>
+                    <a class="u-url" href="{{ $entry->permalink }}" rel="bookmark"><time class="dt-published" datetime="{{ $entry->created_at->format('c') }}">{{ $entry->created_at->format('M j, Y') }}</time></a>
+
                     @auth
                         &bull;
                         <a href="{{ route('admin.entries.edit', $entry) }}">{{ __('Edit :type', ['type' => $entry->type]) }}</a>
@@ -29,6 +30,14 @@
                     </div>
                 @endauth
             @endif
+
+            <span class="sr-only p-author h-card">
+                @if ($avatar = $entry->user->meta->firstWhere('key', 'avatar'))
+                    <img class="u-photo" src="{{ $avatar->value[0] }}" alt="{{ $entry->user->name }}">
+                @endif
+
+                <a href="{{ url('/') }}" class="u-url p-name fn" rel="author">{{ $entry->user->name }}</a>
+            </span>
         </header>
     @else
         {{-- One of the short-form entry formats. --}}
@@ -36,36 +45,36 @@
             @if (is_singular())
                 <h1 class="sr-only">{{ $entry->name }}</h1>
             @else
-                <h2 class="sr-only"><a class="u-url" href="{{ route(Str::plural($entry->type) . '.show', $entry->slug) }}" rel="bookmark">{{ $entry->name }}</a></h2>
+                <h2 class="sr-only"><a class="u-url" href="{{ $entry->permalink }}" rel="bookmark">{{ $entry->name }}</a></h2>
             @endif
+
+            <span class="sr-only p-author h-card">
+                @if ($avatar = $entry->user->meta->firstWhere('key', 'avatar'))
+                    <img class="u-photo" src="{{ $avatar->value[0] }}" alt="{{ $entry->user->name }}">
+                @endif
+
+                <a href="{{ url('/') }}" class="u-url p-name fn" rel="author">{{ $entry->user->name }}</a>
+            </span>
         </header>
     @endif
 
-    @if (is_archive())
-        <div class="p-summary">
-            <p>
-                @if (! empty($entry->summary))
-                    {{ $entry->summary }}
-                @else
-                    {{ Str::limit(strip_tags($entry->content), 150, '…') }}
-                @endif
-
-                <a class="u-url" href="{{ route(Str::plural($entry->type) . '.show', $entry->slug) }}" rel="bookmark">{!! __('Continue reading :title', ['title' => '<span class="sr-only">' . $entry->name . '</span>']) !!} →</a>
-            </p>
-        </div>
-    @else
-        @if (preg_match('~class=("|\')?e-content("|\')?~', $entry->content))
-            {!! $entry->content !!}
+    <div class="entry-content">
+        @if (is_archive())
+            <p class="p-summary">{{ $entry->summary }}</p>
+            <a class="u-url" href="{{ $entry->permalink }}" rel="bookmark">{!! __('Continue reading :title →', ['title' => '<span class="sr-only">' . e($entry->name) . '</span>']) !!}</a>
         @else
             {{-- Only define `e-content` if it doesn't already exist. --}}
-            <div class="e-content">
+            @if (preg_match('~class=("|\')?e-content("|\')?~', $entry->content))
                 {!! $entry->content !!}
-            </div>
+            @else
+                <div class="e-content">
+                    {!! $entry->content !!}
+                </div>
+            @endif
         @endif
-    @endif
+    </div>
 
     @if (! blank($entry->tags))
-        {{-- Tags. --}}
         <p class="entry-meta">
             {{ __('Tagged:') }}
 
@@ -79,16 +88,10 @@
         </p>
     @endif
 
-    @if (! empty($entry->meta['card']['title']) && ! empty($entry->meta['card']['url']))
-        {{-- Preview card, if any. --}}
-        @include('theme::entries.partials.card')
-    @endif
-
-    @if (is_singular() && $entry->comments()->approved()->count() > 0)
-        {{-- Comments. --}}
+    @if (is_singular() && ! blank($entry->comments))
         <h2 id="comments">{{ __('Reactions') }}</h2>
         <ol class="comments">
-            @foreach ($entry->comments()->approved()->get() as $comment)
+            @foreach ($entry->comments as $comment)
                 @include('theme::entries.partials.comment')
             @endforeach
         </ol>
