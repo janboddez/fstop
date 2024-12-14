@@ -95,9 +95,7 @@ class ScrobbleController
         }
 
         $session = $this->getSession($request->input('s'));
-        $userId = $session->user_id ?? 0;
-
-        if (! $userId) {
+        if (empty($session->user_id)) {
             Log::error('[Scrobbble] Invalid session key');
             return response("FAILED\n", 403, ['Content-Type' => 'text/plain; charset=UTF-8']);
         }
@@ -155,19 +153,17 @@ class ScrobbleController
         }
 
         $session = $this->getSession($request->input('s'));
-        $userId = $session->user_id ?? 0;
-
-        if (! $userId) {
+        if (empty($session->user_id)) {
             Log::error('[Scrobbble] Invalid session key');
             return response("FAILED\n", 403, ['Content-Type' => 'text/plain; charset=UTF-8']);
         }
 
-        $artists = (array) $request->input('a', []);
-        $titles = (array) $request->input('t', []);
-        $albums = (array) $request->input('b', []);
-        $tracks = (array) $request->input('n', []);
-        $times = (array) $request->input('i', []);
-        $mbids = (array) $request->input('m', []);
+        $artists = (array) $request->input('a');
+        $titles = (array) $request->input('t');
+        $albums = (array) $request->input('b');
+        $tracks = (array) $request->input('n');
+        $times = (array) $request->input('i');
+        $mbids = (array) $request->input('m');
 
         if (empty($artists) || empty($titles) || empty($times)) {
             Log::error('[Scrobbble] Wrongly formatted data');
@@ -205,7 +201,7 @@ class ScrobbleController
         return response("OK\n", 201, ['Content-Type' => 'text/plain; charset=UTF-8']);
     }
 
-    protected function createEntry(array $data, object $session): void
+    protected function createEntry(array $data, object $session): mixed
     {
         // Generate content off the title and artist (and album) data.
         if (! empty($data['album'])) {
@@ -239,7 +235,7 @@ class ScrobbleController
         // Avoid duplicates, so we don't have to rely on clients for this.
         if (Entry::where('content', $content)->where('created_at', $time)->exists()) {
             Log::warning('[Scrobbble] Listen already exists');
-            return;
+            return 'duplicate';
         }
 
         $entry = Entry::create([
@@ -256,6 +252,8 @@ class ScrobbleController
                 ['value' => (array) $data['mbid']]
             );
         }
+
+        return $entry->id ?? null;
     }
 
     protected function webAuth(
