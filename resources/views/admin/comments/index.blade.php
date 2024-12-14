@@ -28,10 +28,26 @@
     {{ $comments->links('admin.partials.pagination.top') }}
 </div>
 
+<div class="field has-addons my-3">
+    <div class="control">
+        <div class="select">
+            <select name="action">
+                <option value="">{{ __('Bulk action') }}</option>
+                <option value="approve">{{ __('Approve') }}</option>
+                <option value="unapprove">{{ __('Unapprove') }}</option>
+            </select>
+        </div>
+    </div>
+    <div class="control">
+        <button class="button apply-action">{{ __('Apply') }}</button>
+    </div>
+</div>
+
 <div class="card">
     <table class="table is-fullwidth is-striped">
         <thead>
             <tr>
+                <th style="width: 2.5%;"><input type="checkbox" id="select-all" autocomplete="off"></th>
                 <th style="width: 20%;">{{ __('Author') }}</th>
                 <th>{{ __('Comment') }}</th>
                 <th class="is-hidden-mobile" style="width: 20%;">{{ __('In Reply To …') }}</th>
@@ -42,6 +58,7 @@
         <tbody>
             @forelse ($comments as $comment)
                 <tr>
+                    <td><input type="checkbox" name="items[]" value="{{ $comment->id }}" autocomplete="off"></td>
                     <td>
                         <a href="{{ route('admin.comments.edit', $comment) }}">{{ $comment->author }}</a>
                         <br>
@@ -80,7 +97,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" style="text-align: center;">{{ __('Nothing here, yet.') }}</td>
+                    <td colspan="6" style="text-align: center;">{{ __('Nothing here, yet.') }}</td>
                 </tr>
             @endforelse
         </tbody>
@@ -88,4 +105,58 @@
 </div>
 
 {{ $comments->onEachSide(3)->links('admin.partials.pagination.bottom') }}
+@stop
+
+@section('scripts')
+<script>
+document.getElementById('select-all')?.addEventListener('click', (event) => {
+    if (event.target.checked) {
+        document.querySelectorAll('[name="items[]"]')?.forEach((item) => {
+            item.checked = true;
+        });
+    } else {
+        document.querySelectorAll('[name="items[]"]')?.forEach((item) => {
+            item.checked = false;
+        });
+    }
+});
+
+document.querySelector('.apply-action')?.addEventListener('click', () => {
+    const action = document.querySelector('[name="action"]')?.value;
+
+    if (action) {
+        const items = [];
+
+        document.querySelectorAll('[name="items[]"]:checked')?.forEach((item) => {
+            items.push(item.value);
+        });
+
+        fetch('{{ route('admin.comments.bulk-edit') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            },
+            body: JSON.stringify({
+                action: action,
+                items: items,
+            }),
+        })
+        .then((response) => {
+            if (response.ok) {
+                location.reload();
+                // return response.json();
+            }
+
+            throw new Error('Something went wrong');
+        })
+        .then((data) => {
+            // console.table(data);
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+    }
+});
+</script>
 @stop

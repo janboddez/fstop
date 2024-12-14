@@ -4,12 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Response;
 
 class CommentController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $comments = Comment::orderBy('created_at', 'desc')
             ->orderBy('id', 'desc');
@@ -45,12 +46,12 @@ class CommentController extends Controller
         return view('admin.comments.index', compact('comments', 'approved', 'pending'));
     }
 
-    public function edit(Comment $comment)
+    public function edit(Comment $comment): View
     {
         return view('admin.comments.edit', compact('comment'));
     }
 
-    public function update(Request $request, Comment $comment)
+    public function update(Request $request, Comment $comment): Response
     {
         $validated = $request->validate([
             'author' => 'required|max:250',
@@ -82,7 +83,7 @@ class CommentController extends Controller
             ->withSuccess(__('Changes saved!'));
     }
 
-    public function destroy(Comment $comment)
+    public function destroy(Comment $comment): Response
     {
         if (url()->previous() === route('admin.comments.edit', $comment)) {
             $comment->meta()->delete();
@@ -100,7 +101,7 @@ class CommentController extends Controller
             ->withSuccess(__('Deleted!'));
     }
 
-    public function approve(Comment $comment)
+    public function approve(Comment $comment): Response
     {
         $comment->update(['status' => 'approved']);
 
@@ -108,11 +109,40 @@ class CommentController extends Controller
             ->withSuccess(__('Approved!'));
     }
 
-    public function unapprove(Comment $comment)
+    public function unapprove(Comment $comment): Response
     {
         $comment->update(['status' => 'pending']);
 
         return back()
             ->withSuccess(__('Unapproved!'));
+    }
+
+    public function bulkEdit(Request $request): Response
+    {
+        $action = $request->input('action');
+
+        abort_unless(in_array($action, [/*'delete', */'approve', 'unapprove'], true), 400);
+
+        switch ($action) {
+            // case 'delete':
+            //     Comment::whereIn('id', (array) $request->input('items'))
+            //         ->delete();
+
+            //     break;
+
+            case 'approve':
+                Comment::whereIn('id', (array) $request->input('items'))
+                    ->update(['status' => 'approved']);
+
+                break;
+
+            case 'unapprove':
+                Comment::whereIn('id', (array) $request->input('items'))
+                    ->update(['status' => 'pending']);
+
+                break;
+        }
+
+        return response()->json(['message' => __('Changes saved!')]);
     }
 }

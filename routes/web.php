@@ -48,13 +48,6 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin', 'as' => 'admin.'], fu
         ->withTrashed()
         ->name('entries.destroy');
 
-    Route::post('entries/{entry}/restore', [EntryAdminController::class, 'restore'])
-        ->withTrashed()
-        ->name('entries.restore');
-
-    Route::post('entries/empty-trash', [EntryAdminController::class, 'emptyTrash'])
-        ->name('entries.empty-trash');
-
     Route::resource('tags', TagAdminController::class)
         ->except(['create', 'show']);
 
@@ -67,12 +60,27 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin', 'as' => 'admin.'], fu
     /**
      * Everything Else
      */
+    Route::group(['prefix' => 'entries', 'as' => 'entries.'], function () {
+        Route::post('{entry}/restore', [EntryAdminController::class, 'restore'])
+            ->withTrashed()
+            ->name('restore');
+
+        Route::post('empty-trash', [EntryAdminController::class, 'emptyTrash'])
+            ->name('empty-trash');
+
+        Route::post('edit', [EntryAdminController::class, 'bulkEdit'])
+            ->name('bulk-edit');
+    });
+
     Route::group(['prefix' => 'comments', 'as' => 'comments.'], function () {
         Route::post('{comment}/approve', [CommentController::class, 'approve'])
             ->name('approve');
 
         Route::post('{comment}/unapprove', [CommentController::class, 'unapprove'])
             ->name('unapprove');
+
+        Route::post('edit', [CommentController::class, 'bulkEdit'])
+            ->name('bulk-edit');
     });
 
     // Route::group(['prefix' => 'profile', 'as' => 'profile.'], function () {
