@@ -272,6 +272,35 @@ class EntryController extends Controller
             ->withSuccess(__('Deleted!'));
     }
 
+    public function bulkEdit(Request $request): Response
+    {
+        $action = $request->input('action');
+
+        abort_unless(in_array($action, ['delete', 'publish', 'unpublish'], true), 400);
+
+        switch ($action) {
+            case 'delete':
+                Entry::whereIn('id', (array) $request->input('items'))
+                    ->delete();
+
+                break;
+
+            case 'publish':
+                Entry::whereIn('id', (array) $request->input('items'))
+                    ->update(['status' => 'published']);
+
+                break;
+
+            case 'unpublish':
+                Entry::whereIn('id', (array) $request->input('items'))
+                    ->update(['status' => 'draft']);
+
+                break;
+        }
+
+        return response()->json(['message' => __('Changes saved!')]);
+    }
+
     public function emptyTrash(Request $request): Response
     {
         $type = $request->input('type');

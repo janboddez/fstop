@@ -45,6 +45,8 @@
         <div class="select">
             <select name="action">
                 <option value="">{{ __('Bulk action') }}</option>
+                <option value="publish">{{ __('Publish') }}</option>
+                <option value="unpublish">{{ __('Unpublish') }}</option>
                 <option value="delete">{{ __('Delete') }}</option>
             </select>
         </div>
@@ -58,7 +60,7 @@
     <table class="table is-fullwidth is-striped">
         <thead>
             <tr>
-                <th style="width: 2.5%;"><input type="checkbox" id="select-all"></th>
+                <th style="width: 2.5%;"><input type="checkbox" id="select-all" autocomplete="off"></th>
                 <th>{{ __('Name') }}</th>
 
                 @if ($type === 'page')
@@ -79,7 +81,7 @@
         <tbody>
             @forelse ($entries as $entry)
                 <tr>
-                    <td><input type="checkbox" name="items[]" value="{{ $entry->id }}"></td>
+                    <td><input type="checkbox" name="items[]" value="{{ $entry->id }}" autocomplete="off"></td>
                     <td>
                         @if ($entry->trashed())
                             @if ($entry->type === 'page')
@@ -187,10 +189,31 @@ document.querySelector('.apply-action')?.addEventListener('click', () => {
             items.push(item.value);
         });
 
-        console.log(action);
-        console.table(items);
+        fetch('{{ route('admin.entries.bulk-edit') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            },
+            body: JSON.stringify({
+                action: action,
+                items: items,
+            }),
+        })
+        .then((response) => {
+            if (response.ok) {
+                location.reload();
+                // return response.json();
+            }
 
-        // Something-something `fetch()`.
+            throw new Error('Something went wrong');
+        })
+        .then((data) => {
+            // console.table(data);
+        })
+        .catch((error) => {
+            console.log(error);
+        });
     }
 });
 </script>
