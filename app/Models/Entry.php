@@ -239,6 +239,19 @@ class Entry extends Model
         );
     }
 
+    protected function authorUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (filter_var($this->user->url, FILTER_VALIDATE_URL)) {
+                    return filter_var($this->user->url, FILTER_SANITIZE_URL);
+                }
+
+                return url('/');
+            }
+        );
+    }
+
     protected function syndication(): Attribute
     {
         return Attribute::make(

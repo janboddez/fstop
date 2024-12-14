@@ -47,7 +47,7 @@
                     <img class="u-photo" src="{{ $avatar->value[0] }}" alt="{{ $entry->user->name }}">
                 @endif
 
-                <a href="{{ url('/') }}" class="u-url p-name fn" rel="author">{{ $entry->user->name }}</a>
+                <a href="{{ $entry->author_url }}" class="u-url p-name fn" rel="author">{{ $entry->user->name }}</a>
             </span>
         </header>
     @else
@@ -64,7 +64,7 @@
                     <img class="u-photo" src="{{ $avatar->value[0] }}" alt="{{ $entry->user->name }}">
                 @endif
 
-                <a href="{{ url('/') }}" class="u-url p-name fn" rel="author">{{ $entry->user->name }}</a>
+                <a href="{{ $entry->author_url }}" class="u-url p-name fn" rel="author">{{ $entry->user->name }}</a>
             </span>
         </header>
     @endif
