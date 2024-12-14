@@ -112,6 +112,15 @@ class GetPreviewCard implements ShouldQueue
      */
     protected function cacheThumbnail(string $thumbnailUrl, int $size = 150): ?string
     {
+        if (extension_loaded('imagick') && class_exists('Imagick')) {
+            $manager = new ImageManager(new ImagickDriver());
+        } elseif (extension_loaded('gd') && function_exists('gd_info')) {
+            $manager = new ImageManager(new GdDriver());
+        } else {
+            Log::warning('[Preview Cards] Imagick nor GD installed');
+            return null;
+        }
+
         // Download image.
         $response = Http::withHeaders([
             'User-Agent' => Eventy::filter(
@@ -130,15 +139,6 @@ class GetPreviewCard implements ShouldQueue
 
         if (empty($blob)) {
             Log::warning('[Preview Cards] Missing image data');
-            return null;
-        }
-
-        if (extension_loaded('imagick') && class_exists('Imagick')) {
-            $manager = new ImageManager(new ImagickDriver());
-        } elseif (extension_loaded('gd') && function_exists('gd_info')) {
-            $manager = new ImageManager(new GdDriver());
-        } else {
-            Log::warning('[Preview Cards] Imagick nor GD installed');
             return null;
         }
 
