@@ -40,10 +40,25 @@
     {{ $entries->links('admin.partials.pagination.top') }}
 </div>
 
+<div class="field has-addons my-3">
+    <div class="control">
+        <div class="select">
+            <select name="action">
+                <option value="">{{ __('Bulk action') }}</option>
+                <option value="delete">{{ __('Delete') }}</option>
+            </select>
+        </div>
+    </div>
+    <div class="control">
+        <button class="button apply-action">{{ __('Apply') }}</button>
+    </div>
+</div>
+
 <div class="card">
     <table class="table is-fullwidth is-striped">
         <thead>
             <tr>
+                <th style="width: 2.5%;"><input type="checkbox" id="select-all"></th>
                 <th>{{ __('Name') }}</th>
 
                 @if ($type === 'page')
@@ -64,6 +79,7 @@
         <tbody>
             @forelse ($entries as $entry)
                 <tr>
+                    <td><input type="checkbox" name="items[]" value="{{ $entry->id }}"></td>
                     <td>
                         @if ($entry->trashed())
                             @if ($entry->type === 'page')
@@ -134,9 +150,9 @@
             @empty
                 <tr>
                     @if ($type === 'page')
-                        <td colspan="5" style="text-align: center;">{{ __('Nothing here, yet.') }}</td>
-                    @else
                         <td colspan="6" style="text-align: center;">{{ __('Nothing here, yet.') }}</td>
+                    @else
+                        <td colspan="7" style="text-align: center;">{{ __('Nothing here, yet.') }}</td>
                     @endif
                 </tr>
             @endforelse
@@ -145,4 +161,37 @@
 </div>
 
 {{ $entries->onEachSide(3)->links('admin.partials.pagination.bottom') }}
+@stop
+
+@section('scripts')
+<script>
+document.getElementById('select-all')?.addEventListener('click', (event) => {
+    if (event.target.checked) {
+        document.querySelectorAll('[name="items[]"]')?.forEach((item) => {
+            item.checked = true;
+        });
+    } else {
+        document.querySelectorAll('[name="items[]"]')?.forEach((item) => {
+            item.checked = false;
+        });
+    }
+});
+
+document.querySelector('.apply-action')?.addEventListener('click', () => {
+    const action = document.querySelector('[name="action"]')?.value;
+
+    if (action) {
+        const items = [];
+
+        document.querySelectorAll('[name="items[]"]:checked')?.forEach((item) => {
+            items.push(item.value);
+        });
+
+        console.log(action);
+        console.table(items);
+
+        // Something-something `fetch()`.
+    }
+});
+</script>
 @stop
