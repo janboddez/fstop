@@ -3,9 +3,12 @@
 use App\Models\Attachment;
 use App\Models\Entry;
 use App\Models\Option;
+use App\Models\User;
+use App\Support\HttpSignature;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use TorMorten\Eventy\Facades\Events as Eventy;
 
@@ -25,6 +28,11 @@ function is_archive(string $type = null): bool
 
     if (is_tag()) {
         // Tag archive.
+        return true;
+    }
+
+    if (request()->is('users/*')) {
+        // "Author archive."
         return true;
     }
 
@@ -123,6 +131,10 @@ function body_class(): string
 
     if (is_singular()) {
         $classes[] = 'single';
+    }
+
+    if (request()->is('users/*')) {
+        $classes[] = 'author';
     }
 
     if (is_tag()) {
@@ -340,6 +352,7 @@ function list_pages(int $number = 5): string
         ->get();
 
     foreach ($pages as $page) {
+        // phpcs:ignore Generic.Files.LineLength.TooLong
         $html .= '<li ' . (request()->is($page->slug) ? ' class="active"' : '') . '><a href="' . e($page->permalink) . '">' . e($page->name) . "</a></li>\n";
     }
 
@@ -370,4 +383,39 @@ function prepare_meta(array $keys, array $values, $metable): array
     }
 
     return $temp;
+}
+
+function activitypub_fetch_profile(string $url, User $user): array
+{
+    $url = strtok($url, '#');
+    strtok('', '');
+
+    $response = Cache::remember("activitypub:profile:$url", 60 * 15, function () use ($url, $user) {
+        // Always use signed requests, because of "authorized fetch."
+        return Http::withHeaders(HttpSignature::sign(
+            $user,
+            $url,
+            null,
+            ['Accept' => 'application/activity+json, application/json'],
+            'get'
+        ))
+        ->get($url)
+        ->json();
+    });
+
+    /** @todo We may eventually want to also store (and locally cache) avatars. And an `@-@` handle. */
+    if (! empty($response['publicKey']['id'])) {
+        return array_filter([
+            // Looks like Mastodon treats `preferredUsername` as the login/username, and `name` as whatever the person
+            // chose as their, well, name. Makes sense, I guess.
+            'username' => $response['preferredUsername'] ?? null,
+            'name' => $response['name'] ?? null,
+            'inbox' => $response['inbox'] ?? null,
+            'shared_inbox' => $response['endpoints']['sharedInbox'] ?? null,
+            'key_id' => $response['publicKey']['id'] ?? null,
+            'public_key' => $response['publicKey']['publicKeyPem'] ?? null,
+        ]);
+    }
+
+    return [];
 }

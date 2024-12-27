@@ -34,6 +34,10 @@ class SendWebmention implements ShouldQueue
             return;
         }
 
+        if ($this->entry->trashed()) {
+            return;
+        }
+
         if ($this->entry->status !== 'published') {
             return;
         }

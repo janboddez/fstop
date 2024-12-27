@@ -109,7 +109,7 @@ class ProcessWebmentions implements ShouldQueue
 
             $data = [
                 'author' => __('Anonymous'),
-                'website' => parse_url($webmention->source, PHP_URL_SCHEME) . '://' .
+                'author_url' => parse_url($webmention->source, PHP_URL_SCHEME) . '://' .
                     parse_url($webmention->source, PHP_URL_HOST),
                 'content' => __('&hellip; mentioned this.'),
                 'status' => 'pending',

@@ -3,8 +3,12 @@
 namespace App\Models;
 
 use App\Traits\SupportsMicropub;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
@@ -43,51 +47,51 @@ class Entry extends Model
         return $this->morphMany(Meta::class, 'metable');
     }
 
-    public function tags()
+    public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class);
     }
 
-    public function featured()
+    public function featured(): BelongsTo
     {
         return $this->belongsTo(Attachment::class, 'attachment_id');
     }
 
-    public function attachments()
+    public function attachments(): HasMany
     {
         return $this->hasMany(Attachment::class);
     }
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function comments()
+    public function comments(): HasMany
     {
         return $this->hasMany(Comment::class)
             ->orderBy('created_at', 'asc')
             ->orderBy('id', 'asc');
     }
 
-    public function scopeDraft($query)
+    public function scopeDraft(Builder $query): void
     {
-        return $query->where('status', 'draft');
+        $query->where('status', 'draft');
     }
 
-    public function scopePublished($query)
+    public function scopePublished(Builder $query): void
     {
-        return $query->where('status', 'published');
+        $query->where('status', 'published');
     }
 
-    public function scopePublic($query)
+    public function scopePublic(Builder $query): void
     {
-        return $query->where('visibility', 'public');
+        $query->where('visibility', 'public');
     }
 
-    public function scopeOfType($query, $type)
+    public function scopeOfType(Builder $query, $type): void
     {
-        return $query->where('type', $type);
+        $query->where('type', $type);
     }
 
     protected function type(): Attribute
@@ -281,5 +285,50 @@ class Entry extends Model
                 ));
             }
         )->shouldCache();
+    }
+
+    public function serialize(?array $cc = []): array
+    {
+        $content = strip_tags($this->content, '<a><b><blockquote><cite><i><em><li><ol><p><pre><strong><ul>');
+        $content = preg_replace('~<pre[^>]*>.*?</pre>(*SKIP)(*FAIL)|\r|\n|\t~s', '', $content);
+
+        $permalink = ($meta = $this->meta->firstWhere('key', 'short_url'))
+            ? $meta->value[0]
+            : $this->permalink;
+
+        $content .= '<p><a href="' . e($permalink) . '">' . e($permalink) . '</a></p>';
+
+        /** @todo Add tags, etc. */
+
+        if ($this->visibility === 'public') {
+            $cc = array_merge([url("activitypub/users/{$this->user->id}/followers")], $cc);
+        }
+
+        if ($this->visibility === 'unlisted') {
+            $to = [url("activitypub/users/{$this->user->id}/followers")];
+            $cc = array_merge(['https://www.w3.org/ns/activitystreams#Public'], $cc);
+        }
+
+        return array_filter([
+            '@context' => [
+                'https://www.w3.org/ns/activitystreams',
+                [
+                    'Hashtag' => 'as:Hashtag',
+                    'sensitive' => 'as:sensitive',
+                ],
+            ],
+            'id' => $this->permalink,
+            'type' => 'Note', /** @todo Add article support, etc. */
+            'attributedTo' => $this->user->actor_url,
+            'content' => $content,
+            'published' => $this->created_at
+                ? str_replace('+00:00', 'Z', $this->created_at->toIso8601String())
+                : str_replace('+00:00', 'Z', now()->toIso8601String()),
+            'updated' => ($this->updated_at && $this->updated_at->gt($this->created_at))
+                ? str_replace('+00:00', 'Z', $this->updated_at->toIso8601String())
+                : null,
+            'to' => $to ?? ['https://www.w3.org/ns/activitystreams#Public'],
+            'cc' => ! empty($cc) ? $cc : [url("activitypub/users/{$this->user->id}/followers")],
+        ]);
     }
 }

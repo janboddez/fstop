@@ -5,11 +5,13 @@ use App\Http\Controllers\Admin\CommentController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EntryController as EntryAdminController;
 use App\Http\Controllers\Admin\TagController as TagAdminController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\EntryController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\TagController;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
@@ -83,14 +85,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin', 'as' => 'admin.'], fu
             ->name('bulk-edit');
     });
 
-    // Route::group(['prefix' => 'profile', 'as' => 'profile.'], function () {
-    //     Route::get('/', [ProfileController::class, 'index'])
-    //         ->name('index');
-
-    //     Route::put('/', [ProfileController::class, 'update'])
-    //         ->name('update');
-    // });
-
+    /** @todo Rename `profile` to `users`, etc. */
     foreach (['profile', 'themes', 'plugins', 'settings'] as $name) {
         $controller = '\\App\\Http\\Controllers\\Admin\\' . ucfirst(Str::singular($name)) . 'Controller';
 
@@ -120,12 +115,22 @@ Route::prefix('articles')
             ->name('show');
     });
 
-Route::get('tags/{tag:slug}', [TagController::class, 'show'])
-    ->name('tags.show');
-
 Route::get('/', [EntryController::class, 'index']);
 
-// Route::get('articles', [EntryController::class, 'articleArchive']);
+/** @todo Add tag, user feeds. */
+Route::prefix('tags')
+    ->name('tags.')
+    ->group(function () {
+        Route::get('{tag:slug}', [TagController::class, 'show'])
+            ->name('show');
+    });
+
+Route::prefix('users')
+    ->name('users.')
+    ->group(function () {
+        Route::get('{user:login}', UserController::class)
+            ->name('show');
+    });
 
 // Generic feed; contains all content types.
 Route::get('feed', FeedController::class);

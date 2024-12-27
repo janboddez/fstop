@@ -2,10 +2,11 @@
 
 namespace App\Observers;
 
-use App\Jobs\SendWebmention;
+use App\Jobs\ActivityPub\SendActivity;
 use App\Models\Entry;
 use Carbon\Carbon;
 use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use TorMorten\Eventy\Facades\Events as Eventy;
 
@@ -74,7 +75,8 @@ class EntryObserver implements ShouldHandleEventsAfterCommit
 
         $entry->slug = $newSlug ?? $slug;
 
-        // Ensure `created_at` is always set.
+        // Ensure `created_at` is always set. There's no need to do this for, or otherwise modify `updated_at`, as
+        // Laravel should take care of it automatically.
         if (
             preg_match('~\d{4}-\d{2}-\d{2}~', request()->input('created_at')) &&
             preg_match('~\d{2}:\d{2}~', request()->input('time'))
@@ -91,8 +93,6 @@ class EntryObserver implements ShouldHandleEventsAfterCommit
 
     public function saved(Entry $entry): void
     {
-        SendWebmention::dispatch($entry);
-
         /**
          * Note the existence of `Eventy::action('entries:saved', $entry);`, a hook we call from several controllers
          * directly, in order to have any callback functions run *after also metadata* is saved.
@@ -103,5 +103,35 @@ class EntryObserver implements ShouldHandleEventsAfterCommit
     {
         // Ensure entries restored from trash become "draft."
         $entry->status = 'draft';
+    }
+
+    /**
+     * Won't run for "mass-deleted" entries (but you know that).
+     */
+    public function deleted(Entry $entry): void
+    {
+        /** @todo Send webmentions on delete. */
+        /** @todo Send Deletes also for "unpublishing." */
+
+        if (($hash = $entry->meta()->firstWhere('key', 'activitypub_hash')) && ! empty($hash->value[0])) {
+            // Entry was federated before. (We don't know to what servers, but we also don't know what other servers it
+            // ended up on, so that should be okay.)
+            Log::debug("[ActivityPub] Deleted entry. Scheduling Delete");
+
+            $inboxes = [];
+            foreach ($entry->user->followers as $follower) {
+                $inboxes[] = $follower->shared_inbox;
+            }
+
+            $inboxes = array_unique(array_filter($inboxes));
+            foreach ($inboxes as $inbox) {
+                SendActivity::dispatch('Delete', $inbox, $entry); // One job per follower/inbox.
+            }
+
+            // Delete any trace of previous federation.
+            $entry->meta()
+                ->firstWhere('key', 'activitypub_hash')
+                ->delete();
+        }
     }
 }

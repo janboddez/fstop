@@ -60,7 +60,7 @@ class Attachment extends Model
     {
         return Attribute::make(
             get: fn (string $value) => ltrim($value, '/')
-        )->shouldCache();
+        );
     }
 
     protected function url(): Attribute
@@ -70,13 +70,26 @@ class Attachment extends Model
         )->shouldCache();
     }
 
+    protected function mimeType(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $path = Storage::disk('public')->path($this->path);
+                $finfo = new \finfo(FILEINFO_MIME);
+                $mime = $finfo->file($path);
+
+                return $mime
+                    ? trim(explode(';', $mime)[0])
+                    : 'application/octet-stream';
+            }
+        )->shouldCache();
+    }
+
     protected function width(): Attribute
     {
         return Attribute::make(
             get: function () {
-                $width = $this->meta->firstWhere('key', 'width');
-
-                if ($width) {
+                if ($width = $this->meta->firstWhere('key', 'width')) {
                     return (int) $width->value[0];
                 }
 
@@ -88,55 +101,52 @@ class Attachment extends Model
 
                 return self::SIZES['large'];
             }
-        );
+        )->shouldCache();
     }
 
     protected function height(): Attribute
     {
         return Attribute::make(
-            get: fn () => ($meta = $this->meta->firstWhere('key', 'height'))
-                ? (int) $meta->value[0]
+            get: fn () => ($height = $this->meta->firstWhere('key', 'height'))
+                ? (int) $height->value[0]
                 : null
-        );
+        )->shouldCache();
     }
 
     protected function thumbnail(): Attribute
     {
         return Attribute::make(
-            get: fn () => ($meta = $this->meta->firstWhere('key', 'sizes')) && isset($meta->value['thumbnail'])
-                ? Storage::disk('public')->url($meta->value['thumbnail'])
-                : $this->url
+            get: fn () => ($sizes = $this->meta->firstWhere('key', 'sizes')) && isset($sizes->value['thumbnail'])
+                ? Storage::disk('public')->url($sizes->value['thumbnail'])
+                : $this->url // Fall back to original image.
         )->shouldCache();
     }
 
-    public function large(): Attribute
+    protected function large(): Attribute
     {
         return Attribute::make(
-            get: fn () => ($meta = $this->meta->firstWhere('key', 'sizes')) && isset($meta->value['large'])
-                ? Storage::disk('public')->url($meta->value['large'])
-                : $this->url
+            get: fn () => ($sizes = $this->meta->firstWhere('key', 'sizes')) && isset($sizes->value['large'])
+                ? Storage::disk('public')->url($sizes->value['large'])
+                : $this->url // Fall back to original image.
         )->shouldCache();
     }
 
-    public function srcset(): Attribute
+    protected function srcset(): Attribute
     {
         return Attribute::make(
             get: function () {
-                $sizes = $this->meta->firstWhere('key', 'sizes');
-
-                if (! $sizes) {
+                if (! $sizes = $this->meta->firstWhere('key', 'sizes')) {
                     return null;
                 }
 
                 $sizes = $sizes->value;
-
-                unset($sizes['thumbnail']);
+                unset($sizes['thumbnail']); // Don't want to include a square thumbnail.
 
                 return implode(
                     ', ',
                     array_map(
-                        function ($size, $relativePath) {
-                            return Storage::disk('public')->url($relativePath) . ' ' . static::SIZES[$size] . 'w';
+                        function ($size, $path) {
+                            return Storage::disk('public')->url($path) . ' ' . static::SIZES[$size] . 'w';
                         },
                         array_keys($sizes),
                         $sizes

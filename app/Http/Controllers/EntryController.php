@@ -7,6 +7,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Response;
 
 class EntryController extends Controller
 {
@@ -33,7 +34,7 @@ class EntryController extends Controller
         return view('theme::entries.index', compact('entries', 'type'));
     }
 
-    public function show(Request $request, string $slug): View
+    public function show(Request $request, string $slug): Response|View
     {
         // The `pages.show` route allows for forward slashes, so we do this bit manually (for all entry types, for now)
         // rather than rely on implicit model binding.
@@ -58,6 +59,14 @@ class EntryController extends Controller
         if (($entry->status !== 'published' || $entry->visibility === 'private') && ! Auth::check()) {
             // "Hide" draft and "private" entries. ("Unlisted" entries can still be accessed directly.)
             abort(404);
+        }
+
+        if (request()->expectsJson()) {
+            return response()->json(
+                $entry->serialize(),
+                200,
+                ['Content-Type' => 'application/activity+json']
+            );
         }
 
         return view('theme::entries.show', compact('entry'));

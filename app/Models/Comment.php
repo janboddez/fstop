@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Comment extends Model
@@ -20,14 +22,26 @@ class Comment extends Model
         'content',
         'status',
         'type',
+        'entry_id',
+        'parent_id',
         'created_at',
     ];
 
     protected $with = ['meta'];
 
-    public function entry()
+    public function entry(): BelongsTo
     {
         return $this->belongsTo(Entry::class);
+    }
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Comment::class, 'parent_id');
+    }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class, 'parent_id');
     }
 
     public function meta(): MorphMany
@@ -35,14 +49,14 @@ class Comment extends Model
         return $this->morphMany(Meta::class, 'metable', 'metable_type', 'metable_id');
     }
 
-    public function scopeApproved($query)
+    public function scopeApproved($query): void
     {
-        return $query->where('status', 'approved');
+        $query->where('status', 'approved');
     }
 
-    public function scopePending($query)
+    public function scopePending($query): void
     {
-        return $query->where('status', 'pending');
+        $query->where('status', 'pending');
     }
 
     protected function authorUrl(): Attribute

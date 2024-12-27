@@ -66,12 +66,11 @@ class AppServiceProvider extends ServiceProvider
 
         Entry::observe(EntryObserver::class);
 
-        // Serves a similar purpose as the `EntryObserver::saved()` method, but runs *after tags and metadata are
-        // saved*, too.
-        /** @todo Use a "proper" event? */
+        // Serves a similar purpose as the `EntryObserver::saved()` method, but runs _after tags and metadata are
+        // saved, too_.
         Eventy::addAction('entries:saved', function (Entry $entry) {
             SendWebmention::dispatch($entry);
-        });
+        }, PHP_INT_MAX - 1);
 
         Comment::observe(CommentObserver::class);
 

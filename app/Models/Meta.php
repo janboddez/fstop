@@ -11,6 +11,9 @@ class Meta extends Model
 
     protected $table = 'meta';
 
+    /**
+     * @var array<int, string>
+     */
     protected $fillable = [
         'metable_type',
         'metable_id',
@@ -18,6 +21,16 @@ class Meta extends Model
         'value',
     ];
 
+    /**
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'value',
+    ];
+
+    /**
+     * @var array<int, string>
+     */
     protected $casts = [
         'value' => 'array',
     ];

@@ -50,6 +50,14 @@ class ScrobbbleServiceProvider extends ServiceProvider
                 return $types;
             }
 
+            if (request()->is('users/*')) {
+                return $types;
+            }
+
+            if (request()->is('activitypub/users/*')) {
+                return $types;
+            }
+
             $types['listen'] = ['icon' => 'mdi mdi-playlist-music'];
 
             return $types;

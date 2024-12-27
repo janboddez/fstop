@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('status')->default('pending');
             $table->string('type')->default('comment');
             $table->json('meta')->nullable();
-            $table->foreignId('entry_id')->nullable()->constrained()->cascadeOnDelete();;
+            $table->foreignId('entry_id')->nullable()->constrained()->cascadeOnDelete();
             $table->timestamps();
         });
     }
