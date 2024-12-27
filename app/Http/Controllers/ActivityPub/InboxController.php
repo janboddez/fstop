@@ -310,18 +310,18 @@ class InboxController extends Controller
 
     protected function sendAccept(Request $request, Follower $follower, User $user): ClientResponse
     {
-        $activity = [
+        $body = json_encode([
             '@context' => 'https://www.w3.org/ns/activitystreams',
             'id' => $user->actor_url . '#follow-' . bin2hex(random_bytes(16)),
             'type' => 'Accept',
             'actor' => $user->actor_url,
             'object' => json_decode($request->getContent(), true),
-        ];
+        ]);
 
         $headers = HttpSignature::sign(
             $user,
             $follower->inbox,
-            json_encode($activity),
+            $body,
             [
                 'Accept' => 'application/activity+json, application/json',
                 'Content-Type' => 'application/activity+json', // Must be the same as the `$contentType` argument below.
@@ -329,7 +329,7 @@ class InboxController extends Controller
         );
 
         return Http::withHeaders($headers)
-            ->withBody(json_encode($message), 'application/activity+json')
+            ->withBody($body, 'application/activity+json')
             ->post($follower->inbox);
     }
 }
