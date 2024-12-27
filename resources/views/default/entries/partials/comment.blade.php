@@ -46,4 +46,12 @@
             ) !!}
         </small></p>
     @endif
+
+    @if (! blank($comment->comments))
+        <ol>
+            @foreach ($comment->comments as $comment)
+                @include('theme::entries.partials.comment')
+            @endforeach
+        </ol>
+    @endif
 </li>

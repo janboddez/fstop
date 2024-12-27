@@ -23,11 +23,16 @@ class ActivityPubServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Serves a similar purpose as the `EntryObserver::saved()` method, but runs _after tags and metadata are
-        // saved, too_.
+        // Serves a similar purpose as the `EntryObserver::saved()` method, but runs after tags and metadata are saved,
+        // too.
         Eventy::addAction('entries:saved', function (Entry $entry) {
             if ($entry->trashed()) {
                 // Do nothing. (Actual deletes are dealt with elsewhere!)
+                return;
+            }
+
+            /** @todo Make this filterable. Also, "note" isn't even in "core." */
+            if (! in_array($entry->type, ['article', 'note'], true)) {
                 return;
             }
 
@@ -86,5 +91,31 @@ class ActivityPubServiceProvider extends ServiceProvider
                 SendActivity::dispatch('Create', $inbox, $entry, $newHash);
             }
         }, PHP_INT_MAX); // Execute, or rather, schedule (!) after, well, everything else.
+
+        Eventy::addAction('entries:deleted', function (Entry $entry) {
+            /**
+             * Entries' ActivityPub "Delete" activities.
+             */
+            if (($hash = $entry->meta()->firstWhere('key', 'activitypub_hash')) && ! empty($hash->value[0])) {
+                // Entry was federated before. (We don't know to what servers, but we also don't know what other servers
+                // it ended up on, so that should be okay.)
+                Log::debug('[ActivityPub] Deleted entry; scheduling "Delete"');
+
+                $inboxes = [];
+                foreach ($entry->user->followers as $follower) {
+                    $inboxes[] = $follower->shared_inbox;
+                }
+
+                $inboxes = array_unique(array_filter($inboxes));
+                foreach ($inboxes as $inbox) {
+                    SendActivity::dispatch('Delete', $inbox, $entry);
+                }
+
+                // Delete any trace of previous federation.
+                $entry->meta()
+                    ->firstWhere('key', 'activitypub_hash')
+                    ->delete();
+            }
+        });
     }
 }

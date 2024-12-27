@@ -13,7 +13,9 @@ class CommentController extends Controller
     public function index(Request $request): View
     {
         $comments = Comment::orderBy('created_at', 'desc')
-            ->orderBy('id', 'desc');
+            ->orderBy('id', 'desc')
+            ->with('entry')
+            ->without('comments'); // No need to nest children.
 
         if ($request->filled('s')) {
             $comments = $comments->where(function ($query) use ($request) {

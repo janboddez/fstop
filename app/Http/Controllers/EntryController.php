@@ -43,7 +43,8 @@ class EntryController extends Controller
             ->with('tags')
             ->with('user')
             ->with(['comments' => function ($query) {
-                $query->where('status', 'approved');
+                $query->where('status', 'approved')
+                    ->whereNull('parent_id');
             }]);
 
         /** @todo Use `when()`? */
@@ -60,6 +61,8 @@ class EntryController extends Controller
             // "Hide" draft and "private" entries. ("Unlisted" entries can still be accessed directly.)
             abort(404);
         }
+
+        \Log::debug($entry->comments);
 
         if (request()->expectsJson()) {
             return response()->json(

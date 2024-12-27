@@ -38,9 +38,13 @@ class SendActivity implements ShouldQueue
      */
     public function handle(): void
     {
-
         if ($this->object instanceof Entry) {
             if ($this->type !== 'Delete' && $this->object->trashed()) {
+                return;
+            }
+
+            /** @todo Make this filterable. Also, "note" isn't even in "core." */
+            if (! in_array($this->object->type, ['article', 'note'], true)) {
                 return;
             }
 
@@ -60,7 +64,7 @@ class SendActivity implements ShouldQueue
                 'actor' => $this->object->user->actor_url,
                 'object' => $object,
                 'published' => $object['published'],
-                'updated' => $this->type !== 'Create' ? $object['updated'] : null,
+                'updated' => $this->type === 'Create' ? null : ($object['updated'] ?? null),
                 'to' => $object['to'] ?? ['https://www.w3.org/ns/activitystreams#Public'],
                 'cc' => $object['cc'] ?? [url("activitypub/users/{$this->object->user->id}/followers")],
             ]));

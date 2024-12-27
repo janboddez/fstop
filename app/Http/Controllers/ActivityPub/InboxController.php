@@ -62,6 +62,7 @@ class InboxController extends Controller
                     $query->where('key', 'source')
                         ->where('value', json_encode((array) filter_var($object, FILTER_SANITIZE_URL)));
                 })
+                ->without('comments')
                 ->first();
 
                 abort_unless($comment && is_string($request->input('actor')), 400);
@@ -81,6 +82,7 @@ class InboxController extends Controller
 
                 abort_unless(isset($verified) && $verified === 1, 403);
 
+                /** @todo Delete children, too. "Problem" is, how do we ensure their meta gets deleted, too? */
                 $comment->meta()->delete();
                 $comment->delete();
             }
@@ -223,6 +225,7 @@ class InboxController extends Controller
                     $query->where('key', 'source')
                         ->where('value', json_encode((array) filter_var($object['inReplyTo'], FILTER_SANITIZE_URL)));
                 })
+                ->without('comments')
                 ->first();
             }
 

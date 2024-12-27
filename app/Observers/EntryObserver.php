@@ -2,11 +2,9 @@
 
 namespace App\Observers;
 
-use App\Jobs\ActivityPub\SendActivity;
 use App\Models\Entry;
 use Carbon\Carbon;
 use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use TorMorten\Eventy\Facades\Events as Eventy;
 
@@ -95,7 +93,7 @@ class EntryObserver implements ShouldHandleEventsAfterCommit
     {
         /**
          * Note the existence of `Eventy::action('entries:saved', $entry);`, a hook we call from several controllers
-         * directly, in order to have any callback functions run *after also metadata* is saved.
+         * directly, in order to have any callback functions run *after metadata* is saved, too.
          */
     }
 
@@ -111,27 +109,7 @@ class EntryObserver implements ShouldHandleEventsAfterCommit
     public function deleted(Entry $entry): void
     {
         /** @todo Send webmentions on delete. */
-        /** @todo Send Deletes also for "unpublishing." */
 
-        if (($hash = $entry->meta()->firstWhere('key', 'activitypub_hash')) && ! empty($hash->value[0])) {
-            // Entry was federated before. (We don't know to what servers, but we also don't know what other servers it
-            // ended up on, so that should be okay.)
-            Log::debug("[ActivityPub] Deleted entry. Scheduling Delete");
-
-            $inboxes = [];
-            foreach ($entry->user->followers as $follower) {
-                $inboxes[] = $follower->shared_inbox;
-            }
-
-            $inboxes = array_unique(array_filter($inboxes));
-            foreach ($inboxes as $inbox) {
-                SendActivity::dispatch('Delete', $inbox, $entry); // One job per follower/inbox.
-            }
-
-            // Delete any trace of previous federation.
-            $entry->meta()
-                ->firstWhere('key', 'activitypub_hash')
-                ->delete();
-        }
+        Eventy::action('entries:deleted', $entry);
     }
 }

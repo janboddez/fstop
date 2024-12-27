@@ -27,7 +27,7 @@ class Comment extends Model
         'created_at',
     ];
 
-    protected $with = ['meta'];
+    protected $with = ['meta', 'comments'];
 
     public function entry(): BelongsTo
     {
@@ -36,12 +36,14 @@ class Comment extends Model
 
     public function parent(): BelongsTo
     {
-        return $this->belongsTo(Comment::class, 'parent_id');
+        return $this->belongsTo(self::class, 'parent_id');
     }
 
     public function comments(): HasMany
     {
-        return $this->hasMany(Comment::class, 'parent_id');
+        return $this->hasMany(self::class, 'parent_id')
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc');
     }
 
     public function meta(): MorphMany
@@ -76,7 +78,7 @@ class Comment extends Model
     protected function source(): Attribute
     {
         return Attribute::make(
-            get: fn () =>$source = ($meta = $this->meta->firstWhere('key', 'source'))
+            get: fn () => ($meta = $this->meta->firstWhere('key', 'source'))
                 ? $meta->value[0]
                 : null
         )->shouldCache();

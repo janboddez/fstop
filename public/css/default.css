@@ -523,7 +523,8 @@ ol.comments {
     margin-bottom: 0;
 }
 
-ol.comments li + li {
+ol.comments > li + li,
+ol.comments ol li {
     margin-top: 1.875rem;
     border-top: 1px solid #ddd;
     padding-top: 1.5rem;

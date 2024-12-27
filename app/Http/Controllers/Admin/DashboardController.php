@@ -28,6 +28,7 @@ class DashboardController extends Controller
         $comments = Comment::orderBy('created_at', 'desc')
             ->orderBy('id', 'desc')
             ->with('entry')
+            ->without('comments')
             ->limit(5)
             ->get();
 
@@ -35,6 +36,7 @@ class DashboardController extends Controller
             ->orderBy('id', 'desc')
             ->where('status', 'pending')
             ->with('entry')
+            ->without('comments')
             ->limit(5)
             ->get();
 
