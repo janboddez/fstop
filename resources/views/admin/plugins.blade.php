@@ -23,10 +23,10 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse ($plugins as $plugin => $attributes)
+                @forelse ($plugins as $slug => $attributes)
                     <tr>
-                        <td style="width: 2.5%;"><input type="checkbox" name="plugin_{{ $plugin }}" id="plugin_{{ $plugin }}" value="1"{{ old('plugin_'.$plugin, $attributes['active']) ? ' checked' : '' }}></td>
-                        <td style="width: 20%;"><label for="plugin_{{ $plugin }}">{{ Str::headline($plugin) }}</label></td>
+                        <td style="width: 2.5%;"><input type="checkbox" name="plugins[]" id="plugin_{{ $slug }}" value="{{ $slug }}"{{ $attributes['active'] || in_array($slug, old('plugins', []), true) ? ' checked' : '' }}></td>
+                        <td style="width: 20%;"><label for="plugin_{{ $slug }}">{{ Str::headline($slug) }}</label></td>
                         <td>{{ $attributes['description'] ?? __('—') }}</td>
                     </tr>
                 @empty

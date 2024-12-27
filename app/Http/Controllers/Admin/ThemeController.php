@@ -51,7 +51,7 @@ class ThemeController extends Controller
 
         $validated = $request->validate(['theme' => 'string']);
 
-        foreach ($themes as $slug => $theme) {
+        foreach ($themes as $slug => $attributes) {
             $themes[$slug]['active'] = isset($validated['theme']) && $slug === $validated['theme'];
         }
 

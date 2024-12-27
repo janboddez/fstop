@@ -47,16 +47,14 @@ class PluginController extends Controller
             ->first();
 
         $plugins = $option->value ?? [];
-        $rules = [];
 
-        foreach ($plugins as $slug => $plugin) {
-            $rules['plugin_' . $slug] = 'boolean';
-        }
+        $validated = $request->validate([
+            'plugins' => 'array',
+            'plugins.*' => 'string',
+        ]);
 
-        $validated = $request->validate($rules);
-
-        foreach ($plugins as $slug => $plugin) {
-            $plugins[$slug]['active'] = ! empty($validated['plugin_' . $slug]);
+        foreach ($plugins as $slug => $attributes) {
+            $plugins[$slug]['active'] = in_array($slug, $validated['plugins'] ?? [], true);
         }
 
         // Save.
