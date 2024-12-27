@@ -82,7 +82,7 @@ class SendActivity implements ShouldQueue
             if ($response->successful()) {
                 Log::debug("[ActivityPub] Successfully sent {$this->type} activity to {$this->inbox}");
 
-                if (! $this->hash || $this->type !== 'Delete') {
+                if (empty($this->hash) || $this->type !== 'Delete') {
                     // This is where we store a hash of the _body minus any `updated` property, to avoid sending the
                     // same version of a post over and over again. Except for Deletes; for those, we've probably already
                     // deleted the previously stored value.
