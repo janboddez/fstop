@@ -11,6 +11,11 @@
         <title>{{ site_name() }}</title>
     @endif
 
+    @if (request()->is('articles') || request()->is('users/*'))
+        {{-- Copies of the homepage and stream, respectively. --}}
+        <meta name="robots" content="noindex">
+    @endif
+
     <link rel="webmention" href="/webmention">
     <link rel="authorization_endpoint" href="/indieauth">
     <link rel="token_endpoint" href="/indieauth/token">
