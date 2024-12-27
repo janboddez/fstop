@@ -1,7 +1,6 @@
 @extends('theme::layout')
 
 @section('title', __('Entries Tagged “:tag”', ['tag' => $tag->name]))
-@section('body_class', 'tag')
 
 @section('content')
     <h1>@yield('title')</h1>
