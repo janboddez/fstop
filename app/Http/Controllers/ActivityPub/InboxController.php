@@ -108,7 +108,7 @@ class InboxController extends Controller
         }
 
         if (empty($publicKey)) {
-            Log::error('[ ActivityPub] Could not find public key');
+            Log::error('[ActivityPub] Could not find public key');
             abort(401);
         }
 
