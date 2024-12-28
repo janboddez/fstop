@@ -62,8 +62,6 @@ class EntryController extends Controller
             abort(404);
         }
 
-        \Log::debug($entry->comments);
-
         if (request()->expectsJson()) {
             return response()->json(
                 $entry->serialize(),

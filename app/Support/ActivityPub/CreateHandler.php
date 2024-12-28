@@ -53,11 +53,11 @@ class CreateHandler
             })
             ->without('comments')
             ->first();
-        }
 
-        if (! $parent) {
-            // Still no dice. Bail.
-            return;
+            if (! $parent) {
+                // Still no dice. Bail.
+                return;
+            }
         }
 
         $follower = Follower::where('url', filter_var($object['attributedTo'], FILTER_SANITIZE_URL))
@@ -86,6 +86,8 @@ class CreateHandler
         }
 
         $comment = $parent->comments()->create($data);
+
+        // Store object ID to be able to process updates and deletes.
         $comment->meta()->create([
             'key' => 'source', // We use `source` for webmentions, too. Thought it made sense to reuse that name.
             'value' => (array) $id,
