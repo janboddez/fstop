@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Option;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ProfileController extends Controller
 {
@@ -23,6 +23,10 @@ class ProfileController extends Controller
 
         // Previously set user meta.
         foreach ($user->meta as $meta) {
+            if (Str::endsWith($meta->key, '_key')) {
+                continue;
+            }
+
             $settings[$meta->key] = ! empty($meta->value[0]) && ! is_array($meta->value[0])
                 ? $meta->value[0]
                 : json_encode($meta->value, JSON_UNESCAPED_SLASHES);
