@@ -4,7 +4,7 @@ namespace App\Jobs\ActivityPub;
 
 use App\Models\Entry;
 use App\Models\User;
-use App\Support\HttpSignature;
+use App\Support\ActivityPub\HttpSignature;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;

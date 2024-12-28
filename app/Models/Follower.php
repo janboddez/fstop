@@ -57,6 +57,24 @@ class Follower extends Model
         );
     }
 
+    protected function handle(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $username = ($meta = $this->meta->firstWhere('key', 'username'))
+                    ? strip_tags($meta->value[0])
+                    : null;
+
+                if ($username && strpos($username, '@') === false) {
+                    /** @todo This isn't always correct. */
+                    $handle = '@' . $username . '@' . parse_url($this->id, PHP_URL_HOST);
+                }
+
+                return $handle ?? null;
+            }
+        );
+    }
+
     protected function publicKey(): Attribute
     {
         return Attribute::make(

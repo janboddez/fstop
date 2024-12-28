@@ -4,7 +4,7 @@ use App\Models\Attachment;
 use App\Models\Entry;
 use App\Models\Option;
 use App\Models\User;
-use App\Support\HttpSignature;
+use App\Support\ActivityPub\HttpSignature;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
@@ -406,16 +406,36 @@ function activitypub_fetch_profile(string $url, User $user): array
     /** @todo We may eventually want to also store (and locally cache) avatars. And an `@-@` handle. */
     if (! empty($response['publicKey']['id'])) {
         return array_filter([
-            // Looks like Mastodon treats `preferredUsername` as the login/username, and `name` as whatever the person
-            // chose as their, well, name. Makes sense, I guess.
-            'username' => $response['preferredUsername'] ?? null,
-            'name' => $response['name'] ?? null,
-            'inbox' => $response['inbox'] ?? null,
-            'shared_inbox' => $response['endpoints']['sharedInbox'] ?? null,
+            'username' => isset($response['preferredUsername']) && is_string($response['preferredUsername'])
+                ? strip_tags($response['preferredUsername'])
+                : null,
+            'name' => isset($response['name']) && is_string($response['name'])
+                ? strip_tags($response['name'])
+                : null,
+            'inbox' => isset($response['inbox']) && filter_var($response['inbox'], FILTER_VALIDATE_URL)
+                ? filter_var($response['inbox'], FILTER_SANITIZE_URL)
+                : null,
+            // phpcs:ignore Generic.Files.LineLength.TooLong
+            'shared_inbox' => isset($response['endpoints']['sharedInbox']) && filter_var($response['endpoints']['sharedInbox'], FILTER_VALIDATE_URL)
+                ? filter_var($response['endpoints']['sharedInbox'], FILTER_SANITIZE_URL)
+                : null,
             'key_id' => $response['publicKey']['id'] ?? null,
             'public_key' => $response['publicKey']['publicKeyPem'] ?? null,
         ]);
     }
 
     return [];
+}
+
+function activitypub_object_to_id(mixed $object): ?string
+{
+    if (filter_var($object, FILTER_VALIDATE_URL)) {
+        $id = filter_var($object, FILTER_SANITIZE_URL);
+    } elseif (! empty($object['id']) && filter_var($object['id'], FILTER_VALIDATE_URL)) {
+        $id = filter_var($object['id'], FILTER_SANITIZE_URL);
+    }
+
+    return isset($id) && is_string($id)
+        ? $id
+        : null;
 }

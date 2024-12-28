@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Support;
+namespace App\Support\ActivityPub;
 
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -36,11 +36,9 @@ class HttpSignature
         unset($headers['(request-target)']);
 
         return $headers;
-
-        // return static::headersToCurlArray($headers);
     }
 
-    public static function parseSignatureHeader(string $signature): array
+    public static function parseSignatureHeader(string $signature): array|false
     {
         $parts = explode(',', $signature);
         $signatureData = [];
@@ -52,28 +50,21 @@ class HttpSignature
         }
 
         if (! isset($signatureData['keyId'])) {
-            return [
-                // phpcs:ignore Generic.Files.LineLength.TooLong
-                'error' => 'No keyId was found in the signature header. Found: ' . implode(', ', array_keys($signatureData)),
-            ];
+            return false;
         }
 
         if (! filter_var($signatureData['keyId'], FILTER_VALIDATE_URL)) {
-            return [
-                'error' => 'keyId is not a URL: ' . $signatureData['keyId'],
-            ];
+            return false;
         }
 
         if (! isset($signatureData['headers']) || ! isset($signatureData['signature'])) {
-            return [
-                'error' => 'Signature is missing headers or signature parts',
-            ];
+            return false;
         }
 
         return $signatureData;
     }
 
-    public static function verify(string $publicKey, array $signatureData, Request $request): array
+    public static function verify(string $publicKey, array $signatureData, Request $request): bool
     {
         $inputHeaders = $request->headers->all();
         $path = $request->getRequestUri();
@@ -100,7 +91,7 @@ class HttpSignature
             OPENSSL_ALGO_SHA256
         );
 
-        return [$verified, $signingString];
+        return $verified === 1;
     }
 
     protected static function headersToSigningString(array $headers): string
@@ -112,15 +103,6 @@ class HttpSignature
                 array_keys($headers),
                 $headers
             )
-        );
-    }
-
-    protected static function headersToCurlArray(array $headers): array
-    {
-        return array_map(
-            fn ($k, $v) => "$k: $v",
-            array_keys($headers),
-            $headers
         );
     }
 
