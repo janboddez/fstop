@@ -205,18 +205,109 @@ class InboxController extends Controller
         }
 
         /**
+         * Like.
+         */
+        if (
+            $request->input('type') === 'Like' &&
+            ($actor = filter_var($request->input('actor'), FILTER_VALIDATE_URL)) &&
+            ($id = filter_var($request->input('id'), FILTER_VALIDATE_URL))
+        ) {
+            if (! empty($object['id']) && filter_var($object['id'], FILTER_VALIDATE_URL)) {
+                $entry = url_to_entry(filter_var($object['id'], FILTER_SANITIZE_URL));
+            } elseif (filter_var($object, FILTER_VALIDATE_URL)) {
+                $entry = url_to_entry(filter_var($object, FILTER_SANITIZE_URL));
+            }
+
+            if (empty($entry)) {
+                // Quit.
+                return response()->json(new \stdClass(), 202);
+            }
+
+            if ($follower = Follower::where('url', filter_var($actor, FILTER_SANITIZE_URL))->first()) {
+                // If we happen to know this person.
+                $author = $follower->name;
+            }
+            /** @todo Store profiles for everyone we ever interact with, and user a pivot table for actual followers. */
+
+            $data = [
+                'author' => strip_tags($author ?? filter_var($actor, FILTER_SANITIZE_URL)),
+                'author_url' => filter_var($actor, FILTER_SANITIZE_URL),
+                'content' => __('… liked this!'),
+                'status' => 'pending',
+                'type' => 'like',
+                'created_at' => now(), /** @todo Replace with parsed `$request->input('published')`, I guess. */
+            ];
+
+            // Look for an existing comment.
+            $comment = $entry->comments()
+                ->whereHas('meta', function ($query) use ($id) {
+                    $query->where('key', 'source')
+                        ->where('value', json_encode((array) $id));
+                })
+                ->first();
+
+            if (! empty($comment)) {
+                Log::debug("[ActivityPub] Looks like a duplicate ({$id})");
+
+                // Quit.
+                return response()->json(new \stdClass(), 202);
+            } else {
+                Log::debug("[ActivityPub] Creating new like of {$entry->permalink} for {$id}");
+                $comment = $entry->comments()->create($data);
+            }
+
+            $comment->meta()->updateOrCreate(
+                ['key' => 'source'], // We use `source` for webmentions, too. Though it made sense to reuse that name.
+                ['value' => (array) $id],
+            );
+
+            // All done.
+            return response()->json(new \stdClass(), 202);
+        }
+
+        /**
+         * Undo like.
+         */
+        if (
+            $request->input('type') === 'Undo' &&
+            ! empty($object['type']) && $object['type'] === 'Like' &&
+            ! empty($object['id']) && ($id = filter_var($object['id'], FILTER_SANITIZE_URL))
+        ) {
+            // Look for an existing comment.
+            $comment = Comment::whereHas('meta', function ($query) use ($id) {
+                $query->where('key', 'source')
+                    ->where('value', json_encode((array) $id));
+            })
+            ->first();
+
+            if (! empty($comment)) {
+                Log::debug("[ActivityPub] Deleting \"Like\" with source ({$id})");
+                $comment->meta()->delete();
+                $comment->delete();
+            }
+
+            // All done.
+            return response()->json(new \stdClass(), 202);
+        }
+
+        /**
          * Reply create or update.
          *
          * @todo Add support for likes, reposts.
          */
         if (
             in_array($request->input('type'), ['Create', 'Update'], true) &&
-            ! empty($object) &&
             ! empty($object['inReplyTo']) &&
             filter_var($object['inReplyTo'], FILTER_VALIDATE_URL) &&
             ! empty($object['attributedTo']) &&
             filter_var($object['attributedTo'], FILTER_VALIDATE_URL)
         ) {
+            if (empty($object['id']) || ! filter_var($object['id'], FILTER_VALIDATE_URL)) {
+                // Bail.
+                return response()->json(new \stdClass(), 202);
+            }
+            $id = filter_var($object['id'], FILTER_SANITIZE_URL);
+
             $parent = url_to_entry(filter_var($object['inReplyTo'], FILTER_SANITIZE_URL));
 
             if (! $parent) {
@@ -233,12 +324,6 @@ class InboxController extends Controller
                 // Reply to neither an entry nor a comment. Bail.
                 return response()->json(new \stdClass(), 202);
             }
-
-            if (empty($object['id']) || ! filter_var($object['id'], FILTER_VALIDATE_URL)) {
-                // Bail.
-                return response()->json(new \stdClass(), 202);
-            }
-            $id = filter_var($object['id'], FILTER_SANITIZE_URL);
 
             if (! empty($object['content'])) {
                 /** @todo Properly "HTMLPurifier" this. */
