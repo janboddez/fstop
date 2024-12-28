@@ -21,23 +21,25 @@ Route::middleware('auth:sanctum')
 
 Route::get('.well-known/webfinger', WebFingerController::class);
 
-/**
- * @todo Leave out `activitypub` prefix and use username rather than ID, i.e., follow the same URL scheme as the rest of
- *       the site.
- */
-Route::prefix('activitypub')
-    ->name('activitypub.')
-    ->group(function () {
-        Route::get('users/{user}/followers', FollowerController::class)
-            ->name('followers');
+if (config('app.activitypub', env('ACTIVITYPUB_ENABLED', false))) {
+    /**
+     * @todo Leave out `activitypub` prefix and use username rather than ID, i.e., follow the same URL scheme as the
+     *       rest of the site.
+     */
+    Route::prefix('activitypub')
+        ->name('activitypub.')
+        ->group(function () {
+            Route::get('users/{user}/followers', FollowerController::class)
+                ->name('followers');
 
-        // Route::get('users/{user:login}/outbox', OutboxController::class);
-        Route::get('users/{user}/outbox', OutboxController::class)
-            ->name('outbox');
+            // Route::get('users/{user:login}/outbox', OutboxController::class);
+            Route::get('users/{user}/outbox', OutboxController::class)
+                ->name('outbox');
 
-        // Route::get('users/{user:login}/outbox', OutboxController::class);
-        Route::post('users/{user}/inbox', [InboxController::class, 'inbox'])
-            ->name('inbox');
+            // Route::get('users/{user:login}/outbox', OutboxController::class);
+            Route::post('users/{user}/inbox', [InboxController::class, 'inbox'])
+                ->name('inbox');
 
-        Route::post('inbox', [InboxController::class, 'inbox']);
-    });
+            Route::post('inbox', [InboxController::class, 'inbox']);
+        });
+}
