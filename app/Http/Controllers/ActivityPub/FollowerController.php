@@ -32,7 +32,7 @@ class FollowerController extends Controller
                 'last' => route('activitypub.followers', ['user' => $user, 'page' => $followers->lastPage()]),
                 'next' => $followers->nextPageUrl(),
                 'prev' => $followers->previousPageUrl(),
-            ]),
+            ], fn($value) => $value || $value === 0), // Allow literal `0`.
             200,
             ['Content-Type' => 'application/activity+json']
         );

@@ -2,10 +2,10 @@
 
 namespace App\Support\ActivityPub;
 
+use App\Models\Actor;
 use App\Models\Comment;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 class UndoHandler
 {
@@ -47,14 +47,11 @@ class UndoHandler
                 return;
             }
 
-            $follower = $this->user->followers()
-                ->where('url', filter_var($object['actor'], FILTER_SANITIZE_URL))
-                ->first();
+            /** @todo How do we verify our URLs are up to date? */
+            $actorId = Actor::where('url', filter_var($object['actor'], FILTER_SANITIZE_URL))
+                ->value('id');
 
-            if ($follower) {
-                $follower->meta()->delete();
-                $follower->delete();
-            }
+            $this->user->followers()->detach($actorId);
         }
     }
 }

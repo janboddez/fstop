@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\ActivityPub;
 
 use App\Http\Controllers\Controller;
-use App\Models\Follower;
+use App\Models\Actor;
 use App\Models\User;
 use App\Support\ActivityPub\HttpSignature;
 use Illuminate\Http\Request;
@@ -12,22 +12,30 @@ use Symfony\Component\HttpFoundation\Response;
 
 class InboxController extends Controller
 {
-    public function inbox(User $user = null, Request $request): Response
+    public function inbox(User $user, Request $request): Response
     {
+        if ($request->path() === 'activity/inbox' || empty($user->id)) {
+            // The `$user` set for the shared inbox isn't actually retrieved from the datbase.
+            $user = User::find(1); // Dirty hack.
+        }
+
+        Log::debug($request->path());
+        Log::debug(json_encode($request->all()));
+
         // We're going to want a valid signature header.
         abort_unless(is_string($signature = $request->header('signature')), 401, __('Missing signature'));
         $signatureData = HttpSignature::parseSignatureHeader($signature);
         abort_if(! is_array($signatureData), 403, __('Invalid signature'));
 
-        // See if the used `keyId` somehow belongs to one of our followers.
-        $follower = Follower::whereHas('meta', function ($query) use ($signatureData) {
+        // See if the used `keyId` somehow belongs to one of the profiles known to us.
+        $actor = Actor::whereHas('meta', function ($query) use ($signatureData) {
             $query->where('key', 'key_id')
                 ->where('value', json_encode((array) $signatureData['keyId']));
         })
         ->first();
 
-        if (! empty($follower->public_key)) {
-            $publicKey = $follower->public_key;
+        if (! empty($actor->public_key)) {
+            $publicKey = $actor->public_key;
         } else {
             // Try and fetch the remote public key.
             $data = activitypub_fetch_profile($signatureData['keyId'], $user);
@@ -40,27 +48,25 @@ class InboxController extends Controller
 
         $verified = HttpSignature::verify($publicKey, $signatureData, $request);
 
-        if (! $verified && ! empty($follower->public_key)) {
-            // The key we stored previously may be outdated.
+        if (! $verified && ! empty($actor->public_key)) {
+            // Our `$actor->public_key` may be outdated.
             $meta = activitypub_fetch_profile($signatureData['keyId'], $user);
 
             if (! empty($meta['public_key'])) {
-                // Update meta.
-                foreach (prepare_meta(array_keys($meta), array_values($meta), $follower) as $key => $value) {
-                    $follower->meta()->updateOrCreate(
+                // Update the actor's meta ...
+                foreach (prepare_meta(array_keys($meta), array_values($meta), $actor) as $key => $value) {
+                    $actor->meta()->updateOrCreate(
                         ['key' => $key],
                         ['value' => $value]
                     );
                 }
 
-                // Try again.
+                // ... and try again.
                 $verified = HttpSignature::verify($meta['public_key'], $signatureData, $request);
             }
         }
 
-        abort_unless($verified, 403, __('Invalid signature'));
-
-        Log::debug(json_encode($request->all()));
+        abort_unless($verified, 403, __('Invalid signature')); // Still no dice.
 
         $type = $request->input('type');
         if (! in_array($type, ['Create', 'Delete', 'Follow', 'Like', 'Undo', 'Update'])) {

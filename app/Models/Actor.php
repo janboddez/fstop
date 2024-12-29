@@ -4,19 +4,22 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
-class Follower extends Model
+class Actor extends Model
 {
+    /**
+     * @var array<int, string>
+     *
+     * @todo Move most actor meta (inbox, public key, etc.) over to the main table.
+     */
     protected $fillable = [
         'url',
     ];
 
     /**
-     * Always autoload meta.
-     *
-     * @var array
+     * @var array<int, string>
      */
     protected $with = ['meta'];
 
@@ -25,10 +28,22 @@ class Follower extends Model
         return $this->morphMany(Meta::class, 'metable');
     }
 
-    public function user(): BelongsTo
+    /**
+     * The users followed by this actor.
+     */
+    // public function users(): BelongsToMany
+    public function following(): BelongsToMany
     {
-        return $this->belongsTo(User::class);
+        return $this->BelongsToMany(User::class, 'follower_user', 'actor_id', 'user_id');
     }
+
+    // /**
+    //  * This actor's followers.
+    //  */
+    // public function followers(): BelongsToMany
+    // {
+    //     return $this->BelongsToMany(User::class, 'following_user', 'actor_id', 'user_id');
+    // }
 
     protected function inbox(): Attribute
     {

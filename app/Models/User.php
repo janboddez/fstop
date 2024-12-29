@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -19,8 +20,6 @@ class User extends Authenticatable
     use Notifiable;
 
     /**
-     * The attributes that are mass assignable.
-     *
      * @var array<int, string>
      */
     protected $fillable = [
@@ -31,8 +30,6 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
      * @var array<int, string>
      */
     protected $hidden = [
@@ -41,8 +38,11 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
+     * @var array<int, string>
+     */
+    protected $with = ['meta'];
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -53,21 +53,27 @@ class User extends Authenticatable
         ];
     }
 
-    protected $with = ['meta'];
-
-    public function meta(): MorphMany
-    {
-        return $this->morphMany(Meta::class, 'metable');
-    }
-
     public function entries(): HasMany
     {
         return $this->hasMany(Entry::class);
     }
 
-    public function followers(): HasMany
+    public function followers(): BelongsToMany
     {
-        return $this->hasMany(Follower::class);
+        return $this->BelongsToMany(Actor::class, 'follower_user', 'user_id', 'actor_id');
+    }
+
+    // /**
+    //  * The actors followed by this user.
+    //  */
+    // public function following(): BelongsToMany
+    // {
+    //     return $this->BelongsToMany(Actor::class, 'following_user', 'user_id', 'actor_id');
+    // }
+
+    public function meta(): MorphMany
+    {
+        return $this->morphMany(Meta::class, 'metable');
     }
 
     protected function actorUrl(): Attribute
@@ -134,9 +140,6 @@ class User extends Authenticatable
         )->shouldCache();
     }
 
-    /**
-     * @todo Add aliases? To let users who come from WordPress (i.e., me) add an alias in custom user meta or something.
-     */
     public function serialize(): array
     {
         $output = [

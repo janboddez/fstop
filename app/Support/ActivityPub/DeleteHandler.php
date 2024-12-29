@@ -2,8 +2,8 @@
 
 namespace App\Support\ActivityPub;
 
+use App\Models\Actor;
 use App\Models\Comment;
-use App\Models\Follower;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -20,11 +20,11 @@ class DeleteHandler
             return;
         }
 
-        if ($follower = Follower::where('url', $id)->first()) {
+        if ($actor = Actor::where('url', $id)->first()) {
             // If an account we know about has been deleted.
             /** @todo Check for a 410 Gone? */
-            $follower->meta()->delete();
-            $follower->delete();
+            $actor->meta()->delete();
+            $actor->delete();
         } else {
             // Could be for a reply instead.
             $comment = Comment::whereHas('meta', function ($query) use ($id) {

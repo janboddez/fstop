@@ -3,8 +3,8 @@
 namespace App\Support\ActivityPub;
 
 use App\Models\Comment;
+use App\Models\Actor;
 use App\Models\Entry;
-use App\Models\Follower;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -59,11 +59,12 @@ class CreateHandler
             }
         }
 
-        $follower = Follower::where('url', filter_var($object['attributedTo'], FILTER_SANITIZE_URL))
+        // See if we know this person.
+        $actor = Actor::where('url', filter_var($object['attributedTo'], FILTER_SANITIZE_URL))
             ->first();
 
         $data = array_filter([
-            'author' => strip_tags($follower->name ?? filter_var($object['attributedTo'], FILTER_SANITIZE_URL)),
+            'author' => strip_tags($actor->name ?? filter_var($object['attributedTo'], FILTER_SANITIZE_URL)),
             'author_url' => filter_var($object['attributedTo'], FILTER_SANITIZE_URL),
             'content' => $content,
             'status' => 'pending',

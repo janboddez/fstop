@@ -2,10 +2,9 @@
 
 namespace App\Support\ActivityPub;
 
-use App\Models\Follower;
+use App\Models\Actor;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class LikeHandler
 {
@@ -36,11 +35,11 @@ class LikeHandler
          */
 
         // See if maybe we know this person.
-        $follower = Follower::where('url', filter_var($actor, FILTER_SANITIZE_URL))
+        $actor = Actor::where('url', filter_var($actor, FILTER_SANITIZE_URL))
             ->first();
 
         $data = [
-            'author' => strip_tags($follower->name ?? filter_var($actor, FILTER_SANITIZE_URL)),
+            'author' => strip_tags($actor->name ?? filter_var($actor, FILTER_SANITIZE_URL)),
             'author_url' => filter_var($actor, FILTER_SANITIZE_URL),
             'content' => __('… liked this!'),
             'status' => 'pending',
