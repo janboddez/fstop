@@ -426,12 +426,18 @@ function activitypub_fetch_profile(string $url, User $user): array
             'name' => isset($response['name']) && is_string($response['name'])
                 ? strip_tags($response['name'])
                 : null,
+            'url' => isset($response['url']) && filter_var($response['url'], FILTER_VALIDATE_URL)
+                ? filter_var($response['url'], FILTER_SANITIZE_URL)
+                : null,
             'inbox' => isset($response['inbox']) && filter_var($response['inbox'], FILTER_VALIDATE_URL)
                 ? filter_var($response['inbox'], FILTER_SANITIZE_URL)
                 : null,
             // phpcs:ignore Generic.Files.LineLength.TooLong
             'shared_inbox' => isset($response['endpoints']['sharedInbox']) && filter_var($response['endpoints']['sharedInbox'], FILTER_VALIDATE_URL)
                 ? filter_var($response['endpoints']['sharedInbox'], FILTER_SANITIZE_URL)
+                : null,
+            'outbox' => isset($response['outbox']) && filter_var($response['outbox'], FILTER_VALIDATE_URL)
+                ? filter_var($response['outbox'], FILTER_SANITIZE_URL)
                 : null,
             'key_id' => $response['publicKey']['id'] ?? null,
             'public_key' => $response['publicKey']['publicKeyPem'] ?? null,
