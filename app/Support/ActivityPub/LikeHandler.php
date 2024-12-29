@@ -21,7 +21,7 @@ class LikeHandler
             return;
         }
 
-        if (! $actor = filter_var($this->request->input('actor'), FILTER_VALIDATE_URL)) {
+        if (! $actorUrl = filter_var($this->request->input('actor'), FILTER_VALIDATE_URL)) {
             return;
         }
 
@@ -34,13 +34,26 @@ class LikeHandler
          *       generate a "handle," should we not know their name.
          */
 
-        // See if maybe we know this person.
-        $actor = Actor::where('url', filter_var($actor, FILTER_SANITIZE_URL))
-            ->first();
+        // See if we know this person, and store them if we don't.
+        $actor = Actor::firstOrCreate([
+            'url' => filter_var($actorUrl, FILTER_SANITIZE_URL),
+        ]);
+
+        if ($actor->wasRecentlyCreated) {
+            $meta = activitypub_fetch_profile(filter_var($actor->url, FILTER_SANITIZE_URL), $this->user);
+
+            /** @todo Somehow do this in one go, using `saveMany()`. */
+            foreach (prepare_meta(array_keys($meta), array_values($meta), $actor->url) as $key => $value) {
+                $actor->meta()->updateOrCreate(
+                    ['key' => $key],
+                    ['value' => $value]
+                );
+            }
+        }
 
         $data = [
-            'author' => strip_tags($actor->name ?? filter_var($actor, FILTER_SANITIZE_URL)),
-            'author_url' => filter_var($actor, FILTER_SANITIZE_URL),
+            'author' => strip_tags($actor->name ?? filter_var($actorUrl, FILTER_SANITIZE_URL)),
+            'author_url' => $actor->profile ?? filter_var($actorUrl, FILTER_SANITIZE_URL),
             'content' => __('… liked this!'),
             'status' => 'pending',
             'type' => 'like',

@@ -15,6 +15,9 @@ class CreateHandler
         protected User $user
     ) {}
 
+    /**
+     * @todo Use `abort()` with "proper" error messages and status codes? (Something Mastodon *does not* do.)
+     */
     public function handle(): void
     {
         $object = $this->request->input('object');
@@ -59,13 +62,27 @@ class CreateHandler
             }
         }
 
-        // See if we know this person.
-        $actor = Actor::where('url', filter_var($object['attributedTo'], FILTER_SANITIZE_URL))
-            ->first();
+        // See if we know this person, and store them if we don't.
+        $actor = Actor::firstOrCreate([
+            'url' => filter_var($object['attributedTo'], FILTER_SANITIZE_URL),
+        ]);
+
+        if ($actor->wasRecentlyCreated) {
+            // We should be getting these from cache.
+            $meta = activitypub_fetch_profile($actor->url, $this->user);
+
+            /** @todo Somehow do this in one go, using `saveMany()`. */
+            foreach (prepare_meta(array_keys($meta), array_values($meta), $actor) as $key => $value) {
+                $actor->meta()->updateOrCreate(
+                    ['key' => $key],
+                    ['value' => $value]
+                );
+            }
+        }
 
         $data = array_filter([
             'author' => strip_tags($actor->name ?? filter_var($object['attributedTo'], FILTER_SANITIZE_URL)),
-            'author_url' => filter_var($object['attributedTo'], FILTER_SANITIZE_URL),
+            'author_url' => $actor->profile ?? filter_var($object['attributedTo'], FILTER_SANITIZE_URL),
             'content' => $content,
             'status' => 'pending',
             'type' => 'reply',

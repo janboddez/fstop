@@ -40,12 +40,6 @@ class FollowHandler
             return;
         }
 
-        // Their handle would be ...
-        // if (! empty($meta['username'])) {
-        //     /** @todo Validate? */
-        //     $handle = '@' . $meta['username'] . '@' . parse_url($actor, PHP_URL_HOST);
-        // }
-
         // Save.
         $follower = $this->user->followers()
             ->updateOrCreate(['url' => $actor]);
