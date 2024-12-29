@@ -23,11 +23,11 @@ class WebFingerController extends Controller
             $login = $matches[2];
         }
 
-        abort_if(empty($host), 400, __('Invalid host'));
-        abort_unless($host === parse_url(url('/'), PHP_URL_HOST), 400, __('Invalid host'));
+        abort_if(empty($login), 400, __('Unknown resource'));
+        abort_unless($user = User::where('login', $login)->first(), 400, __('Unknown resource'));
 
-        abort_if(empty($login), 400, __('Invalid username'));
-        abort_unless($user = User::where('login', $login)->first(), 400, __('Invalid username'));
+        abort_if(empty($host), 400, __('Invalid host name'));
+        abort_unless($host === parse_url(url('/'), PHP_URL_HOST), 400, __('Invalid host name'));
 
         $output = [
             'subject' => sprintf('acct:%s@%s', $login, $host),
