@@ -10,12 +10,10 @@ class EnsureJsonResponse
 {
     /**
      * "Trick" Laravel into providing a JSON response. Allows us to use `abort()` and the like.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->is('indieauth/token*', 'micropub*', 'webmention*', 'activitypub*')) {
+        if ($request->is('.well-known/webfinger', 'activitypub/*', 'indieauth/token*', 'micropub*', 'webmention*')) {
             $request->headers->set('Accept', 'application/json');
         }
 
