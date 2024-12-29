@@ -19,11 +19,6 @@ class InboxController extends Controller
         $signatureData = HttpSignature::parseSignatureHeader($signature);
         abort_if(! is_array($signatureData), 403, __('Invalid signature'));
 
-        // Dirty catch-all for our single-user blog.
-        if (empty($user->id)) {
-            $user = User::find(1);
-        }
-
         // See if the used `keyId` somehow belongs to one of our followers.
         $follower = Follower::whereHas('meta', function ($query) use ($signatureData) {
             $query->where('key', 'key_id')

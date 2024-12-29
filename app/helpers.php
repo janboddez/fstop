@@ -385,13 +385,25 @@ function prepare_meta(array $keys, array $values, $metable): array
     return $temp;
 }
 
-function activitypub_fetch_profile(string $url, User $user): array
+function activitypub_fetch_profile(string $url, ?User $user): array
 {
+    /** @todo Use some kind of "blog-wide account," for requests that aren't user specific? */
+    $user = $user ?? User::orderBy('id', 'asc')
+        ->whereHas('meta', function ($query) {
+            $query->where('key', 'private_key')
+                ->where('key', 'public_key');
+        })
+        ->first();
+
+    if (! $user) {
+        // Always use signed requests, because of "authorized fetch."
+        return [];
+    }
+
     $url = strtok($url, '#');
     strtok('', '');
 
     $response = Cache::remember("activitypub:profile:$url", 60 * 15, function () use ($url, $user) {
-        // Always use signed requests, because of "authorized fetch."
         return Http::withHeaders(HttpSignature::sign(
             $user,
             $url,
