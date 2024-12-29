@@ -3,6 +3,8 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -27,10 +29,18 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prependToGroup('api', [
             // Require a JSON response.
             \App\Http\Middleware\EnsureJsonResponse::class,
+            // Tell browsers not to cache. Might not be very relevant here.
+            \Illuminate\Http\Middleware\SetCacheHeaders::class . ':private;max_age=0;must_revalidate',
         ]);
-
-        // $middleware->statefulApi();
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
-    })->create();
+        $exceptions->render(function (HttpException $e, Request $request) {
+            if ($request->is('activitypub/*')) {
+                return response()->json([
+                     // At least Mastodon seems to return an `error` property, rather than Laravel's default `message`.
+                    'error' => $e->getMessage(),
+                ], 404);
+            }
+        });
+    })
+    ->create();
