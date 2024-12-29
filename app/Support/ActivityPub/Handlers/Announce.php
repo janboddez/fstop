@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Support\ActivityPub;
+namespace App\Support\ActivityPub\Handlers;
 
 use App\Models\Actor;
 use App\Models\User;
 use Illuminate\Http\Request;
 
-class LikeHandler
+class Announce
 {
     public function __construct(
         public Request $request,
@@ -54,9 +54,9 @@ class LikeHandler
         $data = [
             'author' => strip_tags($actor->name ?? filter_var($actorUrl, FILTER_SANITIZE_URL)),
             'author_url' => $actor->profile ?? filter_var($actorUrl, FILTER_SANITIZE_URL),
-            'content' => __('… liked this!'),
+            'content' => __('… reposted this!'),
             'status' => 'pending',
-            'type' => 'like',
+            'type' => 'repost',
             'created_at' => now(), /** @todo Replace with parsed `$request->input('published')`, I guess. */
         ];
 

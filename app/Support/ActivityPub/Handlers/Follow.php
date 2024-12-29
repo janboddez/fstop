@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Support\ActivityPub;
+namespace App\Support\ActivityPub\Handlers;
 
 use App\Models\Actor;
 use App\Models\User;
@@ -9,7 +9,7 @@ use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 
-class FollowHandler
+class Follow
 {
     public function __construct(
         protected Request $request,

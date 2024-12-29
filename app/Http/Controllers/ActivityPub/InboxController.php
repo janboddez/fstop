@@ -88,7 +88,7 @@ class InboxController extends Controller
         abort_unless($verified, 403, __('Invalid signature')); // Still no dice.
 
         // Do stuff.
-        $class = '\\App\\Support\\ActivityPub\\' . $type . 'Handler';
+        $class = "\\App\\Support\\ActivityPub\\Handlers\\$type";
         (new $class($request, $user))->handle();
 
         return response()->json(new \stdClass(), 202);

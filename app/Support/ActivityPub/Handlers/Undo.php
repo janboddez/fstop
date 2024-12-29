@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Support\ActivityPub;
+namespace App\Support\ActivityPub\Handlers;
 
 use App\Models\Actor;
 use App\Models\Comment;
 use App\Models\User;
 use Illuminate\Http\Request;
 
-class UndoHandler
+class Undo
 {
     public function __construct(
         public Request $request,

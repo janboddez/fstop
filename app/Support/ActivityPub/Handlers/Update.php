@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Support\ActivityPub;
+namespace App\Support\ActivityPub\Handlers;
 
 use App\Models\Comment;
 use App\Models\User;
 use Illuminate\Http\Request;
 
-class UpdateHandler
+class Update
 {
     public function __construct(
         protected Request $request,

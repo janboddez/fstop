@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Support\ActivityPub;
+namespace App\Support\ActivityPub\Handlers;
 
 use App\Models\Comment;
 use App\Models\Actor;
@@ -8,7 +8,7 @@ use App\Models\Entry;
 use App\Models\User;
 use Illuminate\Http\Request;
 
-class CreateHandler
+class Create
 {
     public function __construct(
         protected Request $request,
