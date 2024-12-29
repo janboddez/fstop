@@ -20,7 +20,7 @@
     </div>
 
     @if (($url = $comment->meta->firstWhere('key', 'activitypub_url')) && ! empty($url->value[0]))
-        {{-- ActivityPub reply. --}}
+        {{-- "Public" ActivityPub reply. --}}
         <p><small>
             {!! __(
                 'Via <a href=":source_url" class="u-url" rel="nofollow">:source</a><span class="sr-only">, in reply to <a href=":target_url" class="u-in-reply-to">:target</a></span>',
@@ -32,8 +32,8 @@
                 ]
             ) !!}
         </small></p>
-    @elseif (! empty($comment->source))
-        {{-- Webmention _or ActivityPub_ reply. --}}
+    @elseif (! empty($comment->source) && ! in_array($comment->type, ['like', 'repost'], true))
+        {{-- Webmention or ActivityPub reply. --}}
         <p><small>
             {!! __(
                 'Via <a href=":source_url" class="u-url" rel="nofollow">:source</a><span class="sr-only">, in reply to <a href=":target_url" class="u-in-reply-to">:target</a></span>',

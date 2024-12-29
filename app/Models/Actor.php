@@ -45,21 +45,30 @@ class Actor extends Model
     //     return $this->BelongsToMany(User::class, 'following_user', 'actor_id', 'user_id');
     // }
 
+    // protected function handle(): Attribute
+    // {
+    //     return Attribute::make(
+    //         get: function () {
+    //             $username = ($meta = $this->meta->firstWhere('key', 'username'))
+    //                 ? strip_tags($meta->value[0])
+    //                 : null;
+
+    //             if ($username && strpos($username, '@') === false) {
+    //                 /** @todo This isn't always correct. */
+    //                 $handle = '@' . $username . '@' . parse_url($this->id, PHP_URL_HOST);
+    //             }
+
+    //             return $handle ?? null;
+    //         }
+    //     );
+    // }
+
     protected function inbox(): Attribute
     {
         return Attribute::make(
             get: fn () => ($meta = $this->meta->firstWhere('key', 'inbox'))
                 ? filter_var($meta->value[0], FILTER_SANITIZE_URL)
                 : null
-        )->shouldCache();
-    }
-
-    protected function sharedInbox(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => ($meta = $this->meta->firstWhere('key', 'shared_inbox'))
-                ? filter_var($meta->value[0], FILTER_SANITIZE_URL)
-                : $this->inbox // Fall back to their "normal" inbox.
         )->shouldCache();
     }
 
@@ -72,24 +81,6 @@ class Actor extends Model
         );
     }
 
-    protected function handle(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                $username = ($meta = $this->meta->firstWhere('key', 'username'))
-                    ? strip_tags($meta->value[0])
-                    : null;
-
-                if ($username && strpos($username, '@') === false) {
-                    /** @todo This isn't always correct. */
-                    $handle = '@' . $username . '@' . parse_url($this->id, PHP_URL_HOST);
-                }
-
-                return $handle ?? null;
-            }
-        );
-    }
-
     protected function publicKey(): Attribute
     {
         return Attribute::make(
@@ -97,5 +88,26 @@ class Actor extends Model
                 ? $meta->value[0]
                 : null
         );
+    }
+
+    protected function sharedInbox(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => ($meta = $this->meta->firstWhere('key', 'shared_inbox'))
+                ? filter_var($meta->value[0], FILTER_SANITIZE_URL)
+                : $this->inbox // Fall back to their "normal" inbox.
+        )->shouldCache();
+    }
+
+    /**
+     * The URL to an actor's profile page, which may be different from their "ID."
+     */
+    protected function profile(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => ($meta = $this->meta->firstWhere('key', 'url'))
+                ? filter_var($meta->value[0], FILTER_SANITIZE_URL)
+                : $this->url // Fall back to their "actor ID."
+        )->shouldCache();
     }
 }
