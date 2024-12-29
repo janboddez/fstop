@@ -15,27 +15,30 @@ class WebFingerController extends Controller
 
         $resource = ltrim(Str::replaceStart('acct:', '', $resource), '@');
 
-        /** @todo Add actor URL support. */
-        if (($pos = strpos($resource, '@')) !== false) {
-            $login = substr($resource, 0, $pos);
+        if (filter_var($resource, FILTER_VALIDATE_EMAIL) && $pos = strpos($resource, '@')) {
             $host = substr($resource, $pos + 1);
+            $login = substr($resource, 0, $pos);
+        } elseif (preg_match('~https?://([^/]+)/(?:users|author)/(.*)~', $resource, $matches)) {
+            $host = $matches[1];
+            $login = $matches[2];
         }
 
-        abort_if(empty($login), 400);
-        abort_if(empty($host), 400);
-        abort_unless($host === parse_url(url('/'), PHP_URL_HOST), 400);
-        abort_unless($user = User::where('login', $login)->first(), 400);
+        abort_if(empty($host), 400, __('Invalid host'));
+        abort_unless($host === parse_url(url('/'), PHP_URL_HOST), 400, __('Invalid host'));
+
+        abort_if(empty($login), 400, __('Invalid username'));
+        abort_unless($user = User::where('login', $login)->first(), 400, __('Invalid username'));
 
         $output = [
-            'subject' => sprintf('acct:%s@%s', $user->login, $host),
+            'subject' => sprintf('acct:%s@%s', $login, $host),
             'aliases' => [
                 $user->actor_url,
-                url("author/{$user->login}"), // For now.
+                url("author/{$login}"),
             ],
             'links' => [
                 [
-                    'type' => 'text/html',
                     'rel' => 'http://webfinger.net/rel/profile-page',
+                    'type' => 'text/html',
                     'href' => $user->actor_url,
                 ],
                 [
