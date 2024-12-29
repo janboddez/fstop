@@ -14,14 +14,6 @@ class InboxController extends Controller
 {
     public function inbox(User $user, Request $request): Response
     {
-        if ($request->path() === 'activity/inbox' || empty($user->id)) {
-            // The `$user` set for the shared inbox isn't actually retrieved from the datbase.
-            $user = User::find(1); // Dirty hack.
-        }
-
-        Log::debug($request->path());
-        Log::debug(json_encode($request->all()));
-
         // We're going to want a valid signature header.
         abort_unless(is_string($signature = $request->header('signature')), 401, __('Missing signature'));
         $signatureData = HttpSignature::parseSignatureHeader($signature);
@@ -33,6 +25,12 @@ class InboxController extends Controller
                 ->where('value', json_encode((array) $signatureData['keyId']));
         })
         ->first();
+
+        if ($actor || $request->input('type') !== 'Delete') {
+            // Only log deletes for or by actors we know. Other requests are okay.
+            Log::debug($request->path());
+            Log::debug(json_encode($request->all()));
+        }
 
         if (! empty($actor->public_key)) {
             $publicKey = $actor->public_key;

@@ -385,8 +385,23 @@ function prepare_meta(array $keys, array $values, $metable): array
     return $temp;
 }
 
-function activitypub_fetch_profile(string $url, ?User $user): array
+function activitypub_fetch_profile(string $url, User $user): array
 {
+    if (empty($user->id)) {
+        // Shared inbox request. Find the oldest user with both a private and a public key. We'll eventually want to
+        // look for, like, a super admin instead.
+        $user = User::orderBy('id', 'asc')
+            ->whereHas('meta', function ($query) {
+                $query->where('key', 'private_key')
+                    ->whereNotNull('value');
+            })
+            ->whereHas('meta', function ($query) {
+                $query->where('key', 'public_key')
+                    ->whereNotNull('value');
+            })
+            ->first();
+    }
+
     $url = strtok($url, '#');
     strtok('', '');
 
