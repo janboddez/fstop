@@ -14,10 +14,25 @@ class InboxController extends Controller
 {
     public function inbox(User $user, Request $request): Response
     {
-        // We're going to want a valid signature header.
-        abort_unless(is_string($signature = $request->header('signature')), 401, __('Missing signature'));
-        $signatureData = HttpSignature::parseSignatureHeader($signature);
-        abort_if(! is_array($signatureData), 403, __('Invalid signature'));
+        abort_unless(
+            in_array($type = $request->input('type'), [
+                'Announce', 'Create', 'Delete', 'Follow', 'Like', 'Undo', 'Update',
+            ]),
+            400,
+            __('Invalid type')
+        );
+
+        abort_unless(
+            is_string($signature = $request->header('signature')),
+            401,
+            __('Missing signature')
+        );
+
+        abort_unless(
+            is_array($signatureData = HttpSignature::parseSignatureHeader($signature)),
+            403,
+            __('Invalid signature')
+        );
 
         // See if the used `keyId` somehow belongs to one of the profiles known to us.
         $actor = Actor::whereHas('meta', function ($query) use ($signatureData) {
@@ -33,6 +48,7 @@ class InboxController extends Controller
         }
 
         if (! empty($actor->public_key)) {
+            // Looks like we already have a public key. Let's use it.
             $publicKey = $actor->public_key;
         } else {
             // Try and fetch the remote public key.
@@ -41,6 +57,11 @@ class InboxController extends Controller
         }
 
         if (empty($publicKey)) {
+            if ($request->input('type') === 'Delete') {
+                // Delete for or by an actor we don't know. Ignore.
+                return response()->json(new \stdClass(), 202);
+            }
+
             abort(500, __('Failed to fetch public key'));
         }
 
@@ -65,12 +86,6 @@ class InboxController extends Controller
         }
 
         abort_unless($verified, 403, __('Invalid signature')); // Still no dice.
-
-        $type = $request->input('type');
-        if (! in_array($type, ['Create', 'Delete', 'Follow', 'Like', 'Undo', 'Update'])) {
-            // Unsupported activity.
-            return response()->json(new \stdClass(), 202);
-        }
 
         // Do stuff.
         $class = '\\App\\Support\\ActivityPub\\' . $type . 'Handler';
