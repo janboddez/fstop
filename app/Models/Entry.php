@@ -289,7 +289,14 @@ class Entry extends Model
 
     public function serialize(?array $cc = []): array
     {
-        $content = strip_tags($this->content, '<a><b><blockquote><cite><i><em><li><ol><p><pre><strong><ul>');
+        if (in_array($this->type, ['article', 'page'], true)) {
+            $content = '<p><strong>' . e($this->name) . '</strong></p>';
+            $content .= "<p>{$this->summary}</p>";
+        } else {
+            $content = $this->content;
+        }
+
+        $content = strip_tags($content, '<a><b><blockquote><cite><i><em><li><ol><p><pre><strong><sub><sup><ul>');
         $content = preg_replace('~<pre[^>]*>.*?</pre>(*SKIP)(*FAIL)|\r|\n|\t~s', '', $content);
 
         $permalink = ($meta = $this->meta->firstWhere('key', 'short_url'))
@@ -298,10 +305,29 @@ class Entry extends Model
 
         $content .= '<p><a href="' . e($permalink) . '">' . e($permalink) . '</a></p>';
 
-        /** @todo Add tags, etc. */
+        $lang = strtok(app()->getLocale(), '_');
+        strtok('', '');
+
+        $contentMap = [];
+        $contentMap[$lang] = $content;
+
+        $tags = [];
+
+        foreach ($this->tags as $tag) {
+            $slug = Str::camel($tag->slug);
+            $slug = ($slug !== $tag->slug)
+                ? ucfirst($slug)
+                : $slug;
+
+            $tags[] = [
+                'type' => 'Hashtag',
+                'href' => route('tags.show', $tag->slug),
+                'name' => "#$slug",
+            ];
+        }
 
         if ($this->visibility === 'public') {
-            $cc = array_merge([url("activitypub/users/{$this->user->id}/followers")], $cc);
+            $cc = array_merge([route('activitypub.followers', $this->user)], $cc);
         }
 
         if ($this->visibility === 'unlisted') {
@@ -309,7 +335,7 @@ class Entry extends Model
             $cc = array_merge(['https://www.w3.org/ns/activitystreams#Public'], $cc);
         }
 
-        return array_filter([
+        $output = array_filter([
             '@context' => [
                 'https://www.w3.org/ns/activitystreams',
                 [
@@ -321,6 +347,7 @@ class Entry extends Model
             'type' => 'Note', /** @todo Add article support, etc. */
             'attributedTo' => $this->user->actor_url,
             'content' => $content,
+            'contentMap' => $contentMap,
             'published' => $this->created_at
                 ? str_replace('+00:00', 'Z', $this->created_at->toIso8601String())
                 : str_replace('+00:00', 'Z', now()->toIso8601String()),
@@ -328,7 +355,10 @@ class Entry extends Model
                 ? str_replace('+00:00', 'Z', $this->updated_at->toIso8601String())
                 : null,
             'to' => $to ?? ['https://www.w3.org/ns/activitystreams#Public'],
-            'cc' => ! empty($cc) ? $cc : [url("activitypub/users/{$this->user->id}/followers")],
+            'cc' => ! empty($cc) ? $cc : [route('activitypub.followers', $this->user)],
+            'tag' => ! empty($tags) ? $tags : null,
         ]);
+
+        return $output;
     }
 }
