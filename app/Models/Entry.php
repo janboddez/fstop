@@ -287,7 +287,7 @@ class Entry extends Model
         )->shouldCache();
     }
 
-    public function serialize(?array $cc = []): array
+    public function serialize(): array
     {
         if (in_array($this->type, ['article', 'page'], true)) {
             $content = '<p><strong>' . e($this->name) . '</strong></p>';
@@ -316,7 +316,7 @@ class Entry extends Model
         foreach ($this->tags as $tag) {
             $slug = Str::camel($tag->slug);
             $slug = ($slug !== $tag->slug)
-                ? ucfirst($slug)
+                ? ucfirst($slug) // Also capitalize the first letter.
                 : $slug;
 
             $tags[] = [
@@ -327,12 +327,28 @@ class Entry extends Model
         }
 
         if ($this->visibility === 'public') {
-            $cc = array_merge([route('activitypub.followers', $this->user)], $cc);
+            $cc = array_merge([route('activitypub.followers', $this->user)]);
         }
 
         if ($this->visibility === 'unlisted') {
             $to = [url("activitypub/users/{$this->user->id}/followers")];
-            $cc = array_merge(['https://www.w3.org/ns/activitystreams#Public'], $cc);
+            $cc = array_merge(['https://www.w3.org/ns/activitystreams#Public']);
+        }
+
+        if (preg_match_all('~@[A-Za-z0-9\._-]+@(?:[A-Za-z0-9_-]+\.)+[A-Za-z]+~i', $content, $matches)) {
+            foreach ($matches[0] as $match) {
+                if (! $url = activitypub_fetch_webfinger($match)) {
+                    continue;
+                }
+
+                $tags[] = [
+                    'type' => 'Mention',
+                    'href' => $url,
+                    'name' => $match,
+                ];
+
+                $cc[] = activitypub_get_inbox($url);
+            }
         }
 
         $output = array_filter([
@@ -344,7 +360,7 @@ class Entry extends Model
                 ],
             ],
             'id' => $this->permalink,
-            'type' => 'Note', /** @todo Add article support, etc. */
+            'type' => 'Note',
             'attributedTo' => $this->user->actor_url,
             'content' => $content,
             'contentMap' => $contentMap,
@@ -355,8 +371,8 @@ class Entry extends Model
                 ? str_replace('+00:00', 'Z', $this->updated_at->toIso8601String())
                 : null,
             'to' => $to ?? ['https://www.w3.org/ns/activitystreams#Public'],
-            'cc' => ! empty($cc) ? $cc : [route('activitypub.followers', $this->user)],
-            'tag' => ! empty($tags) ? $tags : null,
+            'cc' => ! empty($cc) ? array_unique(array_filter($cc)) : [route('activitypub.followers', $this->user)],
+            'tag' => ! empty($tags) ? array_unique($tags) : null,
         ]);
 
         return $output;

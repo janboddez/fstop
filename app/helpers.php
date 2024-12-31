@@ -385,7 +385,57 @@ function prepare_meta(array $keys, array $values, $metable): array
     return $temp;
 }
 
-function activitypub_fetch_profile(string $url, User $user): array
+function activitypub_fetch_webfinger(string $resource): ?string
+{
+    $resource = ltrim($resource, '@');
+    if (filter_var($resource, FILTER_VALIDATE_EMAIL) && $pos = strpos($resource, '@')) {
+        $host = substr($resource, $pos + 1);
+        $login = substr($resource, 0, $pos);
+    }
+
+    if (empty($host) || empty($login)) {
+        return null;
+    }
+
+    $url = "https://{$host}/.well-known/webfinger?resource=" . rawurlencode("acct:{$login}@{$host}");
+
+    $response = Cache::remember("activitypub:webfinger:$resource", 60 * 60, function () use ($url) {
+        return Http::withHeaders(['Accept' => 'application/jrd+json'])
+            ->get($url)
+            ->json();
+    });
+
+    /** @todo We may eventually want to also store (and locally cache) avatars. And an `@-@` handle. */
+    if (empty($response['links'])) {
+        return null;
+    }
+
+    foreach ($response['links'] as $link) {
+        if (empty($link['rel']) || $link['rel'] !== 'self') {
+            continue;
+        }
+
+        if (
+            empty($link['type']) ||
+            ! in_array($link['type'], [
+                'application/activity+json',
+                'application/ld+json; profile="https://www.w3.org/ns/activitystreams"',
+            ], true)
+        ) {
+            continue;
+        }
+
+        if (! Str::isUrl($link['href'], ['http', 'https'])) {
+            continue;
+        }
+
+        return filter_var($link['href'], FILTER_SANITIZE_URL);
+    }
+
+    return null;
+}
+
+function activitypub_fetch_profile(string $url, User $user = null): array
 {
     if (empty($user->id)) {
         // Shared inbox request. Find the oldest user with both a private and a public key. We'll eventually want to
@@ -405,7 +455,7 @@ function activitypub_fetch_profile(string $url, User $user): array
     $url = strtok($url, '#');
     strtok('', '');
 
-    $response = Cache::remember("activitypub:profile:$url", 60 * 15, function () use ($url, $user) {
+    $response = Cache::remember("activitypub:profile:$url", 60 * 60, function () use ($url, $user) {
         return Http::withHeaders(HttpSignature::sign(
             $user,
             $url,
@@ -445,6 +495,13 @@ function activitypub_fetch_profile(string $url, User $user): array
     }
 
     return [];
+}
+
+function activitypub_get_inbox(string $url): ?string
+{
+    $data = activitypub_fetch_profile($url);
+
+    return $data['inbox'] ?? null;
 }
 
 function activitypub_object_to_id(mixed $object): ?string
