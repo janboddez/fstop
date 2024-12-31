@@ -262,8 +262,8 @@ class EntryController extends Controller
         if ($entry->trashed()) {
             $entry->comments()->delete(); /** @todo Cascade on delete? */
             $entry->meta()->delete();
-            $entry->forceDelete();
             $entry->tags()->detach();
+            $entry->forceDelete();
         } else {
             $entry->delete();
         }
@@ -280,8 +280,28 @@ class EntryController extends Controller
 
         switch ($action) {
             case 'delete':
-                Entry::whereIn('id', (array) $request->input('items'))
-                    ->delete();
+                // Entry::whereIn('id', (array) $request->input('items'))
+                //     ->whereNull('deleted_at')
+                //     ->delete();
+
+                // Entry::whereIn('id', (array) $request->input('items'))
+                //     ->onlyTrashed()
+                //     ->forceDelete();
+
+                $entries = Entry::whereIn('id', (array) $request->input('items'))
+                    ->withTrashed()
+                    ->get();
+
+                foreach ($entries as $entry) {
+                    if ($entry->trashed()) {
+                        $entry->comments()->delete(); /** @todo Cascade on delete? */
+                        $entry->meta()->delete();
+                        $entry->tags()->detach();
+                        $entry->forceDelete();
+                    } else {
+                        $entry->delete();
+                    }
+                }
 
                 break;
 
