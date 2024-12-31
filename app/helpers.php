@@ -399,7 +399,7 @@ function activitypub_fetch_webfinger(string $resource): ?string
 
     $url = "https://{$host}/.well-known/webfinger?resource=" . rawurlencode("acct:{$login}@{$host}");
 
-    $response = Cache::remember("activitypub:webfinger:$resource", 60 * 60, function () use ($url) {
+    $response = Cache::remember("activitypub:webfinger:$resource", 60 * 60 * 6, function () use ($url) {
         return Http::withHeaders(['Accept' => 'application/jrd+json'])
             ->get($url)
             ->json();
@@ -455,7 +455,7 @@ function activitypub_fetch_profile(string $url, User $user = null): array
     $url = strtok($url, '#');
     strtok('', '');
 
-    $response = Cache::remember("activitypub:profile:$url", 60 * 60, function () use ($url, $user) {
+    $response = Cache::remember("activitypub:profile:$url", 60 * 60 * 6, function () use ($url, $user) {
         return Http::withHeaders(HttpSignature::sign(
             $user,
             $url,

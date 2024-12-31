@@ -167,6 +167,22 @@ class Entry extends Model
                     }
                 }
 
+                if (preg_match_all('~@[A-Za-z0-9\._-]+@(?:[A-Za-z0-9_-]+\.)+[A-Za-z]+~i', $value, $matches)) {
+                    foreach ($matches[0] as $match) {
+                        if (! $url = activitypub_fetch_webfinger($match)) {
+                            continue;
+                        }
+
+                        // We might wanna use the opportunity to store their profile.
+                        $data = activitypub_fetch_profile($url);
+                        $value = str_replace(
+                            $match,
+                            '<a href="' . e($data['url'] ?? $url) . '" rel="mention">' . e($match) . '</a>',
+                            $value
+                        );
+                    }
+                }
+
                 return trim($value);
             }
         )->shouldCache();
