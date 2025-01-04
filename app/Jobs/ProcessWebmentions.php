@@ -12,9 +12,9 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
+use Intervention\Image\ImageManager;
 use TorMorten\Eventy\Facades\Events as Eventy;
 
 class ProcessWebmentions implements ShouldQueue
@@ -59,6 +59,7 @@ class ProcessWebmentions implements ShouldQueue
 
                 if (! $response->successful()) {
                     Log::error("[Webmention] Failed to retrieve the page at {$webmention->source}");
+
                     return null;
                 }
 
@@ -212,7 +213,7 @@ class ProcessWebmentions implements ShouldQueue
         // Update author URL.
         if (
             ! empty($hentry['properties']['author'][0]['properties']['url'][0]) &&
-            filter_var($hentry['properties']['author'][0]['properties']['url'][0], FILTER_VALIDATE_URL)
+            Str::isUrl($hentry['properties']['author'][0]['properties']['url'][0], ['http', 'https'])
         ) {
             $data['author_url'] = filter_var(
                 $hentry['properties']['author'][0]['properties']['url'][0],
@@ -223,7 +224,7 @@ class ProcessWebmentions implements ShouldQueue
         // Store author avatar, if any.
         if (
             ! empty($hentry['properties']['author'][0]['properties']['photo'][0]['value']) &&
-            filter_var($hentry['properties']['author'][0]['properties']['photo'][0]['value'], FILTER_VALIDATE_URL)
+            Str::isUrl($hentry['properties']['author'][0]['properties']['photo'][0]['value'], ['http', 'https'])
         ) {
             $avatarUrl = filter_var(
                 $hentry['properties']['author'][0]['properties']['photo'][0]['value'],
@@ -231,7 +232,7 @@ class ProcessWebmentions implements ShouldQueue
             );
         } elseif (
             ! empty($hentry['properties']['author'][0]['properties']['photo'][0]) &&
-            filter_var($hentry['properties']['author'][0]['properties']['photo'][0], FILTER_VALIDATE_URL)
+            Str::isUrl($hentry['properties']['author'][0]['properties']['photo'][0], ['http', 'https'])
         ) {
             $avatarUrl = filter_var(
                 $hentry['properties']['author'][0]['properties']['photo'][0],
@@ -285,14 +286,17 @@ class ProcessWebmentions implements ShouldQueue
         switch ($postType) {
             case 'bookmark':
                 $content = '&hellip; bookmarked this!';
+
                 break;
 
             case 'like':
                 $content = '&hellip; liked this!';
+
                 break;
 
             case 'repost':
                 $content = '&hellip; reposted this!';
+
                 break;
 
             case 'mention':
@@ -339,6 +343,7 @@ class ProcessWebmentions implements ShouldQueue
 
         if (! $response->successful()) {
             Log::warning('[Webmention] Something went wrong fetching the image at ' . $avatarUrl);
+
             return null;
         }
 
@@ -346,6 +351,7 @@ class ProcessWebmentions implements ShouldQueue
 
         if (empty($blob)) {
             Log::warning('[Webmention] Missing image data');
+
             return null;
         }
 
@@ -355,6 +361,7 @@ class ProcessWebmentions implements ShouldQueue
             $manager = new ImageManager(new GdDriver());
         } else {
             Log::warning('[Webmention] Imagick nor GD installed');
+
             return null;
         }
 
@@ -379,6 +386,7 @@ class ProcessWebmentions implements ShouldQueue
 
         if (! file_exists($fullAvatarPath)) {
             Log::warning('[Webmention] Something went wrong saving the thumbnail');
+
             return null;
         }
 
@@ -403,6 +411,7 @@ class ProcessWebmentions implements ShouldQueue
      * Heavily inspired by WordPress' `wp_xmlrpc_server` class.
      *
      * @link https://github.com/WordPress/WordPress/blob/master/wp-includes/class-wp-xmlrpc-server.php.
+     * @license https://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 2 or later
      *
      * @todo Convert to PHP DOM Document and so on.
      */

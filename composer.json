@@ -30,7 +30,8 @@
     },
     "autoload": {
         "files": [
-            "app/helpers.php"
+            "app/helpers.php",
+            "app/Support/ActivityPub/helpers.php"
         ],
         "psr-4": {
             "App\\": "app/",

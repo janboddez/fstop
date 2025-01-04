@@ -70,14 +70,19 @@ class CommentController extends Controller
 
         $comment->update($validated);
 
-        // Add any metadata.
+        // Add (or update) any metadata.
         if (
             ! empty($validated['meta_keys']) &&
             ! empty($validated['meta_values']) &&
             count($validated['meta_keys']) === count($validated['meta_values'])
         ) {
-            foreach (prepare_meta($validated['meta_keys'], $validated['meta_values'], $comment) as $key => $value) {
-                $comment->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+            $meta = prepare_meta(array_combine($validated['meta_keys'], $validated['meta_values']), $comment);
+
+            foreach ($meta as $key => $value) {
+                $comment->meta()->updateOrCreate(
+                    ['key' => $key],
+                    ['value' => $value]
+                );
             }
         }
 

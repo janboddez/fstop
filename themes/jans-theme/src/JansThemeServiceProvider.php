@@ -23,7 +23,7 @@ class JansThemeServiceProvider extends ServiceProvider
         ], 'public');
 
         // Something-something responsive images.
-        add_filter('theme:width', fn() => '1010');
+        add_filter('theme:width', fn () => '1010');
 
         // Remove default styles.
         // Eventy::removeAction('theme:layout:head', [ThemeServiceProvider::class, 'printDefaultStylesheet']);

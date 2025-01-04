@@ -17,6 +17,11 @@ use Michelf\MarkdownExtra;
 use Michelf\SmartyPants;
 use Symfony\Component\DomCrawler\Crawler;
 
+use function App\Support\ActivityPub\fetch_object;
+use function App\Support\ActivityPub\fetch_profile;
+use function App\Support\ActivityPub\fetch_webfinger;
+use function App\Support\ActivityPub\get_inbox;
+
 class Entry extends Model
 {
     use SoftDeletes;
@@ -94,42 +99,17 @@ class Entry extends Model
         $query->where('type', $type);
     }
 
-    protected function type(): Attribute
-    {
-        return Attribute::make(
-            // phpcs:ignore Generic.Files.LineLength.TooLong
-            get: fn (string $value = null) => ($value === null || ! in_array($value, get_registered_entry_types(), true))
-                ? array_keys(self::TYPES)[0] // Treat "unsupported" types as, in this case, articles.
-                : $value
-        )->shouldCache();
-    }
-
-    protected function permalink(): Attribute
+    protected function authorUrl(): Attribute
     {
         return Attribute::make(
             get: function () {
-                if ($this->status !== 'published') {
-                    return route(Str::plural($this->type) . '.show', ['slug' => $this->id, 'preview' => 'true']);
+                if (Str::isUrl($this->user->url, ['http', 'https'])) {
+                    return filter_var($this->user->url, FILTER_SANITIZE_URL);
                 }
 
-                return route(Str::plural($this->type) . '.show', $this->slug);
+                return url('/');
             }
         );
-    }
-
-    protected function name(): Attribute
-    {
-        return Attribute::make(
-            get: function (string $value = null) {
-                if (empty($value)) {
-                    return '';
-                }
-
-                $value = SmartyPants::defaultTransform($value, SmartyPants::ATTR_LONG_EM_DASH_SHORT_EN);
-
-                return trim(html_entity_decode($value));
-            }
-        )->shouldCache();
     }
 
     protected function content(): Attribute
@@ -167,25 +147,49 @@ class Entry extends Model
                     }
                 }
 
-                if (preg_match_all('~@[A-Za-z0-9\._-]+@(?:[A-Za-z0-9_-]+\.)+[A-Za-z]+~i', $value, $matches)) {
-                    foreach ($matches[0] as $match) {
-                        if (! $url = activitypub_fetch_webfinger($match)) {
-                            continue;
-                        }
-
-                        // We might wanna use the opportunity to store their profile.
-                        $data = activitypub_fetch_profile($url);
-                        $value = str_replace(
-                            $match,
-                            '<a href="' . e($data['url'] ?? $url) . '" rel="mention">' . e($match) . '</a>',
-                            $value
-                        );
-                    }
+                foreach ($this->mentions as $handle => $url) {
+                    $meta = fetch_profile($url);
+                    $value = str_replace(
+                        $handle,
+                        // phpcs:ignore Generic.Files.LineLength.TooLong
+                        '<a href="' . e($meta['url'] ?? $url) . '" rel="mention" class="mention u-url">' .
+                            e('@' . strtok(ltrim($handle, '@'), '@')) . '</a>',
+                        $value
+                    );
                 }
+                strtok('', '');
 
                 return trim($value);
             }
         )->shouldCache();
+    }
+
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            get: function (string $value = null) {
+                if (empty($value)) {
+                    return '';
+                }
+
+                $value = SmartyPants::defaultTransform($value, SmartyPants::ATTR_LONG_EM_DASH_SHORT_EN);
+
+                return trim(html_entity_decode($value));
+            }
+        )->shouldCache();
+    }
+
+    protected function permalink(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if ($this->status !== 'published') {
+                    return route(Str::plural($this->type) . '.show', ['slug' => $this->id, 'preview' => 'true']);
+                }
+
+                return route(Str::plural($this->type) . '.show', $this->slug);
+            }
+        );
     }
 
     protected function rawName(): Attribute
@@ -227,47 +231,42 @@ class Entry extends Model
         );
     }
 
+    protected function rawSummary(): Attribute
+    {
+        return Attribute::make(
+            get: function (string $value = null, array $attributes) {
+                if (empty($attributes['summary'])) {
+                    return '';
+                }
+
+                $value = $attributes['summary'];
+
+                // Replace common HTML entities with Unicode characters, for easier editing.
+                $value = str_replace(
+                    ['&#8216;', '&#8217;', '&#8220;', '&#8221;', '&#8211;', '&#8212;', '&#8230;', '&hellip;'],
+                    ['‘', '’', '“', '”', '–', '—', '…', '…'],
+                    $value
+                );
+
+                $value = preg_replace('~\R~u', "\n", $value);
+                $value = preg_replace('~\n\n+~u', "\n\n", $value);
+
+                return trim($value);
+            }
+        );
+    }
+
     protected function summary(): Attribute
     {
         return Attribute::make(
             get: function (string $value = null) {
-                if (empty($value) && ! request()->is('admin/*') && ! app()->runningInConsole()) {
-                    // Autogenerate a summary, on the front end only.
+                if (empty($value)) {
+                    // Autogenerate a summary.
                     $value = strip_tags($this->content);
                     $value = Str::words($value, 30, ' […]');
                 }
 
-                return html_entity_decode($value); // We encode on output!
-            }
-        );
-    }
-
-    protected function thumbnail(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if (! empty($this->featured->url)) {
-                    // @todo Output an actual image tag and whatnot.
-                    return $this->featured->url;
-                }
-
-                // "Legacy" format.
-                $meta = $this->meta->firstWhere('key', 'featured');
-
-                return $meta->value[0] ?? null;
-            }
-        );
-    }
-
-    protected function authorUrl(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if (filter_var($this->user->url, FILTER_VALIDATE_URL)) {
-                    return filter_var($this->user->url, FILTER_SANITIZE_URL);
-                }
-
-                return url('/');
+                return trim(html_entity_decode($value ?? '')); // Avoid double-encoded quotes, etc.
             }
         );
     }
@@ -294,11 +293,59 @@ class Entry extends Model
                 return implode(', ', array_map(
                     fn ($url) => sprintf(
                         '<a class="u-syndication" href="%1$s">%2$s</a>',
-                        $url,
+                        filter_var($url, FILTER_SANITIZE_URL),
                         $supportedPlatforms[parse_url($url, PHP_URL_HOST)] ?? parse_url($url, PHP_URL_HOST)
                     ),
                     $meta->value
                 ));
+            }
+        )->shouldCache();
+    }
+
+    protected function thumbnail(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (! empty($this->featured->url)) {
+                    // @todo Output an actual image tag and whatnot.
+                    return $this->featured->url;
+                }
+
+                // "Legacy" format.
+                $meta = $this->meta->firstWhere('key', 'featured');
+
+                return $meta->value[0] ?? null;
+            }
+        );
+    }
+
+    protected function type(): Attribute
+    {
+        return Attribute::make(
+            // phpcs:ignore Generic.Files.LineLength.TooLong
+            get: fn (string $value = null) => ($value === null || ! in_array($value, get_registered_entry_types(), true))
+                ? array_keys(self::TYPES)[0] // Treat "unsupported" types as, in this case, articles.
+                : $value
+        )->shouldCache();
+    }
+
+    protected function mentions(): Attribute
+    {
+        return Attribute::make(
+            get: function (string $value = null, array $attributes) {
+                $mentions = [];
+
+                if (preg_match_all('~@[A-Za-z0-9\._-]+@(?:[A-Za-z0-9_-]+\.)+[A-Za-z]+~i', $attributes['content'], $matches)) {
+                    foreach (array_unique($matches[0]) as $match) {
+                        if (! $url = fetch_webfinger($match)) {
+                            continue;
+                        }
+
+                        $mentions[$match] = $url;
+                    }
+                }
+
+                return $mentions;
             }
         )->shouldCache();
     }
@@ -310,6 +357,22 @@ class Entry extends Model
             $content .= "<p>{$this->summary}</p>";
         } else {
             $content = $this->content;
+
+            /** @todo Limit to `e-content`? So that, for, e.g., replies, any "reply context" is left out? */
+            if (
+                ($inReplyTo = $this->meta->firstWhere('key', '_in_reply_to')) && ! empty($inReplyTo->value[0]) &&
+                /** @todo Make the above so much smarter ... */
+                preg_match('~<div.+?(?:"|\')e-content(?:"|\').*?>(.+?)</div>~s', $content, $matches)
+            ) {
+                $content = trim($matches[1]);
+
+                foreach ($this->mentions as $handle => $url) {
+                    // Prepend the first mention. This is tricky! (We *assume* it's the person we're replying to.)
+                    $content = Str::replaceStart('<p>', '<p>@' . strtok(ltrim($handle, '@'), '@') . ' ', $content);
+                    strtok('', '');
+                    break;
+                }
+            }
         }
 
         $content = strip_tags($content, '<a><b><blockquote><cite><i><em><li><ol><p><pre><strong><sub><sup><ul>');
@@ -347,24 +410,18 @@ class Entry extends Model
         }
 
         if ($this->visibility === 'unlisted') {
-            $to = [url("activitypub/users/{$this->user->id}/followers")];
-            $cc = array_merge(['https://www.w3.org/ns/activitystreams#Public']);
+            $to = [route('activitypub.followers', $this->user)];
+            $cc = ['https://www.w3.org/ns/activitystreams#Public'];
         }
 
-        if (preg_match_all('~@[A-Za-z0-9\._-]+@(?:[A-Za-z0-9_-]+\.)+[A-Za-z]+~i', $content, $matches)) {
-            foreach ($matches[0] as $match) {
-                if (! $url = activitypub_fetch_webfinger($match)) {
-                    continue;
-                }
+        foreach ($this->mentions as $handle => $url) {
+            $tags[] = [
+                'type' => 'Mention',
+                'href' => $url,
+                'name' => $handle,
+            ];
 
-                $tags[] = [
-                    'type' => 'Mention',
-                    'href' => $url,
-                    'name' => $match,
-                ];
-
-                $cc[] = activitypub_get_inbox($url);
-            }
+            $cc[] = get_inbox($url);
         }
 
         $output = array_filter([
@@ -387,9 +444,19 @@ class Entry extends Model
                 ? str_replace('+00:00', 'Z', $this->updated_at->toIso8601String())
                 : null,
             'to' => $to ?? ['https://www.w3.org/ns/activitystreams#Public'],
-            'cc' => ! empty($cc) ? array_unique(array_filter($cc)) : [route('activitypub.followers', $this->user)],
-            'tag' => ! empty($tags) ? array_unique($tags) : null,
+            'cc' => ! empty($cc) ? $cc : [route('activitypub.followers', $this->user)],
+            'tag' => ! empty($tags) ? $tags : null,
         ]);
+
+        if (($inReplyTo = $this->meta->firstWhere('key', '_in_reply_to')) && ! empty($inReplyTo->value[0])) {
+            $object = fetch_object($inReplyTo->value[0], $this->user);
+            if (! empty($object['id']) && Str::isUrl($object['id'])) {
+                // This seems to be an ActivityPub object.
+                $output['inReplyTo'] = filter_var($object['id'], FILTER_VALIDATE_URL);
+            }
+
+            /** @todo Add author, if they aren't already mentioned explicitly? */
+        }
 
         return $output;
     }

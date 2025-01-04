@@ -4,17 +4,20 @@ namespace App\Support\ActivityPub\Handlers;
 
 use App\Models\Actor;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Http\Client\Response;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+use function App\Support\ActivityPub\fetch_profile;
 
 class Follow
 {
     public function __construct(
         protected Request $request,
         protected User $user
-    ) {}
+    ) {
+    }
 
     public function handle(): void
     {
@@ -34,25 +37,30 @@ class Follow
         // }
 
         // Fetch their ActivityPub actor profile.
-        $meta = activitypub_fetch_profile($actor, $this->user);
+        $meta = fetch_profile($actor, $this->user);
         if ((empty($meta['inbox']) && empty($meta['sharedInbox']))) {
             Log::warning("[ActivityPub] Something went wrong fetching the profile at $actor");
+
             return;
         }
 
         // Save.
-        $follower = $this->user->followers()
+        $actor = $this->user->followers()
             ->updateOrCreate(['url' => $actor]);
 
         // Store metadata as well.
-        foreach (prepare_meta(array_keys($meta), array_values($meta), $follower) as $key => $value) {
-            $follower->meta()->updateOrCreate(
-                ['key' => $key],
-                ['value' => $value]
-            );
+        if ($actor->wasRecentlyCreated) {
+            add_meta($meta, $actor);
+        } else {
+            foreach (prepare_meta($meta, $actor) as $key => $value) {
+                $actor->meta()->updateOrCreate(
+                    ['key' => $key],
+                    ['value' => $value]
+                );
+            }
         }
 
-        $response = $this->sendAccept($follower);
+        $response = $this->sendAccept($actor);
 
         if (! $response->successful()) {
             Log::warning("[ActivityPub] Something went wrong accepting a follow request by $actor");
@@ -63,7 +71,6 @@ class Follow
     protected function sendAccept(Actor $follower): Response
     {
         $follower->load('meta');
-        \Log::debug($follower->inbox);
 
         $body = json_encode([
             '@context' => 'https://www.w3.org/ns/activitystreams',

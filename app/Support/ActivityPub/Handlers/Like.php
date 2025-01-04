@@ -6,18 +6,22 @@ use App\Models\Actor;
 use App\Models\User;
 use Illuminate\Http\Request;
 
+use function App\Support\ActivityPub\fetch_profile;
+use function App\Support\ActivityPub\object_to_id;
+
 class Like
 {
     public function __construct(
         public Request $request,
         public User $user
-    ) {}
+    ) {
+    }
 
     public function handle(): void
     {
         $object = $this->request->input('object');
 
-        if (! $entry = url_to_entry((string) activitypub_object_to_id($object))) {
+        if (! $entry = url_to_entry((string) object_to_id($object))) {
             return;
         }
 
@@ -39,16 +43,11 @@ class Like
             'url' => filter_var($actorUrl, FILTER_SANITIZE_URL),
         ]);
 
-        if ($actor->wasRecentlyCreated) {
-            $meta = activitypub_fetch_profile(filter_var($actor->url, FILTER_SANITIZE_URL), $this->user);
-
-            /** @todo Somehow do this in one go, using `saveMany()`. */
-            foreach (prepare_meta(array_keys($meta), array_values($meta), $actor->url) as $key => $value) {
-                $actor->meta()->updateOrCreate(
-                    ['key' => $key],
-                    ['value' => $value]
-                );
-            }
+        if (
+            $actor->wasRecentlyCreated &&
+            $meta = fetch_profile(filter_var($actor->url, FILTER_SANITIZE_URL), $this->user)
+        ) {
+            add_meta($meta, $actor);
         }
 
         $data = [

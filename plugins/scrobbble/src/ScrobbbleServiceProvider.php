@@ -29,7 +29,7 @@ class ScrobbbleServiceProvider extends ServiceProvider
         if (! Schema::hasTable('scrobbble_sessions')) {
             // Automatically run plugin migrations.
             Artisan::call('migrate', [
-                '--path'  => '/plugins/scrobbble/database/migrations',
+                '--path' => '/plugins/scrobbble/database/migrations',
                 '--force' => true,
             ]);
         }

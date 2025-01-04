@@ -6,13 +6,17 @@ use App\Models\Actor;
 use App\Models\Comment;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+
+use function App\Support\ActivityPub\object_to_id;
 
 class Undo
 {
     public function __construct(
         public Request $request,
         public User $user
-    ) {}
+    ) {
+    }
 
     public function handle(): void
     {
@@ -23,7 +27,7 @@ class Undo
         }
 
         if ($object['type'] === 'Like') {
-            if (! $id = activitypub_object_to_id($object)) {
+            if (! $id = object_to_id($object)) {
                 return;
             }
 
@@ -42,7 +46,7 @@ class Undo
         }
 
         if ($object['type'] === 'Follow') {
-            if (empty($object['actor']) || ! filter_var($object['actor'], FILTER_VALIDATE_URL)) {
+            if (empty($object['actor']) || ! Str::isUrl($object['actor'], ['http', 'https'])) {
                 // No or invalid actor.
                 return;
             }

@@ -8,9 +8,9 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
+use Intervention\Image\ImageManager;
 use Symfony\Component\DomCrawler\Crawler;
 use TorMorten\Eventy\Facades\Events as Eventy;
 
@@ -70,6 +70,7 @@ class GetPreviewCard implements ShouldQueue
 
         if (! $response->successful()) {
             Log::error('[Preview Cards] Failed to fetch the page at ' . $url);
+
             return;
         }
 
@@ -77,6 +78,7 @@ class GetPreviewCard implements ShouldQueue
 
         if (empty($body)) {
             Log::error('[Preview Cards] Missing page body');
+
             return;
         }
 
@@ -118,6 +120,7 @@ class GetPreviewCard implements ShouldQueue
             $manager = new ImageManager(new GdDriver());
         } else {
             Log::warning('[Preview Cards] Imagick nor GD installed');
+
             return null;
         }
 
@@ -132,6 +135,7 @@ class GetPreviewCard implements ShouldQueue
 
         if (! $response->successful()) {
             Log::warning('[Preview Cards] Something went wrong fetching the image at ' . $thumbnailUrl);
+
             return null;
         }
 
@@ -139,6 +143,7 @@ class GetPreviewCard implements ShouldQueue
 
         if (empty($blob)) {
             Log::warning('[Preview Cards] Missing image data');
+
             return null;
         }
 
@@ -163,6 +168,7 @@ class GetPreviewCard implements ShouldQueue
 
         if (! file_exists($fullThumbnailPath)) {
             Log::warning('[Preview Cards] Something went wrong saving the thumbnail');
+
             return null;
         }
 

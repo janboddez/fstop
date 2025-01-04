@@ -3,10 +3,11 @@
 namespace Plugins\Shortlinks\Jobs;
 
 use App\Models\Entry;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class GetShortlink implements ShouldQueue
 {
@@ -42,6 +43,7 @@ class GetShortlink implements ShouldQueue
         $token = config('shortlinks.token');
         if (empty($token)) {
             Log::debug('[Shortlinks] Missing token');
+
             return;
         }
 
@@ -60,7 +62,7 @@ class GetShortlink implements ShouldQueue
             ])
             ->body();
 
-        if (! empty($response) && filter_var($response, FILTER_VALIDATE_URL)) {
+        if (! empty($response) && Str::isUrl($response, ['http', 'https'])) {
             $this->entry->meta()->updateOrCreate(
                 ['key' => 'short_url'],
                 ['value' => (array) filter_var($response, FILTER_SANITIZE_URL)]

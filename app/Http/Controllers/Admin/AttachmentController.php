@@ -8,9 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
+use Intervention\Image\ImageManager;
 
 class AttachmentController extends Controller
 {
@@ -108,6 +108,7 @@ class AttachmentController extends Controller
             $manager = new ImageManager(new GdDriver());
         } else {
             Log::error('Imagick nor GD installed');
+
             return;
         }
 
@@ -157,9 +158,13 @@ class AttachmentController extends Controller
         // Free up memory.
         unset($image);
 
-        foreach (prepare_meta(['width', 'height', 'sizes'], [$width, $height, $sizes], $attachment) as $key => $value) {
-            // May be able to use `saveMany()`?
-            $attachment->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+        $meta = prepare_meta(array_combine(['width', 'height', 'sizes'], [$width, $height, $sizes]), $attachment);
+
+        foreach ($meta as $key => $value) {
+            $attachment->meta()->updateOrCreate(
+                ['key' => $key],
+                ['value' => $value]
+            );
         }
     }
 

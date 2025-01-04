@@ -49,10 +49,10 @@ class WebFingerController extends Controller
             ],
         ];
 
-        if (filter_var($user->avatar, FILTER_VALIDATE_URL)) {
+        if (Str::isUrl($user->avatar, ['http', 'https'])) {
             $output['links'][] = [
                 'rel' => 'http://webfinger.net/rel/avatar',
-                'type' =>  ($attachment = url_to_attachment($user->avatar))
+                'type' => ($attachment = url_to_attachment($user->avatar))
                     ? $attachment->mime_type
                     : 'application/octet-stream',
                 'href' => $user->avatar,

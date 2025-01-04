@@ -2,14 +2,15 @@
 
 namespace App\Providers;
 
+use App\Jobs\SendWebmention;
 use App\Models\Comment;
 use App\Models\Entry;
 use App\Observers\CommentObserver;
 use App\Observers\EntryObserver;
-use App\Jobs\SendWebmention;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use TorMorten\Eventy\Facades\Events as Eventy;
 
 class AppServiceProvider extends ServiceProvider
@@ -68,6 +69,65 @@ class AppServiceProvider extends ServiceProvider
 
         // Serves a similar purpose as the `EntryObserver::saved()` method, but runs _after tags and metadata are
         // saved, too_.
+        Eventy::addAction('entries:saved', function (Entry $entry) {
+            /**
+             * Parse entry content for microformats.
+             */
+            $content = $entry->content;
+            if (! preg_match('~class=("|\')?e-content("|\')?~', $content)) {
+                $content = '<div class="e-content">' . $content . '</div>';
+            }
+
+            $mf = \Mf2\parse('<div class="h-entry">' . $content . '</div>', $entry->permalink);
+
+
+            if (! empty($mf['items'][0]['type'][0]) && $mf['items'][0]['type'][0] === 'h-entry') {
+                $hentry = $mf['items'][0];
+
+                if (
+                    ! empty($hentry['properties']['in-reply-to'][0]) &&
+                    Str::isUrl($hentry['properties']['in-reply-to'][0], ['http', 'https'])
+                ) {
+                    $entry->meta()->updateOrCreate(
+                        ['key' => '_in_reply_to'],
+                        ['value' => (array) filter_var($hentry['properties']['in-reply-to'][0], FILTER_SANITIZE_URL)]
+                    );
+                } elseif (
+                    ! empty($hentry['properties']['in-reply-to'][0]['properties']['url']) &&
+                    Str::isUrl($hentry['properties']['in-reply-to'][0]['properties']['url'][0], ['http', 'https'])
+                ) {
+                    $entry->meta()->updateOrCreate(
+                        ['key' => '_in_reply_to'],
+                        ['value' => (array) filter_var(
+                            $hentry['properties']['in-reply-to'][0]['properties']['url'][0],
+                            FILTER_SANITIZE_URL
+                        )]
+                    );
+                }
+
+                /** @todo Add h-cite stuff. */
+                if (
+                    ! empty($hentry['properties']['like-of'][0]) &&
+                    Str::isUrl($hentry['properties']['like-of'][0], ['http', 'https'])
+                ) {
+                    $entry->meta()->updateOrCreate(
+                        ['key' => '_like_of'],
+                        ['value' => (array) filter_var($hentry['properties']['like-of'][0], FILTER_SANITIZE_URL)]
+                    );
+                }
+
+                if (
+                    ! empty($hentry['properties']['repost-of'][0]) &&
+                    Str::isUrl($hentry['properties']['repost-of'][0], ['http', 'https'])
+                ) {
+                    $entry->meta()->updateOrCreate(
+                        ['key' => '_repost_of'],
+                        ['value' => (array) filter_var($hentry['properties']['repost-of'][0], FILTER_SANITIZE_URL)]
+                    );
+                }
+            }
+        });
+
         Eventy::addAction('entries:saved', function (Entry $entry) {
             SendWebmention::dispatch($entry);
         }, PHP_INT_MAX - 1);

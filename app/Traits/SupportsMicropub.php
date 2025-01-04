@@ -101,10 +101,9 @@ trait SupportsMicropub
 
             // For these, it depends.
             foreach (['photo', 'featured'] as $property) {
-                $rules["$array.$property.*"] = 'nullable|array';
+                $rules["$array.$property.0"] = "nullable|url|max:255";
                 $rules["$array.$property.value"] = 'nullable|url|max:255';
                 $rules["$array.$property.alt"] = 'nullable|string|max:255';
-                $rules["$array.$property.0"] = "nullable|url|max:255";
             }
 
             // $rules["$array.featured.*"] = 'array:value,alt';

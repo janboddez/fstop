@@ -3,11 +3,11 @@
 namespace Plugins\SyndicateToMastodon\Jobs;
 
 use App\Models\Entry;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class SyndicateToMastodon implements ShouldQueue
 {
@@ -48,6 +48,7 @@ class SyndicateToMastodon implements ShouldQueue
         $host = config('mastodon.host');
         if (empty($host)) {
             Log::warning('[SyndicateToMastodon] Missing host');
+
             return;
         }
 
@@ -56,6 +57,7 @@ class SyndicateToMastodon implements ShouldQueue
         $token = config('mastodon.token');
         if (empty($token)) {
             Log::warning('[SyndicateToMastodon] Missing token');
+
             return;
         }
 
@@ -91,6 +93,7 @@ class SyndicateToMastodon implements ShouldQueue
             foreach ($syndicationUrls->value as $url) {
                 if (strpos($url, $host) !== false) {
                     Log::debug("[SyndicateToMastodon] Entry got syndicated to $url before");
+
                     return;
                 }
             }
@@ -110,6 +113,7 @@ class SyndicateToMastodon implements ShouldQueue
 
         if (empty($content)) {
             Log::debug('[SyndicateToMastodon] Empty status');
+
             return;
         }
 
@@ -144,7 +148,7 @@ class SyndicateToMastodon implements ShouldQueue
             ]);
         }
 
-        if (! empty($response['url']) && filter_var($response['url'], FILTER_VALIDATE_URL)) {
+        if (! empty($response['url']) && Str::isUrl($response['url'], ['http', 'https'])) {
             $syndicationUrls[] = filter_var($response['url'], FILTER_SANITIZE_URL);
 
             $this->entry->meta()->updateOrCreate(

@@ -32,6 +32,7 @@ class GetWeather implements ShouldQueue
         /** @todo Make smarter. Like look at `published`! */
         if ($this->entry->created_at->lt(now()->subHour())) {
             Log::debug("[Location] Skipping fetching weather info for entry {$this->entry->id}: too old");
+
             return;
         }
 
@@ -95,6 +96,7 @@ class GetWeather implements ShouldQueue
 
             if (! $response->successful()) {
                 Log::error("[Location] Failed to retrieve weather data for $lat, $lon");
+
                 return null;
             }
 
@@ -128,109 +130,109 @@ class GetWeather implements ShouldQueue
      * Maps OpenWeather's IDs to SVG icons. Kindly borrowed from David Shanske's Simple Location plugin for WordPress.
      *
      * @link https://github.com/dshanske/simple-location
-     * @license http://www.gnu.org/licenses/gpl-2.0.html GNU General Public License, version 2 or later
+     * @license https://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 2 or later
      *
      * @todo Actually use this code, haha!
      */
     protected static function iconMap(int $id): string
     {
-        if (in_array($id, array(200, 201, 202, 230, 231, 232), true)) {
+        if (in_array($id, [200, 201, 202, 230, 231, 232], true)) {
             return 'wi-thunderstorm';
         }
 
-        if (in_array($id, array(210, 211, 212, 221), true)) {
+        if (in_array($id, [210, 211, 212, 221], true)) {
             return 'wi-lightning';
         }
 
-        if (in_array($id, array(300, 301, 321, 500), true)) {
+        if (in_array($id, [300, 301, 321, 500], true)) {
             return 'wi-sprinkle';
         }
 
-        if (in_array($id, array(302, 311, 312, 314, 501, 502, 503, 504), true)) {
+        if (in_array($id, [302, 311, 312, 314, 501, 502, 503, 504], true)) {
             return 'wi-rain';
         }
 
-        if (in_array($id, array(310, 511, 611, 612, 615, 616, 620), true)) {
+        if (in_array($id, [310, 511, 611, 612, 615, 616, 620], true)) {
             return 'wi-rain-mix';
         }
 
-        if (in_array($id, array(313, 520, 521, 522, 701), true)) {
+        if (in_array($id, [313, 520, 521, 522, 701], true)) {
             return 'wi-showers';
         }
 
-        if (in_array($id, array(531, 901), true)) {
+        if (in_array($id, [531, 901], true)) {
             return 'wi-storm-showers';
         }
 
-        if (in_array($id, array(600, 601, 621, 622), true)) {
+        if (in_array($id, [600, 601, 621, 622], true)) {
             return 'wi-snow';
         }
 
-        if (in_array($id, array(602), true)) {
+        if (in_array($id, [602], true)) {
             return 'wi-sleet';
         }
 
-        if (in_array($id, array(711), true)) {
+        if (in_array($id, [711], true)) {
             return 'wi-smoke';
         }
 
-        if (in_array($id, array(721), true)) {
+        if (in_array($id, [721], true)) {
             return 'wi-day-haze';
         }
 
-        if (in_array($id, array(731, 761), true)) {
+        if (in_array($id, [731, 761], true)) {
             return 'wi-dust';
         }
 
-        if (in_array($id, array(741), true)) {
+        if (in_array($id, [741], true)) {
             return 'wi-fog';
         }
 
-        if (in_array($id, array(771, 801, 802, 803), true)) {
+        if (in_array($id, [771, 801, 802, 803], true)) {
             return 'wi-cloudy-gusts';
         }
 
-        if (in_array($id, array(781, 900), true)) {
+        if (in_array($id, [781, 900], true)) {
             return 'wi-tornado';
         }
 
-        if (in_array($id, array(800), true)) {
+        if (in_array($id, [800], true)) {
             return 'wi-day-sunny';
         }
 
-        if (in_array($id, array(804), true)) {
+        if (in_array($id, [804], true)) {
             return 'wi-cloudy';
         }
 
-        if (in_array($id, array(902, 962), true)) {
+        if (in_array($id, [902, 962], true)) {
             return 'wi-hurricane';
         }
 
-        if (in_array($id, array(903), true)) {
+        if (in_array($id, [903], true)) {
             return 'wi-snowflake-cold';
         }
 
-        if (in_array($id, array(904), true)) {
+        if (in_array($id, [904], true)) {
             return 'wi-hot';
         }
 
-        if (in_array($id, array(905), true)) {
+        if (in_array($id, [905], true)) {
             return 'wi-windy';
         }
 
-        if (in_array($id, array(906), true)) {
+        if (in_array($id, [906], true)) {
             return 'wi-day-hail';
         }
 
-        if (in_array($id, array(957), true)) {
+        if (in_array($id, [957], true)) {
             return 'wi-strong-wind';
         }
 
-        if (in_array($id, array(762), true)) {
+        if (in_array($id, [762], true)) {
             return 'wi-volcano';
         }
 
-        if (in_array($id, array(751), true)) {
+        if (in_array($id, [751], true)) {
             return 'wi-sandstorm';
         }
 

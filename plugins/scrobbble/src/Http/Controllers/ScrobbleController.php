@@ -20,6 +20,7 @@ class ScrobbleController
 
         if (! $request->filled('u')) {
             Log::error('[Scrobbble] Missing login');
+
             return response("FAILED\n", 401, ['Content-Type' => 'text/plain; charset=UTF-8']);
         }
 
@@ -28,6 +29,7 @@ class ScrobbleController
 
         if (! $user) {
             Log::error('[Scrobbble] Invalid login');
+
             return response("FAILED\n", 403, ['Content-Type' => 'text/plain; charset=UTF-8']);
         }
 
@@ -40,6 +42,7 @@ class ScrobbleController
         /** @todo Support per-user authentication. */
         if (! $this->standardAuth($token, $request->input('t'), $user)) {
             Log::error('[Scrobbble] Invalid auth token');
+
             return response("FAILED\n", 403, ['Content-Type' => 'text/plain; charset=UTF-8']);
         }
 
@@ -91,12 +94,14 @@ class ScrobbleController
         // Authenticate using session key.
         if (! $request->filled('s')) {
             Log::error('[Scrobbble] Missing session key');
+
             return response("FAILED\n", 401, ['Content-Type' => 'text/plain; charset=UTF-8']);
         }
 
         $session = $this->getSession($request->input('s'));
         if (empty($session->user_id)) {
             Log::error('[Scrobbble] Invalid session key');
+
             return response("FAILED\n", 403, ['Content-Type' => 'text/plain; charset=UTF-8']);
         }
 
@@ -109,6 +114,7 @@ class ScrobbleController
 
         if (! is_string($artist) || ! is_string($title) || ! is_string($album)) {
             Log::error('[Scrobbble] Wrongly formatted data');
+
             return response("FAILED\n", 400, ['Content-Type' => 'text/plain; charset=UTF-8']);
         }
 
@@ -149,12 +155,14 @@ class ScrobbleController
         // Authenticate using session key.
         if (! $request->filled('s')) {
             Log::error('[Scrobbble] Missing session key');
+
             return response("FAILED\n", 401, ['Content-Type' => 'text/plain; charset=UTF-8']);
         }
 
         $session = $this->getSession($request->input('s'));
         if (empty($session->user_id)) {
             Log::error('[Scrobbble] Invalid session key');
+
             return response("FAILED\n", 403, ['Content-Type' => 'text/plain; charset=UTF-8']);
         }
 
@@ -167,6 +175,7 @@ class ScrobbleController
 
         if (empty($artists) || empty($titles) || empty($times)) {
             Log::error('[Scrobbble] Wrongly formatted data');
+
             return response("FAILED\n", 400, ['Content-Type' => 'text/plain; charset=UTF-8']);
         }
 
@@ -182,7 +191,7 @@ class ScrobbleController
             }
 
             $data = array_filter([
-                'title'  => $title,
+                'title' => $title,
                 'artist' => $artist,
                 'album' => Eventy::filter('scrobbble:album', isset($albums[$i]) ? strip_tags($albums[$i]) : ''),
                 'track' => Eventy::filter('scrobbble:track', isset($tracks[$i]) ? (int) $tracks[$i] : 0),
@@ -235,6 +244,7 @@ class ScrobbleController
         // Avoid duplicates, so we don't have to rely on clients for this.
         if (Entry::where('content', $content)->where('created_at', $time)->exists()) {
             Log::warning('[Scrobbble] Listen already exists');
+
             return 'duplicate';
         }
 
@@ -284,6 +294,7 @@ class ScrobbleController
 
         if (empty($password)) {
             Log::warning('[Scrobbble] No password in config. Check cache?');
+
             return false;
         }
 
@@ -304,6 +315,7 @@ class ScrobbleController
 
         if (! $session) {
             Log::error('[Scrobbble] User has no active sessions');
+
             return null;
         }
 

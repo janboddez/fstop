@@ -6,12 +6,15 @@ use App\Models\Comment;
 use App\Models\User;
 use Illuminate\Http\Request;
 
+use function App\Support\ActivityPub\object_to_id;
+
 class Update
 {
     public function __construct(
         protected Request $request,
         protected User $user
-    ) {}
+    ) {
+    }
 
     /**
      * Currently, only reply updates are supported.
@@ -22,7 +25,7 @@ class Update
     {
         $object = $this->request->input('object');
 
-        if (! $id = activitypub_object_to_id($object)) {
+        if (! $id = object_to_id($object)) {
             return;
         }
 

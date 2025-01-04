@@ -4,6 +4,7 @@ namespace App\Support\ActivityPub;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 /**
  * Heavily inspired by both {@link https://github.com/pixelfed/pixelfed/blob/dev/app/Util/ActivityPub/HttpSignature.php}
@@ -53,7 +54,7 @@ class HttpSignature
             return false;
         }
 
-        if (! filter_var($signatureData['keyId'], FILTER_VALIDATE_URL)) {
+        if (! Str::isUrl($signatureData['keyId'], ['http', 'https'])) {
             return false;
         }
 

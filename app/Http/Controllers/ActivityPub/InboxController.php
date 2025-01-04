@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
+use function App\Support\ActivityPub\fetch_profile;
+
 class InboxController extends Controller
 {
     public function inbox(User $user, Request $request): Response
@@ -52,7 +54,7 @@ class InboxController extends Controller
             $publicKey = $actor->public_key;
         } else {
             // Try and fetch the remote public key.
-            $data = activitypub_fetch_profile($signatureData['keyId'], $user);
+            $data = fetch_profile($signatureData['keyId'], $user);
             $publicKey = $data['public_key'] ?? null;
         }
 
@@ -69,16 +71,11 @@ class InboxController extends Controller
 
         if (! $verified && ! empty($actor->public_key)) {
             // Our `$actor->public_key` may be outdated.
-            $meta = activitypub_fetch_profile($signatureData['keyId'], $user);
+            $meta = fetch_profile($signatureData['keyId'], $user);
 
             if (! empty($meta['public_key'])) {
                 // Update the actor's meta ...
-                foreach (prepare_meta(array_keys($meta), array_values($meta), $actor) as $key => $value) {
-                    $actor->meta()->updateOrCreate(
-                        ['key' => $key],
-                        ['value' => $value]
-                    );
-                }
+                add_meta($meta, $actor);
 
                 // ... and try again.
                 $verified = HttpSignature::verify($meta['public_key'], $signatureData, $request);

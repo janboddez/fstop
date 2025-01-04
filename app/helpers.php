@@ -3,12 +3,10 @@
 use App\Models\Attachment;
 use App\Models\Entry;
 use App\Models\Option;
-use App\Models\User;
-use App\Support\ActivityPub\HttpSignature;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use TorMorten\Eventy\Facades\Events as Eventy;
 
@@ -192,7 +190,7 @@ function slugify(string $value, string $separator = '-', string $language = 'en'
 
 function url_to_attachment(string $url): ?Attachment
 {
-    if (! filter_var($url, FILTER_VALIDATE_URL)) {
+    if (! Str::isUrl($url, ['http', 'https'])) {
         return null;
     }
 
@@ -215,7 +213,7 @@ function url_to_attachment(string $url): ?Attachment
 
 function url_to_entry(string $url): ?Entry
 {
-    if (! filter_var($url, FILTER_VALIDATE_URL)) {
+    if (! Str::isUrl($url, ['http', 'https'])) {
         return null;
     }
 
@@ -359,14 +357,11 @@ function list_pages(int $number = 5): string
     return $html;
 }
 
-/**
- * @todo Can't we do this in an observer class, just prior to saving? Except the `delete()` part ...
- */
-function prepare_meta(array $keys, array $values, $metable): array
+function prepare_meta(array $meta, Model $metable): array
 {
     $temp = [];
 
-    foreach (array_combine($keys, $values) as $key => $value) {
+    foreach ($meta as $key => $value) {
         if (empty($key)) {
             continue;
         }
@@ -385,134 +380,17 @@ function prepare_meta(array $keys, array $values, $metable): array
     return $temp;
 }
 
-function activitypub_fetch_webfinger(string $resource): ?string
+function add_meta(array $meta, Model $metable): void
 {
-    $resource = ltrim($resource, '@');
-    if (filter_var($resource, FILTER_VALIDATE_EMAIL) && $pos = strpos($resource, '@')) {
-        $host = substr($resource, $pos + 1);
-        $login = substr($resource, 0, $pos);
-    }
+    $meta = prepare_meta($meta, $metable);
+    $meta = array_map(
+        fn ($key, $value) => [
+            'key' => $key,
+            'value' => $value,
+        ],
+        array_keys($meta),
+        array_values($meta)
+    );
 
-    if (empty($host) || empty($login)) {
-        return null;
-    }
-
-    $url = "https://{$host}/.well-known/webfinger?resource=" . rawurlencode("acct:{$login}@{$host}");
-
-    $response = Cache::remember("activitypub:webfinger:$resource", 60 * 60 * 6, function () use ($url) {
-        return Http::withHeaders(['Accept' => 'application/jrd+json'])
-            ->get($url)
-            ->json();
-    });
-
-    /** @todo We may eventually want to also store (and locally cache) avatars. And an `@-@` handle. */
-    if (empty($response['links'])) {
-        return null;
-    }
-
-    foreach ($response['links'] as $link) {
-        if (empty($link['rel']) || $link['rel'] !== 'self') {
-            continue;
-        }
-
-        if (
-            empty($link['type']) ||
-            ! in_array($link['type'], [
-                'application/activity+json',
-                'application/ld+json; profile="https://www.w3.org/ns/activitystreams"',
-            ], true)
-        ) {
-            continue;
-        }
-
-        if (! Str::isUrl($link['href'], ['http', 'https'])) {
-            continue;
-        }
-
-        return filter_var($link['href'], FILTER_SANITIZE_URL);
-    }
-
-    return null;
-}
-
-function activitypub_fetch_profile(string $url, User $user = null): array
-{
-    if (empty($user->id)) {
-        // Shared inbox request. Find the oldest user with both a private and a public key. We'll eventually want to
-        // look for, like, a super admin instead.
-        $user = User::orderBy('id', 'asc')
-            ->whereHas('meta', function ($query) {
-                $query->where('key', 'private_key')
-                    ->whereNotNull('value');
-            })
-            ->whereHas('meta', function ($query) {
-                $query->where('key', 'public_key')
-                    ->whereNotNull('value');
-            })
-            ->first();
-    }
-
-    $url = strtok($url, '#');
-    strtok('', '');
-
-    $response = Cache::remember("activitypub:profile:$url", 60 * 60 * 6, function () use ($url, $user) {
-        return Http::withHeaders(HttpSignature::sign(
-            $user,
-            $url,
-            null,
-            ['Accept' => 'application/activity+json, application/json'],
-            'get'
-        ))
-        ->get($url)
-        ->json();
-    });
-
-    /** @todo We may eventually want to also store (and locally cache) avatars. And an `@-@` handle. */
-    if (! empty($response['publicKey']['id'])) {
-        return array_filter([
-            'username' => isset($response['preferredUsername']) && is_string($response['preferredUsername'])
-                ? strip_tags($response['preferredUsername'])
-                : null,
-            'name' => isset($response['name']) && is_string($response['name'])
-                ? strip_tags($response['name'])
-                : null,
-            'url' => isset($response['url']) && filter_var($response['url'], FILTER_VALIDATE_URL)
-                ? filter_var($response['url'], FILTER_SANITIZE_URL)
-                : null,
-            'inbox' => isset($response['inbox']) && filter_var($response['inbox'], FILTER_VALIDATE_URL)
-                ? filter_var($response['inbox'], FILTER_SANITIZE_URL)
-                : null,
-            // phpcs:ignore Generic.Files.LineLength.TooLong
-            'shared_inbox' => isset($response['endpoints']['sharedInbox']) && filter_var($response['endpoints']['sharedInbox'], FILTER_VALIDATE_URL)
-                ? filter_var($response['endpoints']['sharedInbox'], FILTER_SANITIZE_URL)
-                : null,
-            'outbox' => isset($response['outbox']) && filter_var($response['outbox'], FILTER_VALIDATE_URL)
-                ? filter_var($response['outbox'], FILTER_SANITIZE_URL)
-                : null,
-            'key_id' => $response['publicKey']['id'] ?? null,
-            'public_key' => $response['publicKey']['publicKeyPem'] ?? null,
-        ]);
-    }
-
-    return [];
-}
-
-function activitypub_get_inbox(string $url): ?string
-{
-    $data = activitypub_fetch_profile($url);
-
-    return $data['inbox'] ?? null;
-}
-
-function activitypub_object_to_id(mixed $object): ?string
-{
-    if (filter_var($object, FILTER_VALIDATE_URL)) {
-        $id = filter_var($object, FILTER_SANITIZE_URL);
-    } elseif (! empty($object['id']) && filter_var($object['id'], FILTER_VALIDATE_URL)) {
-        $id = filter_var($object['id'], FILTER_SANITIZE_URL);
-    }
-
-    return isset($id) && is_string($id)
-        ? $id
-        : null;
+    $metable->meta()->createMany($meta);
 }

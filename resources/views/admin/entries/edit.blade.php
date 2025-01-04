@@ -51,7 +51,7 @@
                 <div class="card-content">
                     <div class="field">
                         <div class="control">
-                            <textarea class="textarea" id="summary" name="summary" rows="3">{{ old('summary', $entry->summary ?? '') }}</textarea>
+                            <textarea class="textarea" id="summary" name="summary" rows="3">{{ old('summary', $entry->rawSummary ?? '') }}</textarea>
                        </div>
                     </div>
                 </div>
@@ -66,23 +66,26 @@
                     <div class="field">
                         @if (isset($entry) && ! blank($entry->meta))
                             @foreach ($entry->meta as $meta)
-                                <div class="columns">
-                                    <div class="column">
-                                        <div class="control">
-                                            <input type="text" class="input" name="meta_keys[]" value="{{ $meta->key }}">
+                                @if (! Str::startsWith($meta->key, '_'))
+                                    {{-- Allow for "custom fields" to be "hidden." --}}
+                                    <div class="columns">
+                                        <div class="column">
+                                            <div class="control">
+                                                <input type="text" class="input" name="meta_keys[]" value="{{ $meta->key }}">
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div class="column">
-                                        <div class="control">
-                                            <textarea class="textarea" id="summary" name="meta_values[]" rows="1">{{
-                                                ! empty($meta->value[0]) && ! is_array($meta->value[0])
-                                                    ? $meta->value[0]
-                                                    : json_encode($meta->value, JSON_UNESCAPED_SLASHES)
-                                            }}</textarea>
+                                        <div class="column">
+                                            <div class="control">
+                                                <textarea class="textarea" id="summary" name="meta_values[]" rows="1">{{
+                                                    ! empty($meta->value[0]) && ! is_array($meta->value[0])
+                                                        ? $meta->value[0]
+                                                        : json_encode($meta->value, JSON_UNESCAPED_SLASHES)
+                                                }}</textarea>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                @endif
                             @endforeach
                         @endif
 

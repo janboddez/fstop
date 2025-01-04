@@ -153,9 +153,7 @@ class EntryController extends Controller
             ! empty($validated['meta_values']) &&
             count($validated['meta_keys']) === count($validated['meta_values'])
         ) {
-            foreach (prepare_meta($validated['meta_keys'], $validated['meta_values'], $entry) as $key => $value) {
-                $entry->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
-            }
+            add_meta(array_combine($validated['meta_keys'], $validated['meta_values']), $entry);
         }
 
         /** @todo Use an actual Laravel event. */
@@ -229,8 +227,13 @@ class EntryController extends Controller
             ! empty($validated['meta_values']) &&
             count($validated['meta_keys']) === count($validated['meta_values'])
         ) {
-            foreach (prepare_meta($validated['meta_keys'], $validated['meta_values'], $entry) as $key => $value) {
-                $entry->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+            $meta = prepare_meta(array_combine($validated['meta_keys'], $validated['meta_values']), $entry);
+
+            foreach ($meta as $key => $value) {
+                $entry->meta()->updateOrCreate(
+                    ['key' => $key],
+                    ['value' => $value]
+                );
             }
         }
 

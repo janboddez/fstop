@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -238,7 +239,7 @@ class User extends Authenticatable
             // ],
         ];
 
-        if (filter_var($this->avatar, FILTER_VALIDATE_URL)) {
+        if (Str::isUrl($this->avatar, ['http', 'https'])) {
             $output['icon'] = [
                 'type' => 'Image',
                 'mediaType' => ($attachment = url_to_attachment($this->avatar))

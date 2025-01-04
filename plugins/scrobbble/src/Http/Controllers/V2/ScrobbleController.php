@@ -20,6 +20,7 @@ class ScrobbleController extends BaseController
 
         if (! is_string($method = $request->input('method'))) {
             Log::error('[Scrobbble/V2] Missing or invalid method');
+
             return response()->json([
                 'error' => 3,
                 'message' => 'Invalid Method - No method with that name in this package',
@@ -31,6 +32,7 @@ class ScrobbleController extends BaseController
 
         if (empty($method) || ! method_exists(__CLASS__, $method)) {
             Log::error('[Scrobbble/V2] Unsupported method');
+
             return response()->json([
                 'error' => 3,
                 'message' => 'Invalid Method - No method with that name in this package',
@@ -118,7 +120,7 @@ class ScrobbleController extends BaseController
             Log::error('[Scrobbble/2.0] Invalid format');
 
             return response()->json([
-                'error'   => 6,
+                'error' => 6,
                 'message' => 'Invalid parameters - Your request is missing a required parameter',
             ]);
         }
@@ -202,7 +204,7 @@ class ScrobbleController extends BaseController
             }
 
             $data = array_filter([
-                'title'  => $title,
+                'title' => $title,
                 'artist' => $artist,
                 'album' => Eventy::filter('scrobbble:album', isset($albums[$i]) ? strip_tags($albums[$i]) : ''),
                 'track' => Eventy::filter('scrobbble:track', isset($tracks[$i]) ? (int) $tracks[$i] : 0),
@@ -289,6 +291,7 @@ class ScrobbleController extends BaseController
 
         if (empty($storedPassword)) {
             Log::warning('[Scrobbble] No password in config. Check cache?');
+
             return false;
         }
 

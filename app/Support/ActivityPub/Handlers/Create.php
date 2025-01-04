@@ -2,18 +2,23 @@
 
 namespace App\Support\ActivityPub\Handlers;
 
-use App\Models\Comment;
 use App\Models\Actor;
+use App\Models\Comment;
 use App\Models\Entry;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+
+use function App\Support\ActivityPub\fetch_profile;
+use function App\Support\ActivityPub\object_to_id;
 
 class Create
 {
     public function __construct(
         protected Request $request,
         protected User $user
-    ) {}
+    ) {
+    }
 
     /**
      * @todo Use `abort()` with "proper" error messages and status codes? (Something Mastodon *does not* do.)
@@ -22,15 +27,15 @@ class Create
     {
         $object = $this->request->input('object');
 
-        if (empty($object['inReplyTo']) || ! filter_var($object['inReplyTo'], FILTER_VALIDATE_URL)) {
+        if (empty($object['inReplyTo']) || ! Str::isUrl($object['inReplyTo'], ['http', 'https'])) {
             return;
         }
 
-        if (empty($object['attributedTo']) || ! filter_var($object['attributedTo'], FILTER_VALIDATE_URL)) {
+        if (empty($object['attributedTo']) || ! Str::isUrl($object['attributedTo'], ['http', 'https'])) {
             return;
         }
 
-        if (! $id = activitypub_object_to_id($object)) {
+        if (! $id = object_to_id($object)) {
             return;
         }
 
@@ -67,17 +72,11 @@ class Create
             'url' => filter_var($object['attributedTo'], FILTER_SANITIZE_URL),
         ]);
 
-        if ($actor->wasRecentlyCreated) {
-            // We should be getting these from cache.
-            $meta = activitypub_fetch_profile($actor->url, $this->user);
-
-            /** @todo Somehow do this in one go, using `saveMany()`. */
-            foreach (prepare_meta(array_keys($meta), array_values($meta), $actor) as $key => $value) {
-                $actor->meta()->updateOrCreate(
-                    ['key' => $key],
-                    ['value' => $value]
-                );
-            }
+        if (
+            $actor->wasRecentlyCreated &&
+            $meta = fetch_profile(filter_var($actor->url, FILTER_SANITIZE_URL), $this->user)
+        ) {
+            add_meta($meta, $actor);
         }
 
         $data = array_filter([
@@ -110,7 +109,7 @@ class Create
             'value' => (array) $id,
         ]);
 
-        if (! empty($object['url']) && filter_var($object['url'], FILTER_VALIDATE_URL)) {
+        if (! empty($object['url']) && Str::isUrl($object['url'], ['http', 'https'])) {
             $comment->meta()->create([
                 'key' => 'activitypub_url',
                 'value' => (array) filter_var($object['url'], FILTER_SANITIZE_URL),

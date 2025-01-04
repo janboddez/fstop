@@ -53,8 +53,11 @@ class ProfileController extends Controller
         // Everything else is "user meta."
         $meta = array_diff_key($validated, array_flip($user->getFillable()));
 
-        foreach (prepare_meta(array_keys($meta), array_values($meta), $user) as $key => $value) {
-            $user->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+        foreach (prepare_meta($meta, $user) as $key => $value) {
+            $user->meta()->updateOrCreate(
+                ['key' => $key],
+                ['value' => $value]
+            );
         }
 
         return back()

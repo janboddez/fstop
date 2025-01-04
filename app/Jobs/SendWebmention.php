@@ -31,6 +31,7 @@ class SendWebmention implements ShouldQueue
         /** @todo Make smarter. */
         if ($this->entry->created_at->lt(now()->subHours(2))) {
             Log::debug("[Webmention] Skipping sending mentions for entry {$this->entry->id}: too old");
+
             return;
         }
 
@@ -60,6 +61,7 @@ class SendWebmention implements ShouldQueue
             if (in_array($target, array_column($previousMentions, 'target'), true)) {
                 // Skip (until we support updates, at least).
                 Log::debug("[Webmention] Previously pinged the page at $target, skipping");
+
                 continue;
             }
 

@@ -7,16 +7,19 @@ use App\Models\Comment;
 use App\Models\User;
 use Illuminate\Http\Request;
 
+use function App\Support\ActivityPub\object_to_id;
+
 class Delete
 {
     public function __construct(
         protected Request $request,
         protected User $user
-    ) {}
+    ) {
+    }
 
     public function handle(): void
     {
-        if (! $id = activitypub_object_to_id($this->request->input('object'))) {
+        if (! $id = object_to_id($this->request->input('object'))) {
             return;
         }
 

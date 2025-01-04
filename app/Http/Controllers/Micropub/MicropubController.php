@@ -180,7 +180,7 @@ class MicropubController extends Controller
             $properties['created_at'] = [
                 ! empty($properties['published'][0])
                     ? new Carbon($properties['published'][0])
-                    : now()
+                    : now(),
             ];
 
             $properties['user_id'] = (array) $request->user()->id;
@@ -232,7 +232,7 @@ class MicropubController extends Controller
 
         // Scenarios other than "create" require a URL.
         abort_unless($request->filled('url'), 400, __('Missing URL parameter.'));
-        abort_unless(filter_var($request->input('url'), FILTER_VALIDATE_URL), 400, __('Invalid URL parameter.'));
+        abort_unless(Str::isUrl($request->input('url'), ['http', 'https']), 400, __('Invalid URL parameter.'));
 
         $entry = url_to_entry($request->input('url'));
 
@@ -280,7 +280,7 @@ class MicropubController extends Controller
 
             return trim(
                 $context . "\n\n" . (
-                ! empty($properties['content'][0])
+                    ! empty($properties['content'][0])
                     // phpcs:ignore Generic.Files.LineLength.TooLong
                     ? "<div class=\"e-content\" markdown=\"1\">\n" . $properties['content'][0] . "\n</div>"
                     : ''
@@ -303,7 +303,7 @@ class MicropubController extends Controller
 
             return trim(
                 $context . "\n\n" . (
-                ! empty($properties['content'][0])
+                    ! empty($properties['content'][0])
                     ? "<div class=\"e-content\" markdown=\"1\">\n" . $properties['content'][0] . "\n</div>"
                     : ''
                 )
@@ -325,7 +325,7 @@ class MicropubController extends Controller
 
             return trim(
                 $context . "\n\n" . (
-                ! empty($properties['content'][0])
+                    ! empty($properties['content'][0])
                     ? "<div class=\"e-content\" markdown=\"1\">\n" . $properties['content'][0] . "\n</div>"
                     : ''
                 )
@@ -347,7 +347,7 @@ class MicropubController extends Controller
 
             return trim(
                 $context . "\n\n" . (
-                ! empty($properties['content'][0])
+                    ! empty($properties['content'][0])
                     ? "<blockquote class=\"e-content\" markdown=\"1\">\n" . $properties['content'][0] . "\n</blockquote>"
                     : ''
                 )

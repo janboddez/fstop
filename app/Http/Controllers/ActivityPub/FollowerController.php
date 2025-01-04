@@ -25,14 +25,14 @@ class FollowerController extends Controller
                 'partOf' => route('activitypub.followers', $user),
                 'totalItems' => $followers->total(),
                 'orderedItems' => array_map(
-                    fn($follower) => filter_var($follower->url, FILTER_SANITIZE_URL),
+                    fn ($follower) => filter_var($follower->url, FILTER_SANITIZE_URL),
                     $followers->items()
                 ),
                 'first' => route('activitypub.followers', ['user' => $user, 'page' => 1]),
                 'last' => route('activitypub.followers', ['user' => $user, 'page' => $followers->lastPage()]),
                 'next' => $followers->nextPageUrl(),
                 'prev' => $followers->previousPageUrl(),
-            ], fn($value) => $value || $value === 0), // Allow literal `0`.
+            ], fn ($value) => $value || $value === 0), // Allow literal `0`.
             200,
             ['Content-Type' => 'application/activity+json']
         );

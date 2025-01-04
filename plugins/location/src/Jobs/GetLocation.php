@@ -99,6 +99,7 @@ class GetLocation implements ShouldQueue
 
             if (! $response->successful()) {
                 Log::error("[Location] Failed to retrieve address data for $lat, $lon");
+
                 return null;
             }
 
@@ -107,6 +108,7 @@ class GetLocation implements ShouldQueue
 
         if (! empty($data['error'])) {
             Log::error("[Location] {$data['error']} ($lat, $lon)");
+
             return null;
         }
 

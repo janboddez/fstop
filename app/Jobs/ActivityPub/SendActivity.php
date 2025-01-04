@@ -7,8 +7,8 @@ use App\Models\User;
 use App\Support\ActivityPub\HttpSignature;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class SendActivity implements ShouldQueue
 {
@@ -57,7 +57,7 @@ class SendActivity implements ShouldQueue
             }
 
             $object = $this->object->serialize();
-            $body = json_encode(array_filter([
+            $activity = array_filter([
                 '@context' => ['https://www.w3.org/ns/activitystreams'],
                 'id' => $this->object['id'] . '#' . strtolower($this->type) . '-' . bin2hex(random_bytes(16)),
                 'type' => $this->type,
@@ -67,7 +67,47 @@ class SendActivity implements ShouldQueue
                 'updated' => $this->type === 'Create' ? null : ($object['updated'] ?? null),
                 'to' => $object['to'] ?? ['https://www.w3.org/ns/activitystreams#Public'],
                 'cc' => $object['cc'] ?? [url("activitypub/users/{$this->object->user->id}/followers")],
-            ]));
+            ]);
+
+            if (($likeOf = $this->object->meta->firstWhere('key', '_like_of')) && ! empty($likeOf->value[0])) {
+                // Like.
+                if (in_array($this->type, ['Create', 'Update'], true)) {
+                    $activity['type'] = 'Like';
+                    $activity['object'] = filter_var($likeOf->value[0], FILTER_VALIDATE_URL);
+                    unset($activity['object']['updated']);
+                    unset($activity['updated']);
+                } elseif (
+                    $this->type === 'Delete' &&
+                    ($like = $this->object->meta->firstWhere('key', '_activitypub_activity')) &&
+                    ! empty($like->value[0])
+                ) {
+                    $activity['type'] = 'Undo';
+                    $activity['object'] = filter_var($like->value[0], FILTER_VALIDATE_URL); // Previous "Like."
+                    unset($activity['object']['updated']);
+                    unset($activity['updated']);
+                }
+            } elseif (
+                in_array($this->type, ['Create', 'Update'], true) &&
+                ($repostOf = $this->object->meta->firstWhere('key', 'repost_of')) && ! empty($repostOf->value[0])
+            ) {
+                if (in_array($this->type, ['Create', 'Update'], true)) {
+                    $activity['type'] = 'Announce';
+                    $activity['object'] = filter_var($likeOf->value[0], FILTER_VALIDATE_URL);
+                    unset($activity['object']['updated']);
+                    unset($activity['updated']);
+                } elseif (
+                    $this->type === 'Delete' &&
+                    ($announce = $this->object->meta->firstWhere('key', '_activitypub_activity')) &&
+                    ! empty($announce->value[0])
+                ) {
+                    $activity['type'] = 'Undo';
+                    $activity['object'] = filter_var($announce->value[0], FILTER_VALIDATE_URL); // Previous "Announce."
+                    unset($activity['object']['updated']);
+                    unset($activity['updated']);
+                }
+            }
+
+            $body = json_encode($activity);
 
             $headers = HttpSignature::sign(
                 $this->object->user,
@@ -84,10 +124,24 @@ class SendActivity implements ShouldQueue
                 ->post($this->inbox);
 
             if ($response->successful()) {
-                Log::debug("[ActivityPub] Successfully sent {$this->type} activity to {$this->inbox}");
+                Log::debug("[ActivityPub] Successfully sent {$activity['type']} activity to {$this->inbox}");
+
+                if ($activity['type'] = 'Undo') {
+                    // We sent an Undo and can forget about the original activity.
+                    $this->object->meta()
+                        ->where('key', '_activitypub_activity')
+                        ->delete();
+                }
+
+                if (in_array($activity['type'], ['Like', 'Announce'], true)) {
+                    $this->object->meta()->updateOrCreate(
+                        ['key' => '_activitypub_activity'],
+                        ['value' => (array) $activity] // So that we may one day undo it.
+                    );
+                }
 
                 if (! empty($this->hash) && $this->type !== 'Delete') {
-                    // This is where we store a hash of the _body minus any `updated` property, to avoid sending the
+                    // This is where we store a hash of the _body minus any `updated` property_, to avoid sending the
                     // same version of a post over and over again. Except for Deletes; for those, we've probably already
                     // deleted the previously stored value.
                     $this->object->meta()->updateOrCreate(
