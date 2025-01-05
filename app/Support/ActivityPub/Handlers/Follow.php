@@ -4,6 +4,7 @@ namespace App\Support\ActivityPub\Handlers;
 
 use App\Models\Actor;
 use App\Models\User;
+use App\Support\ActivityPub\HttpSignature;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
