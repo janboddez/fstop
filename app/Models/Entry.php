@@ -368,7 +368,11 @@ class Entry extends Model
 
                 foreach ($this->mentions as $handle => $url) {
                     // Prepend the first mention. This is tricky! (We *assume* it's the person we're replying to.)
-                    $content = Str::replaceStart('<p>', '<p>@' . strtok(ltrim($handle, '@'), '@') . ' ', $content);
+                    $content = Str::replaceStart(
+                        '<p>',
+                        '<p><a href="' . e($url) . '" rel="mention">@' . e(strtok(ltrim($handle, '@'), '@')) . '</a> ',
+                        $content
+                    );
                     strtok('', '');
                     break;
                 }
@@ -382,7 +386,8 @@ class Entry extends Model
             ? $meta->value[0]
             : $this->permalink;
 
-        $content .= '<p><a href="' . e($permalink) . '">' . e($permalink) . '</a></p>';
+        $content .= '<p><a href="' . e($permalink) . '">' .
+            e(preg_replace('~^https?://~', '', $permalink)) . '</a></p>';
 
         $lang = strtok(app()->getLocale(), '_');
         strtok('', '');
