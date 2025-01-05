@@ -27,7 +27,7 @@ function fetch_object(string $url, User $user = null): array
     $url = strtok($url, '#');
     strtok('', '');
 
-    $response = Cache::remember('activitypub:entry:' . md5($url), 60 * 60 * 12, function () use ($url, $user) {
+    $response = Cache::remember('activitypub:entry:' . md5($url), 60 * 60 * 24, function () use ($url, $user) {
         return Http::withHeaders(HttpSignature::sign(
             $user,
             $url,
@@ -67,7 +67,7 @@ function fetch_profile(string $url, User $user = null): array
     $url = strtok($url, '#');
     strtok('', '');
 
-    $response = Cache::remember('activitypub:profile:' . md5($url), 60 * 60 * 12, function () use ($url, $user) {
+    $response = Cache::remember('activitypub:profile:' . md5($url), 60 * 60 * 24, function () use ($url, $user) {
         return Http::withHeaders(HttpSignature::sign(
             $user,
             $url,
@@ -124,7 +124,7 @@ function fetch_webfinger(string $resource): ?string
 
     $url = "https://{$host}/.well-known/webfinger?resource=" . rawurlencode("acct:{$login}@{$host}");
 
-    $response = Cache::remember('activitypub:webfinger:' . md5($url), 60 * 60 * 12, function () use ($url) {
+    $response = Cache::remember('activitypub:webfinger:' . md5($url), 60 * 60 * 24, function () use ($url) {
         return Http::withHeaders(['Accept' => 'application/jrd+json'])
             ->get($url)
             ->json();
