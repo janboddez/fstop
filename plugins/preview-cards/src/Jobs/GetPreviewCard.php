@@ -5,6 +5,7 @@ namespace Plugins\PreviewCards\Jobs;
 use App\Models\Entry;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -60,25 +61,34 @@ class GetPreviewCard implements ShouldQueue
         }
 
         // Fetch the remote page.
-        $response = Http::withHeaders([
-            'User-Agent' => Eventy::filter(
-                'preview-cards:user_agent',
-                'F-Stop/' . config('app.version') . '; ' . url('/'),
-                $url
-            )])
-            ->get($url);
+        $hash = md5($url);
+        $body = Cache::remember("preview-cards:$hash", 60 * 60, function () use ($url) {
+            $response = Http::withHeaders([
+                'User-Agent' => Eventy::filter(
+                    'preview-cards:user_agent',
+                    'F-Stop/' . config('app.version') . '; ' . url('/'),
+                    $url
+                )])
+                ->get($url);
 
-        if (! $response->successful()) {
-            Log::error('[Preview Cards] Failed to fetch the page at ' . $url);
+            if (! $response->successful()) {
+                Log::error('[Preview Cards] Failed to fetch the page at ' . $url);
 
-            return;
-        }
+                return null;
+            }
 
-        $body = $response->body();
+            $body = $response->body();
+
+            if (empty($body)) {
+                Log::error('[Preview Cards] Missing page body');
+
+                return null;
+            }
+
+            return $body;
+        });
 
         if (empty($body)) {
-            Log::error('[Preview Cards] Missing page body');
-
             return;
         }
 
@@ -125,25 +135,34 @@ class GetPreviewCard implements ShouldQueue
         }
 
         // Download image.
-        $response = Http::withHeaders([
-            'User-Agent' => Eventy::filter(
-                'preview-cards:user_agent',
-                'F-Stop/' . config('app.version') . '; ' . url('/'),
-                $thumbnailUrl
-            )])
-            ->get($thumbnailUrl);
+        $hash = md5($thumbnailUrl);
+        $blob = Cache::remember("preview-cards:$hash", 60 * 60, function () use ($thumbnailUrl) {
+            $response = Http::withHeaders([
+                'User-Agent' => Eventy::filter(
+                    'preview-cards:user_agent',
+                    'F-Stop/' . config('app.version') . '; ' . url('/'),
+                    $thumbnailUrl
+                )])
+                ->get($thumbnailUrl);
 
-        if (! $response->successful()) {
-            Log::warning('[Preview Cards] Something went wrong fetching the image at ' . $thumbnailUrl);
+            if (! $response->successful()) {
+                Log::warning('[Preview Cards] Something went wrong fetching the image at ' . $thumbnailUrl);
 
-            return null;
-        }
+                return null;
+            }
 
-        $blob = $response->body();
+            $blob = $response->body();
+
+            if (empty($blob)) {
+                Log::warning('[Preview Cards] Missing image data');
+
+                return null;
+            }
+
+            return $blob;
+        });
 
         if (empty($blob)) {
-            Log::warning('[Preview Cards] Missing image data');
-
             return null;
         }
 
