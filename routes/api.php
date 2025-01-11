@@ -3,6 +3,7 @@
 use App\Http\Controllers\ActivityPub\InboxController;
 use App\Http\Controllers\ActivityPub\FollowerController;
 use App\Http\Controllers\ActivityPub\OutboxController;
+use App\Http\Controllers\ActivityPub\ReplyController;
 use App\Http\Controllers\ActivityPub\WebFingerController;
 use App\Http\Controllers\Micropub\MicropubController;
 use Illuminate\Support\Facades\Route;
@@ -39,6 +40,9 @@ if (config('app.activitypub', env('ACTIVITYPUB_ENABLED', false))) {
             // Route::get('users/{user:login}/outbox', OutboxController::class);
             Route::post('users/{user}/inbox', [InboxController::class, 'inbox'])
                 ->name('inbox');
+
+            Route::get('entries/{entry}/replies', ReplyController::class)
+                ->name('replies');
 
             Route::post('inbox', [InboxController::class, 'inbox']);
         });

@@ -76,7 +76,24 @@ class Entry extends Model
     {
         return $this->hasMany(Comment::class)
             ->orderBy('created_at', 'asc')
-            ->orderBy('id', 'asc');
+            ->orderBy('id', 'asc')
+            ->whereNotIn('type', ['like', 'repost']);
+    }
+
+    public function likes(): HasMany
+    {
+        return $this->hasMany(Comment::class)
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
+            ->where('type', 'like');
+    }
+
+    public function reposts(): HasMany
+    {
+        return $this->hasMany(Comment::class)
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
+            ->where('type', 'repost');
     }
 
     public function scopeDraft(Builder $query): void
@@ -461,6 +478,38 @@ class Entry extends Model
             }
 
             /** @todo Add author, if they aren't already mentioned explicitly? */
+        }
+
+        $comments = $this->comments()
+            ->approved()
+            ->whereHas('meta', function ($query) {
+                $query->where('key', 'activitypub_url') // Or `source`?
+                    ->whereNotNull('value');
+            })
+            ->with('entry')
+            ->without('comments')
+            ->paginate();
+
+        if (! blank($comments)) {
+            $output['replies'] = array_filter([
+                'id' => route('activitypub.replies', $this),
+                'type' => 'Collection',
+                'first' => array_filter([
+                    'id' => route('activitypub.replies', ['entry' => $this, 'page' => 1]),
+                    'type' => 'CollectionPage',
+                    'partOf' => route('activitypub.replies', $this),
+                    'items' => array_filter(array_map(
+                        fn ($comment) => (
+                            ($meta = $comment->meta->firstWhere('key', 'activitypub_url')) &&
+                            ! empty($meta->value[0])
+                        )
+                            ? filter_var($meta->value[0], FILTER_SANITIZE_URL)
+                            : null,
+                        $comments->items()
+                    )),
+                ]),
+                // 'totalItems' => $comments->total(),
+            ]);
         }
 
         return $output;
