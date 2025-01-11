@@ -163,6 +163,24 @@
         @endif
     @endif
 
+    @if (is_singular() && ! blank($entry->likes))
+        <h2>{{ __('Likes') }}</h2>
+        <ol class="comments">
+            @foreach ($entry->likes as $comment)
+                @include('theme::entries.partials.comment')
+            @endforeach
+        </ol>
+    @endif
+
+    @if (is_singular() && ! blank($entry->reposts))
+        <h2>{{ __('Reposts') }}</h2>
+        <ol class="comments">
+            @foreach ($entry->reposts as $comment)
+                @include('theme::entries.partials.comment')
+            @endforeach
+        </ol>
+    @endif
+
     @if (is_singular() && ! blank($entry->comments))
         <h2 id="comments">{{ __('Reactions') }}</h2>
         <ol class="comments">
