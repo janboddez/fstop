@@ -29,7 +29,7 @@ class OutboxController extends Controller
         return response()->json(
             array_filter([
                 '@context' => ['https://www.w3.org/ns/activitystreams'],
-                'id' => $user->outbox,
+                'id' => route('activitypub.outbox', ['user' => $user, 'page' => $request->input('page')]),
                 'actor' => $user->actor_url,
                 'type' => 'OrderedCollectionPage',
                 'partOf' => $user->outbox,
@@ -69,8 +69,8 @@ class OutboxController extends Controller
                     },
                     $entries->items()
                 ),
-                'first' => $user->outbox . '?page=1',
-                'last' => $user->outbox . '?page=' . $entries->lastPage(),
+                'first' => route('activitypub.outbox', ['user' => $user, 'page' => 1]),
+                'last' => route('activitypub.outbox', ['user' => $user, 'page' => $entries->lastPage()]),
                 'next' => $entries->nextPageUrl(),
                 'prev' => $entries->previousPageUrl(),
             ]),
