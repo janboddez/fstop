@@ -62,7 +62,13 @@ class EntryController extends Controller
             abort(404);
         }
 
-        if (request()->expectsJson()) {
+        if (
+            in_array($entry->type, ['article', 'note'], true) &&
+            request()->expectsJson() &&
+            null === $entry->meta->firstWhere('key', '_like_of') &&
+            null === $entry->meta->firstWhere('key', '_repost_of')
+        ) {
+            // "Content negotiation."
             return response()->json(
                 $entry->serialize(),
                 200,
