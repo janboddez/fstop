@@ -32,7 +32,7 @@ class ActivityPubServiceProvider extends ServiceProvider
             }
 
             /** @todo Make this filterable. Also, "note" isn't even in "core." */
-            if (! in_array($entry->type, ['article', 'note'], true)) {
+            if (! in_array($entry->type, ['article', 'note', 'like'], true)) {
                 return;
             }
 
