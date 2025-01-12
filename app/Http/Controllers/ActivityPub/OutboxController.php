@@ -15,6 +15,11 @@ class OutboxController extends Controller
             ->whereIn('type', get_registered_entry_types('slug', 'page'))
             ->orderBy('created_at', 'desc')
             ->orderBy('id', 'desc') // Prevent pagination issues by also sorting by ID.
+            ->whereDoesntHave('meta', function ($query) {
+                // Exclude likes.
+                $query->where('key', '_like_of')
+                    ->whereNotNull('value');
+            })
             ->published()
             ->public()
             ->with('user')
@@ -32,9 +37,25 @@ class OutboxController extends Controller
                 'orderedItems' => array_map(
                     function ($entry) {
                         $object = $entry->serialize();
+
+                        if (($meta = $entry->meta->firstWhere('key', '_repost_of')) && ! empty($meta->value[0])) {
+                            $activity = array_filter([
+                                '@context' => ['https://www.w3.org/ns/activitystreams'],
+                                'id' => $object['id'] . '#activity',
+                                'type' => 'Announce',
+                                'actor' => $entry->user->actor_url,
+                                'object' => filter_var($meta->value[0], FILTER_SANITIZE_URL),
+                                'published' => $object['published'],
+                                'to' => $object['to'] ?? ['https://www.w3.org/ns/activitystreams#Public'],
+                                'cc' => $object['cc'] ?? [url("activitypub/users/{$entry->user->id}/followers")],
+                            ]);
+
+                            return $activity;
+                        }
+
                         $activity = array_filter([
                             '@context' => ['https://www.w3.org/ns/activitystreams'],
-                            'id' => $entry['id'] . '#activity',
+                            'id' => $object['id'] . '#activity',
                             'type' => 'Create',
                             'actor' => $entry->user->actor_url,
                             'object' => $object,
