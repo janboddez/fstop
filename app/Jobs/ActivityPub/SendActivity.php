@@ -44,7 +44,7 @@ class SendActivity implements ShouldQueue
             }
 
             /** @todo Make this filterable. Also, "note" isn't even in "core." */
-            if (! in_array($this->object->type, ['article', 'note'], true)) {
+            if (! in_array($this->object->type, ['article', 'note', 'like'], true)) {
                 return;
             }
 
@@ -57,9 +57,9 @@ class SendActivity implements ShouldQueue
             }
 
             $object = $this->object->serialize();
+
             $activity = array_filter([
                 '@context' => ['https://www.w3.org/ns/activitystreams'],
-                'id' => $this->object['id'] . '#' . strtolower($this->type) . '-' . bin2hex(random_bytes(16)),
                 'type' => $this->type,
                 'actor' => $this->object->user->actor_url,
                 'object' => $object,
@@ -69,43 +69,45 @@ class SendActivity implements ShouldQueue
                 'cc' => $object['cc'] ?? [url("activitypub/users/{$this->object->user->id}/followers")],
             ]);
 
+            /**
+             * This part's kinda "nasty"; it's where we try to add Like and Announce support.
+             */
             if (($likeOf = $this->object->meta->firstWhere('key', '_like_of')) && ! empty($likeOf->value[0])) {
-                // Like.
+                // Convert to Like activity.
                 if (in_array($this->type, ['Create', 'Update'], true)) {
                     $activity['type'] = 'Like';
                     $activity['object'] = filter_var($likeOf->value[0], FILTER_VALIDATE_URL);
-                    unset($activity['object']['updated']);
                     unset($activity['updated']);
                 } elseif (
                     $this->type === 'Delete' &&
                     ($like = $this->object->meta->firstWhere('key', '_activitypub_activity')) &&
-                    ! empty($like->value[0])
+                    ! empty($like->value)
                 ) {
+                    // Undoing a previous like.
                     $activity['type'] = 'Undo';
-                    $activity['object'] = filter_var($like->value[0], FILTER_VALIDATE_URL); // Previous "Like."
-                    unset($activity['object']['updated']);
+                    $activity['object'] = $like->value; // The Like activity from before.
                     unset($activity['updated']);
                 }
-            } elseif (
-                in_array($this->type, ['Create', 'Update'], true) &&
-                ($repostOf = $this->object->meta->firstWhere('key', 'repost_of')) && ! empty($repostOf->value[0])
-            ) {
+            } elseif (($repostOf = $this->object->meta->firstWhere('key', '_repost_of')) && ! empty($repostOf->value[0])) { // phpcs:ignore Generic.Files.LineLength.TooLong
+                // Convert to Announce activity.
                 if (in_array($this->type, ['Create', 'Update'], true)) {
                     $activity['type'] = 'Announce';
-                    $activity['object'] = filter_var($likeOf->value[0], FILTER_VALIDATE_URL);
-                    unset($activity['object']['updated']);
+                    $activity['object'] = filter_var($repostOf->value[0], FILTER_VALIDATE_URL);
                     unset($activity['updated']);
                 } elseif (
                     $this->type === 'Delete' &&
                     ($announce = $this->object->meta->firstWhere('key', '_activitypub_activity')) &&
-                    ! empty($announce->value[0])
+                    ! empty($announce->value)
                 ) {
+                    // Undoing a previous Announce.
                     $activity['type'] = 'Undo';
-                    $activity['object'] = filter_var($announce->value[0], FILTER_VALIDATE_URL); // Previous "Announce."
-                    unset($activity['object']['updated']);
+                    $activity['object'] = $announce->value; // The Announce activity from before.
                     unset($activity['updated']);
                 }
             }
+
+            $activity['id'] = $object['id'] . '#' .
+                strtolower($activity['type'] ?? $this->type) . '-' . bin2hex(random_bytes(16));
 
             $body = json_encode($activity);
 
@@ -126,12 +128,13 @@ class SendActivity implements ShouldQueue
             if ($response->successful()) {
                 Log::debug("[ActivityPub] Successfully sent {$activity['type']} activity to {$this->inbox}");
 
-                if ($activity['type'] = 'Undo') {
-                    // We sent an Undo and can forget about the original activity.
-                    $this->object->meta()
-                        ->where('key', '_activitypub_activity')
-                        ->delete();
-                }
+                // if ($activity['type'] === 'Undo') {
+                //     // ~~We sent an Undo and can forget about the original activity.~~
+                //     // Wrong! Other servers still need to be served the Undo!
+                //     $this->object->meta()
+                //         ->where('key', '_activitypub_activity')
+                //         ->delete();
+                // }
 
                 if (in_array($activity['type'], ['Like', 'Announce'], true)) {
                     $this->object->meta()->updateOrCreate(
