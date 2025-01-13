@@ -164,17 +164,55 @@ class Entry extends Model
                     }
                 }
 
+                $mentions = [];
                 foreach ($this->mentions as $handle => $url) {
                     $meta = fetch_profile($url);
-                    $value = str_replace(
-                        $handle,
-                        // phpcs:ignore Generic.Files.LineLength.TooLong
-                        '<a href="' . e($meta['url'] ?? $url) . '" rel="mention" class="mention u-url">' .
-                            e('@' . strtok(ltrim($handle, '@'), '@')) . '</a>',
-                        $value
-                    );
+                    if (empty($meta)) {
+                        continue;
+                    }
+
+                    $mentions[$handle] = '<span class="p-author h-card"><a href="' . e($meta['url'] ?? $url) .
+                        '" rel="mention" class="mention u-url">' . e('@' . strtok(ltrim($handle, '@'), '@')) .
+                        '</a></span>';
                 }
                 strtok('', '');
+
+                if (! empty($mentions)) {
+                    // Load HTML.
+                    $doc = new \DOMDocument();
+                    $useInternalErrors = libxml_use_internal_errors(true);
+                    $doc->loadHTML(
+                        mb_convert_encoding("<div>$value</div>", 'HTML-ENTITIES', 'UTF-8'), // To preserve emoji, etc.
+                        LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+                    );
+                    $xpath = new \DOMXpath($doc);
+
+                    // Loop over *text* nodes *not* inside an `a` or `span`---to avoid adding the `p-author` and so on
+                    // classes twice---element.
+                    $nodes = $xpath->query('//text()[not(ancestor::a) and not(ancestor::span)]');
+                    if (! empty($nodes)) {
+                        foreach ($nodes as $node) {
+                            $html = str_replace(
+                                array_keys($mentions),
+                                array_values($mentions),
+                                htmlspecialchars($node->nodeValue)
+                            );
+
+                            $fragment = $doc->createDocumentFragment();
+                            $fragment->appendXML($html);
+
+                            // Replace current text node with HTML fragment.
+                            $node->parentNode->replaceChild($fragment, $node);
+                        }
+
+                        $value = $doc->saveHTML();
+                        libxml_use_internal_errors($useInternalErrors);
+
+                        // Trim `<div></div>`.
+                        $value = substr($value, 5);
+                        $value = substr($value, 0, -7);
+                    }
+                }
 
                 return trim($value);
             }
@@ -350,10 +388,15 @@ class Entry extends Model
     {
         return Attribute::make(
             get: function (string $value = null, array $attributes) {
+                if (($meta = $this->meta->firstWhere('key', '_activitypub_mentions')) && ! empty($meta->value)) {
+                    return (array) $meta->value;
+                }
+
                 $mentions = [];
 
-                if (preg_match_all('~@[A-Za-z0-9\._-]+@(?:[A-Za-z0-9_-]+\.)+[A-Za-z]+~i', $attributes['content'], $matches)) {
-                    foreach (array_unique($matches[0]) as $match) {
+                // phpcs:ignore Generic.Files.LineLength.TooLong
+                if (preg_match_all('~[^\/](@[A-Za-z0-9\._-]+@(?:[A-Za-z0-9_-]+\.)+[A-Za-z]+)[^\/]~i', $attributes['content'], $matches)) {
+                    foreach (array_unique($matches[1]) as $match) {
                         if (! $url = fetch_webfinger($match)) {
                             continue;
                         }
@@ -399,7 +442,7 @@ class Entry extends Model
         $content = strip_tags($content, '<a><b><blockquote><cite><i><em><li><ol><p><pre><strong><sub><sup><ul>');
         $content = preg_replace('~<pre[^>]*>.*?</pre>(*SKIP)(*FAIL)|\r|\n|\t~s', '', $content);
 
-        $permalink = ($meta = $this->meta->firstWhere('key', 'short_url'))
+        $permalink = (($meta = $this->meta->firstWhere('key', 'short_url')) && ! empty($meta->value[0]))
             ? $meta->value[0]
             : $this->permalink;
 
