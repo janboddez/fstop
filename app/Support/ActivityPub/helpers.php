@@ -5,6 +5,7 @@ namespace App\Support\ActivityPub;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 function fetch_object(string $url, User $user = null): array
@@ -28,15 +29,21 @@ function fetch_object(string $url, User $user = null): array
     strtok('', '');
 
     $response = Cache::remember('activitypub:entry:' . md5($url), 60 * 60 * 24, function () use ($url, $user) {
-        return Http::withHeaders(HttpSignature::sign(
-            $user,
-            $url,
-            null,
-            ['Accept' => 'application/activity+json, application/json'],
-            'get'
-        ))
-        ->get($url)
-        ->json();
+        try {
+            return Http::withHeaders(HttpSignature::sign(
+                $user,
+                $url,
+                null,
+                ['Accept' => 'application/activity+json, application/json'],
+                'get'
+            ))
+            ->get($url)
+            ->json();
+        } catch (\Exception $e) {
+            Log::warning("[ActivityPub] Failed to get $url (" . $e->getMessage() . ')');
+        }
+
+        return null;
     });
 
     /** @todo We may eventually want to also store (and locally cache) avatars. And an `@-@` handle. */
@@ -68,15 +75,21 @@ function fetch_profile(string $url, User $user = null): array
     strtok('', '');
 
     $response = Cache::remember('activitypub:profile:' . md5($url), 60 * 60 * 24, function () use ($url, $user) {
-        return Http::withHeaders(HttpSignature::sign(
-            $user,
-            $url,
-            null,
-            ['Accept' => 'application/activity+json, application/json'],
-            'get'
-        ))
-        ->get($url)
-        ->json();
+        try {
+            return Http::withHeaders(HttpSignature::sign(
+                $user,
+                $url,
+                null,
+                ['Accept' => 'application/activity+json, application/json'],
+                'get'
+            ))
+            ->get($url)
+            ->json();
+        } catch (\Exception $e) {
+            Log::warning("[ActivityPub] Failed to get $url (" . $e->getMessage() . ')');
+        }
+
+        return null;
     });
 
     /** @todo We may eventually want to also store (and locally cache) avatars. And an `@-@` handle. */
@@ -125,9 +138,15 @@ function fetch_webfinger(string $resource): ?string
     $url = "https://{$host}/.well-known/webfinger?resource=" . rawurlencode("acct:{$login}@{$host}");
 
     $response = Cache::remember('activitypub:webfinger:' . md5($url), 60 * 60 * 24, function () use ($url) {
-        return Http::withHeaders(['Accept' => 'application/jrd+json'])
-            ->get($url)
-            ->json();
+        try {
+            return Http::withHeaders(['Accept' => 'application/jrd+json'])
+                ->get($url)
+                ->json();
+        } catch (\Exception $e) {
+            Log::warning("[ActivityPub] Failed to get $url (" . $e->getMessage() . ')');
+        }
+
+        return null;
     });
 
     /** @todo We may eventually want to also store (and locally cache) avatars. And an `@-@` handle. */
