@@ -74,7 +74,7 @@ class SendActivity implements ShouldQueue
              */
             if (($likeOf = $this->object->meta->firstWhere('key', '_like_of')) && ! empty($likeOf->value[0])) {
                 // Convert to Like activity.
-                if (in_array($this->type, ['Create', 'Update'], true)) {
+                if ($this->type === 'Create') {
                     $activity['type'] = 'Like';
                     $activity['object'] = filter_var($likeOf->value[0], FILTER_VALIDATE_URL);
                     unset($activity['updated']);
@@ -90,7 +90,7 @@ class SendActivity implements ShouldQueue
                 }
             } elseif (($repostOf = $this->object->meta->firstWhere('key', '_repost_of')) && ! empty($repostOf->value[0])) { // phpcs:ignore Generic.Files.LineLength.TooLong
                 // Convert to Announce activity.
-                if (in_array($this->type, ['Create', 'Update'], true)) {
+                if ($this->type === 'Create') {
                     $activity['type'] = 'Announce';
                     $activity['object'] = filter_var($repostOf->value[0], FILTER_VALIDATE_URL);
                     unset($activity['updated']);
