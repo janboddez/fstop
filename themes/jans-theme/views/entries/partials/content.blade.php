@@ -163,30 +163,48 @@
         @endif
     @endif
 
-    @if (is_singular() && ! blank($entry->likes))
-        <h2>{{ __('Likes') }}</h2>
-        <ol class="comments">
-            @foreach ($entry->likes as $comment)
-                @include('theme::entries.partials.comment')
-            @endforeach
-        </ol>
-    @endif
+    @if (is_singular())
+        @if  (! blank($entry->likes) || ! blank($entry->reposts) || ! blank($entry->bookmarks))
+            <div class="reactions entry-meta" style="display: flex; gap: 2rem;">
+                @if (! blank($entry->likes))
+                    <p><button class="link likes"><svg class="icon icon-like" aria-hidden="true" role="img" width="18" height="18" style="position: relative; top: 0.125rem;"><use href="#icon-like"></use></svg> {{ $entry->likes->count() }}<span class="sr-only"> {{ __('Likes') }}</span></button></p>
 
-    @if (is_singular() && ! blank($entry->reposts))
-        <h2>{{ __('Reposts') }}</h2>
-        <ol class="comments">
-            @foreach ($entry->reposts as $comment)
-                @include('theme::entries.partials.comment')
-            @endforeach
-        </ol>
-    @endif
+                    <!-- <div id="popover-likes" popover>
+                        Likes
+                    </div> -->
+                @endif
 
-    @if (is_singular() && ! blank($entry->comments))
-        <h2 id="comments">{{ __('Reactions') }}</h2>
-        <ol class="comments">
-            @foreach ($entry->comments as $comment)
-                @include('theme::entries.partials.comment')
-            @endforeach
-        </ol>
+                @if (! blank($entry->reposts))
+                    <p><button class="link reposts"><svg class="icon icon-repost" aria-hidden="true" role="img" width="18" height="18" style="position: relative; top: 0.125rem;"><use href="#icon-repost"></use></svg> {{ $entry->reposts->count() }}<span class="sr-only"> {{ __('Reposts') }}</span></button></p>
+
+                    <!-- <div id="popover-reposts" popover>
+                        Reposts
+                    </div> -->
+                @endif
+
+                @if (! blank($entry->bookmarks))
+                    <p><button class="link bookmarks"><svg class="icon icon-bookmark" aria-hidden="true" role="img" width="18" height="18" style="position: relative; top: 0.125rem;"><use href="#icon-bookmark"></use></svg> {{ $entry->bookmarks->count() }}<span class="sr-only"> {{ __('Likes') }}</span></button></p>
+
+                    <!-- <div id="popover-bookmarks" popover>
+                        Bookmarks
+                    </div> -->
+                @endif
+            </div>
+        @endif
+
+        @if (! blank($entry->comments))
+            @php
+                $comments = $entry->comments->groupBy('parent_id');
+                \Log::debug($comments);
+            @endphp
+            <h2 id="comments">{{ __('Comments') }}</h2>
+            <ol class="comments">
+                @foreach ($comments as $parent)
+                    @foreach ($parent as $comment)
+                        @include('theme::entries.partials.comment')
+                    @endforeach
+                @endforeach
+            </ol>
+        @endif
     @endif
 </article>

@@ -43,8 +43,18 @@ class EntryController extends Controller
             ->with('tags')
             ->with('user')
             ->with(['comments' => function ($query) {
-                $query->where('status', 'approved')
-                    ->whereNull('parent_id');
+                $query->whereNotIn('type', ['like', 'repost', 'bookmark'])
+                    ->whereNull('parent_id')
+                    ->approved();
+            }])
+            ->with(['likes' => function ($query) {
+                $query->approved();
+            }])
+            ->with(['reposts' => function ($query) {
+                $query->approved();
+            }])
+            ->with(['bookmarks' => function ($query) {
+                $query->approved();
             }]);
 
         /** @todo Use `when()`? */
