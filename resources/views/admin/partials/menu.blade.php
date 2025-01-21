@@ -41,6 +41,15 @@
             <span class="icon-text"><span class="icon"><i class="mdi mdi-account"></i></span> <span>{{ __('Profile') }}</span></span>
         </a>
     </li>
+
+    @if (config('app.activitypub', env('ACTIVITYPUB_ENABLED', false)))
+        <li>
+            <a{!! request()->is('admin/followers*') ? ' class="is-active"' : '' !!} href="{{ route('admin.followers.index') }}">
+                <span class="icon-text"><span class="icon"><i class="mdi mdi-account-multiple"></i></span> <span>{{ __('Followers (beta)') }}</span></span>
+            </a>
+        </li>
+    @endif
+
     <li class="mt-3">
         <a{!! request()->is('admin/themes*') ? ' class="is-active"' : '' !!} href="{{ route('admin.themes.index') }}">
             <span class="icon-text"><span class="icon"><i class="mdi mdi-palette-outline"></i></span> <span>{{ __('Themes') }}</span></span>

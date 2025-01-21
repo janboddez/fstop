@@ -86,15 +86,17 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin', 'as' => 'admin.'], fu
     });
 
     /** @todo Rename `profile` to `users`, etc. */
-    foreach (['profile', 'themes', 'plugins', 'settings'] as $name) {
+    foreach (['profile', 'themes', 'plugins', 'settings', 'followers'] as $name) {
         $controller = '\\App\\Http\\Controllers\\Admin\\' . ucfirst(Str::singular($name)) . 'Controller';
 
-        Route::group(['prefix' => $name, 'as' => "$name."], function () use ($controller) {
+        Route::group(['prefix' => $name, 'as' => "$name."], function () use ($controller, $name) {
             Route::get('/', [$controller, 'index'])
                 ->name('index');
 
-            Route::put('/', [$controller, 'update'])
-                ->name('update');
+            if ($name !== 'followers') {
+                Route::put('/', [$controller, 'update'])
+                    ->name('update');
+            }
         });
     }
 });
