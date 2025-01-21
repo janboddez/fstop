@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Michelf\MarkdownExtra;
+use Michelf\SmartyPants;
 
 class Comment extends Model
 {
@@ -43,7 +45,8 @@ class Comment extends Model
     {
         return $this->hasMany(self::class, 'parent_id')
             ->orderBy('created_at', 'asc')
-            ->orderBy('id', 'asc');
+            ->orderBy('id', 'asc')
+            ->approved();
     }
 
     public function meta(): MorphMany
@@ -72,6 +75,44 @@ class Comment extends Model
                 // Fall back to source.
                 return $this->source;
             }
+        )->shouldCache();
+    }
+
+    protected function avatar(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => ($meta = $this->meta->firstWhere('key', 'avatar'))
+                ? $meta->value[0]
+                : null
+        )->shouldCache();
+    }
+
+    protected function content(): Attribute
+    {
+        return Attribute::make(
+            get: function (string $value = null) {
+                if (empty($value)) {
+                    return '';
+                }
+
+                $parser = new MarkdownExtra();
+                $parser->no_markup = false; // Do not escape markup already present.
+
+                $value = $parser->defaultTransform($value);
+                $value = SmartyPants::defaultTransform($value, SmartyPants::ATTR_LONG_EM_DASH_SHORT_EN);
+
+                $value = preg_replace('~\R~u', "\n", $value);
+                $value = preg_replace('~\n\n+~u', "\n\n", $value);
+
+                return trim($value);
+            }
+        )->shouldCache();
+    }
+
+    protected function parentId(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value = null) => $value ?? 0
         )->shouldCache();
     }
 
