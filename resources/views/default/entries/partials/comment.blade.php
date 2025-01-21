@@ -1,7 +1,7 @@
 <li id="comment-{{ $comment->id }}" class="h-cite p-comment">
     <h3>
         {!! __('<span class="p-author h-card">:avatar<a class="u-url url fn" href=":author_url" rel="nofollow">:author</a></span> on <a href=":permalink" rel="bookmark"><time datetime=":created_at" class="dt-published">:created</time></a>', [
-            'avatar' => ! empty($comment->avatar) ? '<span class="avatar">' . $comment->avatar . '</span> ' : '',
+            'avatar' => '<span class="avatar"><img src="' . ($comment->avatar ?? asset('images/no-image.png')) . '" width="50" height="50" alt="' . e($comment->author ?? $comment->author_url ?? '') . '"></span> ',
             'author_url' => e($comment->author_url ?? ''),
             'author' => e($comment->author ?? $comment->author_url ?? ''),
             'permalink' => route(Str::plural($entry->type) . '.show', $entry->slug) . "#comment-{$comment->id}",
@@ -16,7 +16,7 @@
     </h3>
 
     <div class="p-name p-content">
-        <p>{!! $comment->content !!}</p>
+        {!! $comment->content !!}
     </div>
 
     @if (($url = $comment->meta->firstWhere('key', 'activitypub_url')) && ! empty($url->value[0]))
@@ -47,6 +47,7 @@
         </small></p>
     @endif
 
+    {{--
     @if (! blank($comment->comments))
         <ol>
             @foreach ($comment->comments as $comment)
@@ -54,4 +55,5 @@
             @endforeach
         </ol>
     @endif
+    --}}
 </li>

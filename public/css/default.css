@@ -487,6 +487,37 @@ input[type="submit"]:active {
 /* ==========================================================================
  *  Comments
  * ========================================================================== */
+button.link {
+    -webkit-appearance: none;
+    background: transparent;
+    border: 0;
+    color: currentColor;
+    cursor: pointer;
+    display: inline;
+    font: inherit;
+    padding: 0;
+    text-decoration: underline;
+}
+
+button.likes,
+button.reposts,
+button.bookmarks {
+    text-decoration: none;
+}
+
+/* #popover-likes-trigger {
+    anchor-name: --popover-likes-trigger;
+}
+
+#popover-likes {
+    position: absolute;
+    max-width: 250px;
+    min-width: 200px;
+    position-anchor: --popover-likes-trigger;
+    inset-area: bottom;
+    margin: 1rem;
+} */
+
 h2#likes,
 h2#comments {
     margin-top: 2rem;
@@ -519,22 +550,37 @@ ol.likes a > img {
     vertical-align: middle;
 }
 
-ol.comments {
-    margin-bottom: 0;
+ol.comments,
+ol.comments ol {
+    list-style: none;
+    margin-inline-start: 0;
+    padding-left: 0;
 }
 
-ol.comments > li + li,
-ol.comments ol li {
-    margin-top: 1.875rem;
-    border-top: 1px solid #ddd;
-    padding-top: 1.5rem;
+ol.comments li {
+    margin-block: 2rem;
+	margin-inline: 21px;
+}
+/*
+ol.comments li:has(ol) {
+    border-left: 2px solid;
+    border-image: linear-gradient(#ddd 75%, transparent) 1;
+	margin-inline-start: 19px;
+}
+*/
+ol.comments li.parent {
+    border-left: 2px solid #ddd;
+	margin-inline-start: 19px;
+}
+
+ol.comments > li:first-child {
+    margin-block-start: 1.5rem;
 }
 
 ol.comments h3 {
     font-family: "DM Sans", sans-serif;
     font-size: inherit;
     font-weight: normal;
-    margin: 0;
 }
 
 ol.comments h3 .p-author {
@@ -542,17 +588,22 @@ ol.comments h3 .p-author {
 }
 
 ol.comments h3 .avatar {
-    float: right;
-    margin: 0 0 0.5rem 1rem;
+    float: left;
+    margin: -20px 0 0 -40px;
+    border: 20px solid white;
 }
 
 ol.comments h3 .avatar > img {
     border-radius: 50%;
-    width: 75px;
-    height: 75px;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    width: 40px;
+    height: 40px;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
     vertical-align: middle;
     /*filter: url(#bluish);*/
+}
+
+ol.comments li > :not(:first-child) {
+    margin-inline-start: 46px;
 }
 
 ol.comments li small {
@@ -576,6 +627,7 @@ ol.comments li.by-author small a:focus {
     color: #f2836b;
 }
 
+/*
 ol.comments li .twitter-icon {
     display: block;
     position: absolute;
@@ -584,6 +636,7 @@ ol.comments li .twitter-icon {
     font-size: 2rem;
     color: #1da1f2;
 }
+*/
 
 /* ==========================================================================
  *  Notes
@@ -643,7 +696,7 @@ ol.comments li .twitter-icon {
     display: flex;
     align-items: center;
     font-family: "DM Sans", sans-serif;
-    margin: 1.25rem auto 1.675rem;
+    margin: 1.5rem auto;
     border: 1px solid #ddd !important;
     border-radius: 0.5rem;
     max-width: 550px;
