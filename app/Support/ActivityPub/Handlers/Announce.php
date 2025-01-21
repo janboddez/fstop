@@ -45,7 +45,7 @@ class Announce
 
         if (
             $actor->wasRecentlyCreated &&
-            $meta = fetch_profile(filter_var($actor->url, FILTER_SANITIZE_URL), $this->user)
+            $meta = fetch_profile(filter_var($actor->url, FILTER_SANITIZE_URL), $this->user, true)
         ) {
             add_meta($meta, $actor);
         }

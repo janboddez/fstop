@@ -74,10 +74,12 @@ class Create
 
         if (
             $actor->wasRecentlyCreated &&
-            $meta = fetch_profile(filter_var($actor->url, FILTER_SANITIZE_URL), $this->user)
+            $meta = fetch_profile(filter_var($actor->url, FILTER_SANITIZE_URL), $this->user, true)
         ) {
             add_meta($meta, $actor);
         }
+
+        $actor->load('meta');
 
         $data = array_filter([
             'author' => strip_tags($actor->name ?? filter_var($object['attributedTo'], FILTER_SANITIZE_URL)),
@@ -113,6 +115,17 @@ class Create
             $comment->meta()->create([
                 'key' => 'activitypub_url',
                 'value' => (array) filter_var($object['url'], FILTER_SANITIZE_URL),
+            ]);
+        }
+
+        /**
+         * @todo Look into alternatives, like, if we were to make this a pure "Fediverse app," we could simply add an
+         *       `actor_id` to replies (and use that to fetch names and avatars of commenters).
+         */
+        if (! empty($actor->avatar)) {
+            $comment->meta()->create([
+                'key' => 'avatar',
+                'value' => (array) filter_var($actor->avatar, FILTER_SANITIZE_URL),
             ]);
         }
     }

@@ -63,6 +63,18 @@ class Actor extends Model
     //     );
     // }
 
+    /**
+     * The actor's last known "avatar."
+     */
+    protected function avatar(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => ($meta = $this->meta->firstWhere('key', 'avatar'))
+                ? filter_var($meta->value[0], FILTER_SANITIZE_URL)
+                : null
+        )->shouldCache();
+    }
+
     protected function inbox(): Attribute
     {
         return Attribute::make(

@@ -38,7 +38,7 @@ class Follow
         // }
 
         // Fetch their ActivityPub actor profile.
-        $meta = fetch_profile($actor, $this->user);
+        $meta = fetch_profile($actor, $this->user, true);
         if ((empty($meta['inbox']) && empty($meta['sharedInbox']))) {
             Log::warning("[ActivityPub] Something went wrong fetching the profile at $actor");
 
