@@ -54,6 +54,7 @@ class InboxController extends Controller
             $publicKey = $actor->public_key;
         } else {
             // Try and fetch the remote public key.
+            /** @todo Maybe for Deletes a HEAD request is sufficient? */
             $data = fetch_profile($signatureData['keyId'], $user);
             $publicKey = $data['public_key'] ?? null;
         }
