@@ -76,8 +76,7 @@ class Entry extends Model
     {
         return $this->hasMany(Comment::class)
             ->orderBy('created_at', 'asc')
-            ->orderBy('id', 'asc')
-            ->whereNotIn('type', ['like', 'repost']);
+            ->orderBy('id', 'asc');
     }
 
     public function likes(): HasMany
@@ -94,6 +93,14 @@ class Entry extends Model
             ->orderBy('created_at', 'asc')
             ->orderBy('id', 'asc')
             ->where('type', 'repost');
+    }
+
+    public function bookmarks(): HasMany
+    {
+        return $this->hasMany(Comment::class)
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
+            ->where('type', 'bookmark');
     }
 
     public function scopeDraft(Builder $query): void
@@ -166,12 +173,7 @@ class Entry extends Model
 
                 $mentions = [];
                 foreach ($this->mentions as $handle => $url) {
-                    $meta = fetch_profile($url);
-                    if (empty($meta)) {
-                        continue;
-                    }
-
-                    $mentions[$handle] = '<span class="p-author h-card"><a href="' . e($meta['url'] ?? $url) .
+                    $mentions[$handle] = '<span class="h-card"><a href="' . e($url) .
                         '" rel="mention" class="mention u-url">' . e('@' . strtok(ltrim($handle, '@'), '@')) .
                         '</a></span>';
                 }
@@ -187,8 +189,8 @@ class Entry extends Model
                     );
                     $xpath = new \DOMXpath($doc);
 
-                    // Loop over *text* nodes *not* inside an `a` or `span`---to avoid adding the `p-author` and so on
-                    // classes twice---element.
+                    // Loop over *text* nodes *not* inside an `a` or `span` element. (Don't wanna add, e.g., the
+                    // `h-card` class twice.)
                     $nodes = $xpath->query('//text()[not(ancestor::a) and not(ancestor::span)]');
                     if (! empty($nodes)) {
                         foreach ($nodes as $node) {
@@ -214,6 +216,10 @@ class Entry extends Model
                     }
                 }
 
+                /**
+                 * @todo Again query the resulting HTML, but this time look for `.h-card` inside `.h-cite`, and add
+                 *       `.p-author` if it isn't already there.
+                 */
                 return trim($value);
             }
         )->shouldCache();
@@ -401,8 +407,14 @@ class Entry extends Model
                             continue;
                         }
 
-                        $mentions[$match] = $url;
+                        $meta = fetch_profile($url);
+                        $mentions[$match] = $meta['url'] ?? $url;
                     }
+
+                    $this->meta()->updateOrCreate(
+                        ['key' => '_activitypub_mentions'],
+                        ['value' => (array) $mentions]
+                    );
                 }
 
                 return $mentions;
