@@ -39,6 +39,13 @@ class SendActivity implements ShouldQueue
     public function handle(): void
     {
         if ($this->object instanceof Entry) {
+            /** @todo Make smarter. */
+            if ($this->object->created_at->lt(now()->subHours(12))) {
+                Log::debug("[ActivityPub] Skipping entry {$this->object->id}: too old");
+
+                return;
+            }
+
             if ($this->type !== 'Delete' && $this->object->trashed()) {
                 return;
             }
