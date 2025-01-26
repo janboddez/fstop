@@ -25,7 +25,11 @@
                             style="width: 20px; height: 20px; vertical-align: middle; border-radius: 50%; position: relative; top: -1px;"
                             > {{ $follower->url }}
                     </td>
-                    <td><time>{{ $follower->pivot->created_at->format('M j, Y') }}<br><small>{{ $follower->pivot->created_at->format('h:i A') }}</small></time></td>
+                    <td>
+                        @if (! empty($follower->pivot->created_at))
+                            <time>{{ $follower->pivot->created_at->format('M j, Y') }}<br><small>{{ $follower->pivot->created_at->format('h:i A') }}</small></time>
+                        @endif
+                    </td>
                 </tr>
             @empty
                 <tr>
