@@ -29,7 +29,7 @@ class CommentController extends Controller
                 $query->where('entry_id', (int) $request->input('entry'));
             })
             ->paginate()
-            ->appends(['s' => $request->input('entry')]);
+            ->appends(['entry' => $request->input('entry')]);
         } elseif ($request->input('pending')) {
             $comments = $comments->where('status', 'pending')
             ->paginate()
