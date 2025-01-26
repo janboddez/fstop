@@ -21,7 +21,9 @@
             @forelse ($followers as $follower)
                 <tr>
                     <td>
-                        {{ $follower->url }}
+                        <img src="{{ $follower->avatar ?? asset('images/no-image.png') }}" class="avatar" width="40" height="40" alt=""
+                            style="width: 20px; height: 20px; vertical-align: middle; border-radius: 50%; position: relative; top: -1px;"
+                            > {{ $follower->url }}
                     </td>
                     <td><time>{{ $follower->pivot->created_at->format('M j, Y') }}<br><small>{{ $follower->pivot->created_at->format('h:i A') }}</small></time></td>
                 </tr>
