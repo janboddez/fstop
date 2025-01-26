@@ -137,8 +137,8 @@
         </defs>
     </svg>
 
-    <script src="{{ url('js/floating-ui/core.js') }}?v=1.6.8"></script>
-    <script src="{{ url('js/floating-ui/dom.js') }}?v=1.6.12"></script>
+    <script src="{{ url('js/floating-ui/core.js') }}?v=1.6.9"></script>
+    <script src="{{ url('js/floating-ui/dom.js') }}?v=1.6.13"></script>
     <script src="{{ url('js/popovers.js') }}?v={{ config('app.version') }}"></script>
 
     <script src="{{ url('js/highlight.pack.js') }}"></script>
