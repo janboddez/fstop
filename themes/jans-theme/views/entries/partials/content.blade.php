@@ -165,29 +165,51 @@
 
     @if (is_singular())
         @if  (! blank($entry->likes) || ! blank($entry->reposts) || ! blank($entry->bookmarks))
-            <div class="reactions entry-meta" style="display: flex; gap: 2rem;">
+            <div class="reactions">
                 @if (! blank($entry->likes))
-                    <p><button class="link likes"><svg class="icon icon-like" aria-hidden="true" role="img" width="18" height="18" style="position: relative; top: 0.125rem;"><use href="#icon-like"></use></svg> {{ $entry->likes->count() }}<span class="sr-only"> {{ __('Likes') }}</span></button></p>
-
-                    <!-- <div id="popover-likes" popover>
-                        Likes
-                    </div> -->
+                    <p><button class="link" popovertarget="likes"><svg class="icon icon-like" aria-hidden="true" role="img" width="18" height="18" style="position: relative; top: 0.125rem;"><use href="#icon-like"></use></svg> {{ $entry->likes->count() }}<span class="sr-only"> {{ __('Likes') }}</span></button></p>
+                    <ul id="likes" popover>
+                        @foreach ($entry->likes as $reaction)
+                            <li class="h-cite p-like">
+                                @if (! empty($reaction->author_url))
+                                    <a href="{{ $reaction->author_url }}" target="_blank" rel="noopener noreferrer"><span class="h-card p-author"><img src="{{ $reaction->avatar ?? asset('images/no-image.png') }}" width="40" height="40" alt="{{ $reaction->author ?? '' }}"></span></a>
+                                @else
+                                    <span class="h-card p-author"><img src="{{ $reaction->avatar ?? asset('images/no-image.png') }}" width="40" height="40" alt="{{ $reaction->author ?? '' }}"></span>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
                 @endif
 
                 @if (! blank($entry->reposts))
-                    <p><button class="link reposts"><svg class="icon icon-repost" aria-hidden="true" role="img" width="18" height="18" style="position: relative; top: 0.125rem;"><use href="#icon-repost"></use></svg> {{ $entry->reposts->count() }}<span class="sr-only"> {{ __('Reposts') }}</span></button></p>
-
-                    <!-- <div id="popover-reposts" popover>
-                        Reposts
-                    </div> -->
+                    <p><button class="link" popovertarget="reposts"><svg class="icon icon-repost" aria-hidden="true" role="img" width="18" height="18" style="position: relative; top: 0.125rem;"><use href="#icon-repost"></use></svg> {{ $entry->reposts->count() }}<span class="sr-only"> {{ __('Reposts') }}</span></button></p>
+                    <ul id="reposts" popover>
+                        @foreach ($entry->reposts as $reaction)
+                            <li class="h-cite p-repost">
+                                @if (! empty($reaction->author_url))
+                                    <a href="{{ $reaction->author_url }}" target="_blank" rel="noopener noreferrer"><span class="h-card p-author"><img src="{{ $reaction->avatar ?? asset('images/no-image.png') }}" width="40" height="40" alt="{{ $reaction->author ?? '' }}"></span></a>
+                                @else
+                                    <span class="h-card p-author"><img src="{{ $reaction->avatar ?? asset('images/no-image.png') }}" width="40" height="40" alt="{{ $reaction->author ?? '' }}"></span>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
                 @endif
 
                 @if (! blank($entry->bookmarks))
-                    <p><button class="link bookmarks"><svg class="icon icon-bookmark" aria-hidden="true" role="img" width="18" height="18" style="position: relative; top: 0.125rem;"><use href="#icon-bookmark"></use></svg> {{ $entry->bookmarks->count() }}<span class="sr-only"> {{ __('Likes') }}</span></button></p>
+                    <p><button class="link" popovertarget="bookmarks"><svg class="icon icon-bookmark" aria-hidden="true" role="img" width="18" height="18" style="position: relative; top: 0.125rem;"><use href="#icon-bookmark"></use></svg> {{ $entry->bookmarks->count() }}<span class="sr-only"> {{ __('Likes') }}</span></button></p>
+                    <ul id="bookmarks" popover>
+                        @foreach ($entry->bookmarks as $reaction)
+                            <li class="h-cite p-bookmark">
+                                @if (! empty($reaction->author_url))
+                                    <a href="{{ $reaction->author_url }}" target="_blank" rel="noopener noreferrer"><span class="h-card p-author"><img src="{{ $reaction->avatar ?? asset('images/no-image.png') }}" width="40" height="40" alt="{{ $reaction->author ?? '' }}"></span></a>
+                                @else
+                                    <span class="h-card p-author"><img src="{{ $reaction->avatar ?? asset('images/no-image.png') }}" width="40" height="40" alt="{{ $reaction->author ?? '' }}"></span>
+                                @endif
 
-                    <!-- <div id="popover-bookmarks" popover>
-                        Bookmarks
-                    </div> -->
+                            </li>
+                        @endforeach
+                    </ul>
                 @endif
             </div>
         @endif
@@ -195,7 +217,6 @@
         @if (! blank($entry->comments))
             @php
                 $comments = $entry->comments->groupBy('parent_id');
-                \Log::debug($comments);
             @endphp
             <h2 id="comments">{{ __('Comments') }}</h2>
             <ol class="comments">

@@ -284,7 +284,8 @@ pre {
 
 .entry-header,
 .entry-footer,
-.entry-meta {
+.entry-meta,
+.reactions {
     color: #555;
     font-family: "Inter", sans-serif;
     font-size: 1rem;
@@ -304,7 +305,8 @@ pre {
 
 .entry-meta,
 .client,
-.also-on {
+.also-on,
+.reactions {
     margin-bottom: 1rem;
 }
 
@@ -487,6 +489,11 @@ input[type="submit"]:active {
 /* ==========================================================================
  *  Comments
  * ========================================================================== */
+.reactions {
+    display: flex;
+    gap: 1.25rem;
+}
+
 button.link {
     -webkit-appearance: none;
     background: transparent;
@@ -499,24 +506,76 @@ button.link {
     text-decoration: underline;
 }
 
-button.likes,
-button.reposts,
-button.bookmarks {
+.reactions button.link {
     text-decoration: none;
 }
 
-/* #popover-likes-trigger {
-    anchor-name: --popover-likes-trigger;
+#likes,
+#reposts,
+#bookmarks {
+    background-color: #fff;
+    border: none;
+    border-radius: 0.375rem;
+    box-shadow: 0 0 7px 1px rgba(0, 0, 0, 0.0875);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    list-style: none;
+    margin: 0.25rem 0 0.25rem -0.25rem !important;
+    padding: 1.25rem;
+    max-width: 60vw;
+    position: absolute;
+    left: 0;
+    top: -999rem;
+    width: max-content;
 }
 
-#popover-likes {
+/*
+#popover-likes::before,
+#popover-reposts::before,
+#popover-bookmarks::before {
+    border-left: 0.5rem solid transparent;
+    border-right: 0.5rem solid transparent;
+    border-bottom: 0.5rem solid #fff;
+    content: "";
+    left: 0.875rem;
+    height: 0;
+    width: 0;
     position: absolute;
-    max-width: 250px;
-    min-width: 200px;
-    position-anchor: --popover-likes-trigger;
-    inset-area: bottom;
-    margin: 1rem;
-} */
+    top: -0.5rem;
+}
+*/
+
+#likes li,
+#reposts li,
+#bookmarks li {
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+#likes li:not(:last-child),
+#reposts li:not(:last-child),
+#bookmarks li:not(:last-child) {
+    margin-inline-end: -1.875rem;
+}
+
+#likes li:not(:last-child):hover,
+#reposts li:not(:last-child):hover,
+#bookmarks li:not(:last-child):hover {
+    margin-inline-end: -0.75rem;
+}
+
+#likes img,
+#reposts img,
+#bookmarks img {
+    background: #fff;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+    height: 40px;
+    width: 40px;
+    vertical-align: middle;
+}
 
 h2#likes,
 h2#comments {

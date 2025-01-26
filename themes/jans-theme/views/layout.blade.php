@@ -108,9 +108,6 @@
         </div>
     </footer>
 
-    <script src="/js/highlight.pack.js"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
-
     <svg style="position: absolute; width: 0; height: 0; overflow: hidden;" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
         <defs>
             <symbol id="icon-link" viewbox="0 0 24 24">
@@ -140,6 +137,13 @@
         </defs>
     </svg>
 
-    <script src="{{ url('js/instantpage-5.2.0.js') }}" type="module" defer></script>
+    <script src="{{ url('js/floating-ui/core.js') }}?v=1.6.8"></script>
+    <script src="{{ url('js/floating-ui/dom.js') }}?v=1.6.12"></script>
+    <script src="{{ url('js/popovers.js') }}?v={{ config('app.version') }}"></script>
+
+    <script src="{{ url('js/highlight.pack.js') }}"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    <script src="{{ url('js/instantpage.js') }}?v=5.2.0" type="module" defer></script>
 </body>
 </html>
