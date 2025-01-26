@@ -93,7 +93,7 @@ function fetch_profile(string $url, User $user = null, bool $cacheAvatar = false
             ->get($url)
             ->json();
         } catch (\Exception $e) {
-            Log::warning("[ActivityPub] Failed to fetch $url (" . $e->getMessage() . ')');
+            Log::warning("[ActivityPub] Failed to fetch the profile at $url (" . $e->getMessage() . ')');
         }
 
         return null;
@@ -263,14 +263,16 @@ function store_avatar(string $avatarUrl, string $authorUrl = '', int $size = 150
     });
 
     if (empty($blob)) {
+        Log::warning('[ActivityPub] Missing image data');
+
         return null;
     }
 
     try {
         // Recursively create directory if it doesn't exist, yet.
-        if (! Storage::disk('public')->has($dir = dirname($relativeAvatarPath))) {
-            Storage::disk('public')->makeDirectory($dir);
-        }
+        // if (! Storage::disk('public')->has($dir = dirname($relativeAvatarPath))) {
+        //     Storage::disk('public')->makeDirectory($dir);
+        // }
 
         // Store original. (Somehow resizing PNGs may lead to corrupted images if we don't save them locally first.)
         Storage::disk('public')->put($relativeAvatarPath, $blob);
@@ -317,7 +319,7 @@ function store_avatar(string $avatarUrl, string $authorUrl = '', int $size = 150
         /** @todo Verify this file actually exists? */
         return Storage::disk('public')->url($relativeAvatarPath . ".$extension");
     } catch (\Exception $e) {
-        //
+        Log::warning('[ActivityPub] Something went wrong saving or resizing the image: ' . $e->getMessage());
     }
 
     return null;
