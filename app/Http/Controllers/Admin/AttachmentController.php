@@ -4,17 +4,24 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attachment;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Intervention\Image\Colors\Rgb\Channels\Blue;
+use Intervention\Image\Colors\Rgb\Channels\Green;
+use Intervention\Image\Colors\Rgb\Channels\Red;
+use Intervention\Image\Colors\Rgb\Color as RgbColor;
+use Intervention\Image\Colors\Rgb\Colorspace as RgbColorspace;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
 use Intervention\Image\ImageManager;
+use kornrunner\Blurhash\Blurhash;
 
 class AttachmentController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $attachments = Attachment::orderBy('created_at', 'desc')
             ->orderBy('id', 'desc')
@@ -24,10 +31,10 @@ class AttachmentController extends Controller
         return view('admin.attachments.index', compact('attachments'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request): View
     {
         $validated = $request->validate([
-            'file' => 'required|file',
+            'file' => 'required|file|max:5120',
         ]);
 
         $filename = $validated['file']->getClientOriginalName();
@@ -55,7 +62,9 @@ class AttachmentController extends Controller
             $validated
         );
 
+        /** @todo Move to model? */
         static::createThumbnails($attachment);
+        static::storeBlurhash($attachment);
 
         return view('admin.attachments.edit', compact('attachment'));
     }
@@ -114,12 +123,13 @@ class AttachmentController extends Controller
 
         $fullPath = Storage::disk('public')->path($attachment->path);
 
-        // Load image.
+        // Load original image.
         $image = $manager->read($fullPath);
 
         $width = $image->width();
         $height = $image->height();
 
+        // Generate thumbnails.
         $sizes = [];
 
         foreach (Attachment::SIZES as $size => $newWidth) {
@@ -150,22 +160,85 @@ class AttachmentController extends Controller
             $copy->save($fullThumbnailPath);
 
             // Free up memory.
+            $copy = null;
             unset($copy);
 
             $sizes[$size] = static::getRelativePath($fullThumbnailPath);
         }
 
         // Free up memory.
+        $image = null;
         unset($image);
 
-        $meta = prepare_meta(array_combine(['width', 'height', 'sizes'], [$width, $height, $sizes]), $attachment);
+        // Store meta.
+        add_meta(
+            array_combine(['width', 'height', 'sizes'], [$width, $height, $sizes]),
+            $attachment
+        );
 
-        foreach ($meta as $key => $value) {
-            $attachment->meta()->updateOrCreate(
-                ['key' => $key],
-                ['value' => $value]
-            );
+        // Force reload meta.
+        $attachment->load('meta');
+    }
+
+    public static function storeBlurhash(Attachment $attachment): void
+    {
+        if (extension_loaded('imagick') && class_exists('Imagick')) {
+            $manager = new ImageManager(new ImagickDriver());
+        } elseif (extension_loaded('gd') && function_exists('gd_info')) {
+            $manager = new ImageManager(new GdDriver());
+        } else {
+            Log::error('Imagick nor GD installed');
+
+            return;
         }
+
+        $thumbnail = $manager->read($attachment->thumbnail);
+
+        $width = $thumbnail->width();
+        $height = $thumbnail->height();
+
+        if ($width > 200 || $height > 200) {
+            return; // Prevent memory issues.
+        }
+
+        $pixels = [];
+
+        for ($y = 0; $y < $height; ++$y) {
+            $row = [];
+
+            for ($x = 0; $x < $width; ++$x) {
+                $colors = $thumbnail->pickColor($x, $y);
+
+                if (! ($colors instanceof RgbColor)) {
+                    $colors = $colors->convertTo(new RgbColorspace());
+                }
+
+                $row[] = [
+                    $colors->channel(Red::class)->value(),
+                    $colors->channel(Green::class)->value(),
+                    $colors->channel(Blue::class)->value(),
+                ];
+            }
+
+            $pixels[] = $row;
+        }
+
+        // Free up memory.
+        $thumbnail = null;
+        unset($thumbnail);
+
+        $componentsX = 4;
+        $componentsY = 3;
+
+        if ($height > $width) {
+            $componentsX = 3;
+            $componentsY = 4;
+        }
+
+        $attachment->meta()->updateOrCreate(
+            ['key' => 'blurhash'],
+            ['value' => (array) Blurhash::encode($pixels, $componentsX, $componentsY)]
+        );
     }
 
     protected static function getRelativePath(string $absolutePath, string $disk = 'public'): string

@@ -225,6 +225,96 @@ class Entry extends Model
         )->shouldCache();
     }
 
+    /**
+     * @todo Add blurhash, width, height?
+     * @todo Cache this, like, for real.
+     */
+    protected function images(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $images = [];
+
+                // Featured image.
+                if ($this->thumbnail) {
+                    $image = [
+                        'type' => 'Image',
+                        'url' => $this->thumbnail,
+                        'mediaType' => get_mime_type($this->thumbnail), // Because older thumbnails may not exist as attachments.
+                    ];
+
+                    $attachment = url_to_attachment($this->thumbnail);
+                    if ($attachment) {
+                        $image = array_merge($image, array_filter([
+                            'name' => $attachment->alt,
+                            'width' => $attachment->width,
+                            'height' => $attachment->height,
+                            'blurhash' => $attachment->blurhash,
+                        ]));
+                    }
+
+                    $images[] = $image;
+                }
+
+                // "Attached images."
+                $doc = new \DOMDocument();
+                $useInternalErrors = libxml_use_internal_errors(true);
+                $doc->loadHTML(
+                    mb_convert_encoding("<div>$this->content</div>", 'HTML-ENTITIES', 'UTF-8'), // To preserve emoji, etc.
+                    LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+                );
+                $xpath = new \DOMXpath($doc);
+
+                foreach ($xpath->query('//img') as $node) {
+                    if (! $node->hasAttribute('src') || empty($node->getAttribute('src'))) {
+                        continue;
+                    }
+
+                    $src = $node->getAttribute('src');
+                    $filename = pathinfo($src, PATHINFO_FILENAME); // Filename without extension.
+
+                    // Strip dimensions, etc., off resized images. Of course this doesn't work if the original file had
+                    // these in its name.
+                    /** @todo Come up with something more robust. */
+                    $original = preg_replace('~-(?:\d+x\d+|scaled|rotated)$~', '', $filename);
+
+                    $url = str_replace($filename, $original, $src); // Replace filename with the "orginal" file's name.
+
+                    // Convert URL back to attachment.
+                    $attachment = url_to_attachment($url);
+
+                    if (! $attachment) {
+                        // Not hosted here, or something else went wrong.
+                        continue;
+                    }
+
+                    $image = [
+                        'type' => 'Image',
+                        'url' => $url,
+                        'mediaType' => $attachment->mime_type,
+                    ];
+
+                    $alt = $node->hasAttribute('alt') ? $node->getAttribute('alt') : '';
+                    if (! empty($alt)) {
+                        $image['name'] = $alt;
+                    }
+
+                    if (count($images) < 4) {
+                        $images[] = $image;
+
+                        // There's still a risk that a featured image without alt text shows up as well as the same
+                        // image with alt text as found in the post's content.
+                        $images = array_unique($images);
+                    }
+                }
+
+                libxml_use_internal_errors($useInternalErrors);
+
+                return $images;
+            }
+        )->shouldCache();
+    }
+
     protected function name(): Attribute
     {
         return Attribute::make(
@@ -533,6 +623,10 @@ class Entry extends Model
             }
 
             /** @todo Add author, if they aren't already mentioned explicitly? */
+        }
+
+        if (! empty($this->images)) {
+            $output['attachment'] = $this->images;
         }
 
         $comments = $this->comments()
