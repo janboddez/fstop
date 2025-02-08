@@ -453,21 +453,42 @@ class Entry extends Model
         )->shouldCache();
     }
 
+    /**
+     * Outputs an image tag containing the entry's featured image.
+     */
     protected function thumbnail(): Attribute
     {
         return Attribute::make(
             get: function () {
-                if (! empty($this->featured->url)) {
-                    // @todo Output an actual image tag and whatnot.
-                    return $this->featured->url;
+                if ($this->featured) {
+                    $attributes = ! empty($this->featured->width)
+                        ? ' width="' . $this->featured->width . '"'
+                        : '';
+
+                    $attributes .= ! empty($this->featured->height)
+                    ? ' height="' . $this->featured->height . '"'
+                    : '';
+
+                    $attributes .= ! empty($this->featured->srcset)
+                    ? ' srcset="' . $this->featured->srcset . '"'
+                    : '';
+
+                    return sprintf(
+                        '<img class="u-featured" src="%s" alt="%s" loading="lazy"%s>',
+                        e($this->featured->url),
+                        e($this->featured->alt),
+                        $attributes
+                    );
                 }
 
                 // "Legacy" format.
                 $meta = $this->meta->firstWhere('key', 'featured');
 
-                return $meta->value[0] ?? null;
+                return ! empty($meta->value[0])
+                    ? '<img class="u-featured" src="' . e($meta->value[0]) . '" alt="" loading="lazy">'
+                    : null;
             }
-        );
+        )->shouldCache();
     }
 
     protected function type(): Attribute

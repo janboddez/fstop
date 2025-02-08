@@ -2,7 +2,7 @@
     @if (is_archive() && ! empty($entry->thumbnail))
         <div class="post-thumbnail">
             {{-- @todo: Make responsive. --}}
-            <a class="u-url" href="{{ $entry->permalink }}" rel="bookmark"><img class="u-featured" src="{{ $entry->thumbnail }}" width="1600" height="720" alt="" loading="lazy"></a>
+            <a class="u-url" href="{{ $entry->permalink }}" rel="bookmark">{!! $entry->thumbnail !!}</a>
         </div>
     @endif
 

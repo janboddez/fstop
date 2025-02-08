@@ -3,12 +3,12 @@
     @if (is_archive() && ! empty($entry->thumbnail))
         <div class="post-thumbnail">
             {{-- @todo: Make responsive. --}}
-            <a class="u-url" href="{{ $entry->permalink }}" rel="bookmark"><img class="u-featured" src="{{ $entry->thumbnail }}" width="1600" height="720" alt="" loading="lazy"></a>
+            <a class="u-url" href="{{ $entry->permalink }}" rel="bookmark">{!! $entry->thumbnail !!}</a>
         </div>
     @elseif (in_array($entry->type, ['note', 'like'], true) && ! empty($entry->thumbnail))
         <div class="post-thumbnail">
             {{-- @todo: Make responsive. --}}
-            <a href="{{ $entry->thumbnail }}"><img class="u-featured" src="{{ $entry->thumbnail }}" width="1600" height="720" alt="" loading="lazy"></a>
+            <a href="{{ $entry->thumbnail }}">{!! $entry->thumbnail !!}</a>
         </div>
     @endif
 
