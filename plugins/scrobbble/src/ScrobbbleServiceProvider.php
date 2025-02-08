@@ -50,7 +50,7 @@ class ScrobbbleServiceProvider extends ServiceProvider
                 return $types;
             }
 
-            if (request()->is('users/*')) {
+            if (request()->is('users/*') || request()->is('@*')) {
                 return $types;
             }
 
