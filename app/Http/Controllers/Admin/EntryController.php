@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreEntryRequest;
 use App\Models\Attachment;
 use App\Models\Entry;
 use App\Models\Tag;
@@ -94,24 +95,9 @@ class EntryController extends Controller
         return view('admin.entries.edit', compact('type'));
     }
 
-    public function store(Request $request): Response
+    public function store(StoreEntryRequest $request): Response
     {
-        $validated = $request->validate([
-            'name' => 'nullable|max:250',
-            'slug' => 'nullable|max:250',
-            'content' => 'required|string',
-            'summary' => 'nullable|string',
-            'created_at' => 'nullable|date_format:Y-m-d',
-            'status' => 'in:draft,published',
-            'visibility' => 'in:public,unlisted,private',
-            'type' => 'in:' . implode(',', get_registered_entry_types()),
-            'featured' => 'nullable|url',
-            'meta_keys' => 'nullable|array',
-            'meta_values' => 'array',
-            'meta_keys.*' => 'nullable|string|max:250',
-            'meta_values.*' => 'nullable|string',
-            'tags' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         // Parse in user ID.
         $validated['user_id'] = $request->user()->id;
@@ -123,7 +109,9 @@ class EntryController extends Controller
             $featured = Attachment::where('path', $relativePath)
                 ->first();
 
-            $validated['attachment_id'] = $featured->id;
+            if ($featured) {
+                $validated['attachment_id'] = $featured->id;
+            }
         }
 
         $entry = Entry::create($validated);
@@ -156,7 +144,6 @@ class EntryController extends Controller
             add_meta(array_combine($validated['meta_keys'], $validated['meta_values']), $entry);
         }
 
-        /** @todo Use an actual Laravel event. */
         Eventy::action('entries:saved', $entry);
 
         return redirect()->route('admin.entries.edit', compact('entry'))
@@ -174,24 +161,9 @@ class EntryController extends Controller
         return view('admin.entries.edit', compact('entry', 'type'));
     }
 
-    public function update(Request $request, Entry $entry): Response
+    public function update(StoreEntryRequest $request, Entry $entry): Response
     {
-        $validated = $request->validate([
-            'name' => 'nullable|max:250',
-            'slug' => 'nullable|max:250',
-            'content' => 'required|string',
-            'summary' => 'nullable|string',
-            'created_at' => 'nullable|date_format:Y-m-d',
-            'status' => 'in:draft,published',
-            'visibility' => 'in:public,unlisted,private',
-            'type' => 'in:' . implode(',', get_registered_entry_types()),
-            'featured' => 'nullable|url',
-            'meta_keys' => 'nullable|array',
-            'meta_values' => 'array',
-            'meta_keys.*' => 'nullable|string|max:250',
-            'meta_values.*' => 'nullable|string',
-            'tags' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         if (! empty($validated['featured'])) {
             $relativePath = Str::replaceStart(Storage::disk('public')->url(''), '', $validated['featured']);
@@ -199,7 +171,9 @@ class EntryController extends Controller
             $featured = Attachment::where('path', $relativePath)
                 ->first();
 
-            $validated['attachment_id'] = $featured->id;
+            if ($featured) {
+                $validated['attachment_id'] = $featured->id;
+            }
         }
 
         $entry->update($validated);

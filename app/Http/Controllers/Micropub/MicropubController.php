@@ -211,14 +211,10 @@ class MicropubController extends Controller
             // Process meta.
             $meta = array_intersect_key($properties, array_flip(Entry::$supportedProperties['meta']));
 
-            foreach ($meta as $key => $value) {
-                $entry->meta()->create([
-                    'key' => $key,
-                    'value' => $value,
-                ]);
+            if (! empty($meta)) {
+                add_meta($meta, $entry);
             }
 
-            /** @todo Use an actual Laravel event? */
             Eventy::action('entries:saved', $entry);
 
             return response()->json(

@@ -33,13 +33,14 @@ class WebFingerController extends Controller
             'subject' => sprintf('acct:%s@%s', $login, $host),
             'aliases' => [
                 $user->actor_url,
-                url("author/{$login}"),
+                $user->author_url,
+                url("author/{$login}"), // "Legacy."
             ],
             'links' => [
                 [
                     'rel' => 'http://webfinger.net/rel/profile-page',
                     'type' => 'text/html',
-                    'href' => $user->actor_url,
+                    'href' => url("@{$login}"),
                 ],
                 [
                     'rel' => 'self',

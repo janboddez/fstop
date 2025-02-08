@@ -81,7 +81,8 @@ class User extends Authenticatable
     protected function actorUrl(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->author_url
+            // get: fn () => $this->author_url
+            get: fn () => url('@' . $this->login)
         );
     }
 

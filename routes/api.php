@@ -46,4 +46,8 @@ if (config('app.activitypub', env('ACTIVITYPUB_ENABLED', false))) {
 
             Route::post('inbox', [InboxController::class, 'inbox']);
         });
+
+        // Legacy.
+        Route::post('wp-json/activitypub/1.0/users/3/inbox', [InboxController::class, 'inbox']);
+        Route::post('wp-json/activitypub/1.0/actors/3/inbox', [InboxController::class, 'inbox']);
 }

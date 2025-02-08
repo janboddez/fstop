@@ -31,8 +31,7 @@ class ActivityPubServiceProvider extends ServiceProvider
                 return;
             }
 
-            /** @todo Make this filterable. Also, "note" isn't even in "core." */
-            if (! in_array($entry->type, ['article', 'note', 'like'], true)) {
+            if (! in_array($entry->type, Eventy::filter('activitypub:entry_types', ['article']), true)) {
                 return;
             }
 

@@ -127,12 +127,16 @@ Route::prefix('tags')
             ->name('show');
     });
 
+// User profiles.
 Route::prefix('users')
     ->name('users.')
     ->group(function () {
         Route::get('{user:login}', UserController::class)
             ->name('show');
     });
+
+// Alternative user profiles.
+Route::get('@{user:login}', UserController::class);
 
 // Generic feed; contains all content types.
 Route::get('feed', FeedController::class);

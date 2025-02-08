@@ -124,7 +124,8 @@ class Attachment extends Model
                     ', ',
                     array_map(
                         function ($size, $path) {
-                            return Storage::disk('public')->url($path) . ' ' . static::SIZES[$size] . 'w';
+                            return safe_encode_url(Storage::disk('public')->url($path)) . ' ' .
+                                static::SIZES[$size] . 'w';
                         },
                         array_keys($sizes),
                         $sizes

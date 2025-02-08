@@ -112,7 +112,7 @@ class Actor extends Model
     }
 
     /**
-     * The URL to an actor's profile page, which may be different from their "ID."
+     * The URL to an actor's profile page, which may be different from their "ID" (also a URL).
      */
     protected function profile(): Attribute
     {

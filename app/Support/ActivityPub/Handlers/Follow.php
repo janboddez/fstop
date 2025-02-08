@@ -29,6 +29,11 @@ class Follow
 
         $actor = filter_var($actor, FILTER_SANITIZE_URL);
 
+        if (empty($this->user->id)) {
+            // Legacy (or shared inbox) request.
+            $this->user = User::find(1);
+        }
+
         // if ($this->user->followers()->where('url', $actor)->exists()) {
         //     /**
         //      * @todo We'll want to fetch their profile regardless, and look up their handle, and perform a WebFinger

@@ -29,7 +29,7 @@ function is_archive(string $type = null): bool
         return true;
     }
 
-    if (request()->is('users/*')) {
+    if (request()->is('users/*') || request()->is('@*')) {
         // "Author archive."
         return true;
     }
@@ -131,7 +131,7 @@ function body_class(): string
         $classes[] = 'single';
     }
 
-    if (request()->is('users/*')) {
+    if (request()->is('users/*') || request()->is('@*')) {
         $classes[] = 'author';
     }
 
@@ -190,10 +190,6 @@ function slugify(string $value, string $separator = '-', string $language = 'en'
 
 function url_to_attachment(string $url): ?Attachment
 {
-    if (! Str::isUrl($url, ['http', 'https'])) {
-        return null;
-    }
-
     if (! $path = parse_url($url, PHP_URL_PATH)) {
         return null;
     }
@@ -225,6 +221,26 @@ function url_to_entry(string $url): ?Entry
         ->first();
 
     return $entry;
+}
+
+function get_mime_type(string $url, string $disk = 'public'): ?string
+{
+    $relativePath = Str::replaceStart(
+        Storage::disk($disk)->url(''),
+        '',
+        $url
+    );
+
+    if (! Storage::disk($disk)->has($relativePath)) {
+        return null;
+    }
+
+    $finfo = new \finfo(FILEINFO_MIME);
+    $mime = $finfo->file(Storage::disk($disk)->path($relativePath));
+
+    return $mime
+        ? trim(explode(';', $mime)[0])
+        : 'application/octet-stream';
 }
 
 /**
@@ -393,4 +409,26 @@ function add_meta(array $meta, Model $metable): void
     );
 
     $metable->meta()->createMany($meta);
+}
+
+function safe_encode_url(string $url): string
+{
+    $dontEncode = [
+        '%2F' => '/',
+        '%40' => '@',
+        '%3A' => ':',
+        '%3B' => ';',
+        '%2C' => ',',
+        '%3D' => '=',
+        '%2B' => '+',
+        '%21' => '!',
+        '%2A' => '*',
+        '%7C' => '|',
+        '%3F' => '?',
+        '%26' => '&',
+        '%23' => '#',
+        '%25' => '%',
+    ];
+
+    return strtr(rawurlencode($url), $dontEncode);
 }
