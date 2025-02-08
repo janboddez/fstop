@@ -1,8 +1,6 @@
 ((FloatingUIDOM) => {
     const {autoUpdate, computePosition} = FloatingUIDOM;
 
-    const cleanup = {}; // To "hold" the "cleanup" functions (to stop auto-updating popovers' positions).
-
     document.querySelectorAll('[popover]').forEach((element) => {
         const id = element.getAttribute('id');
         const button = document.querySelector(`[popovertarget="${id}"`);
@@ -29,6 +27,7 @@
             } else if (typeof cleanup === 'function') {
                 // Stop auto-updating.
                 cleanup();
+                cleanup = null;
                 Object.assign(element.style, {
                     top: '-999rem', // Avoid any "jumps" when `element` is next made visible.
                 });
