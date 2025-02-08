@@ -78,5 +78,16 @@ class Like
             'key' => 'source',
             'value' => (array) filter_var($id, FILTER_SANITIZE_URL),
         ]);
+
+        /**
+         * @todo Look into alternatives, like, if we were to make this a pure "Fediverse app," we could simply add an
+         *       `actor_id` to replies (and use that to fetch names and avatars of commenters).
+         */
+        if (! empty($actor->avatar)) {
+            $comment->meta()->create([
+                'key' => 'avatar',
+                'value' => (array) filter_var($actor->avatar, FILTER_SANITIZE_URL),
+            ]);
+        }
     }
 }
