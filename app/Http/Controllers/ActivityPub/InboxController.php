@@ -76,7 +76,14 @@ class InboxController extends Controller
 
             if (! empty($meta['public_key'])) {
                 // Update the actor's meta ...
-                add_meta($meta, $actor);
+                $meta = prepare_meta($meta, $actor);
+
+                foreach ($meta as $key => $value) {
+                    $actor->meta()->updateOrCreate(
+                        ['key' => $key],
+                        ['value' => $value]
+                    );
+                }
 
                 // ... and try again.
                 $verified = HttpSignature::verify($meta['public_key'], $signatureData, $request);
