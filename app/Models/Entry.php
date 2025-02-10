@@ -622,7 +622,7 @@ class Entry extends Model
             ],
             'id' => $this->permalink,
             'type' => 'Note',
-            'attributedTo' => $this->user->actor_url,
+            'attributedTo' => $this->user->author_url,
             'content' => $content,
             'contentMap' => $contentMap,
             'published' => $this->created_at
