@@ -365,19 +365,28 @@ blockquote::before {
     margin-top: 1.25rem;
 }
 
-/*
 .post-thumbnail a {
     display: block;
+    position: relative;
 }
-*/
 
-.post-thumbnail img {
+.post-thumbnail canvas {
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+    bottom: 0;
+    height: 100%;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 100%;
+    z-index: 1;
+}
+
+.post-thumbnail a img {
+    position: relative;
     vertical-align: middle;
-    opacity: 0.9;
-}
-
-.post-thumbnail a:hover img {
-    opacity: 1;
+    z-index: 100;
 }
 
 .h-entry.note .post-thumbnail {
@@ -388,6 +397,7 @@ blockquote::before {
 
 .h-entry.note .post-thumbnail img {
     border: 1px solid #ddd;
+    box-sizing: border-box;
 }
 
 /*

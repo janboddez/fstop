@@ -14,7 +14,7 @@ return [
     */
 
     'name' => env('APP_NAME', 'F-Stop'),
-    'version' => '0.1.2.8',
+    'version' => '0.1.3.5',
     'charset' => env('APP_CHARSET', 'utf-8'),
     'activitypub' => env('ACTIVITYPUB_ENABLED', false),
 
