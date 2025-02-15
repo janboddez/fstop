@@ -40,12 +40,12 @@ class WebFingerController extends Controller
                 [
                     'rel' => 'http://webfinger.net/rel/profile-page',
                     'type' => 'text/html',
-                    'href' => url("@{$login}"),
+                    'href' => $user->actor_url,
                 ],
                 [
                     'rel' => 'self',
                     'type' => 'application/activity+json',
-                    'href' => $user->actor_url,
+                    'href' => $user->author_url,
                 ],
             ],
         ];
