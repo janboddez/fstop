@@ -453,13 +453,35 @@ class Entry extends Model
         )->shouldCache();
     }
 
-    /**
-     * Outputs an image tag containing the entry's featured image.
-     */
     protected function thumbnail(): Attribute
     {
         return Attribute::make(
             get: function () {
+                if ($this->featured) {
+                    return $this->featured->url;
+                }
+
+                // "Legacy" format.
+                $meta = $this->meta->firstWhere('key', 'featured');
+
+                return ! empty($meta->value[0])
+                    ? $meta->value[0]
+                    : null;
+            }
+        )->shouldCache();
+    }
+
+    /**
+     * Outputs an image tag containing the entry's featured image.
+     */
+    protected function thumbnailHtml(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (! $this->thumbnail) {
+                    return null;
+                }
+
                 if ($this->featured) {
                     $attributes = ! empty($this->featured->width)
                         ? ' width="' . $this->featured->width . '"'
@@ -473,6 +495,10 @@ class Entry extends Model
                     ? ' srcset="' . $this->featured->srcset . '"'
                     : '';
 
+                    $attributes .= ! empty($this->featured->blurhash)
+                    ? ' data-blurhash="' . e($this->featured->blurhash) . '"'
+                    : '';
+
                     return sprintf(
                         '<img class="u-featured" src="%s" alt="%s" loading="lazy"%s>',
                         e($this->featured->url),
@@ -481,12 +507,7 @@ class Entry extends Model
                     );
                 }
 
-                // "Legacy" format.
-                $meta = $this->meta->firstWhere('key', 'featured');
-
-                return ! empty($meta->value[0])
-                    ? '<img class="u-featured" src="' . e($meta->value[0]) . '" alt="" loading="lazy">'
-                    : null;
+                return '<img class="u-featured" src="' . e($this->thumbnail) . '" alt="" loading="lazy">';
             }
         )->shouldCache();
     }

@@ -20,12 +20,12 @@
     @foreach ($entries as $entry)
         @php
         if (! empty($entry->thumbnail)) {
-            $image = '<p><img src="' . $entry->thumbnail . '" alt="' . $entry->title . '"></p>'.PHP_EOL;
+            $image = '<p>' . $entry->thumbnail_html . '</p>' . PHP_EOL;
         } else {
             $image = '';
         }
 
-        $content = $image.$entry->content;
+        $content = $image . $entry->content;
         @endphp
 
     <item>

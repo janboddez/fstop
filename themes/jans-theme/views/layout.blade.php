@@ -137,12 +137,15 @@
         </defs>
     </svg>
 
-    <script src="{{ url('js/floating-ui/core.js') }}?v=1.6.9"></script>
-    <script src="{{ url('js/floating-ui/dom.js') }}?v=1.6.13"></script>
-    <script src="{{ url('js/popovers.js') }}?v={{ config('app.version') }}"></script>
+    <script src="{{ url('js/blurhash_pure_js_port.min.js') }}?v={{ config('app.version') }}"></script>
+    <script src="{{ url('js/blurhash.js') }}?v={{ config('app.version') }}"></script>
 
     <script src="{{ url('js/highlight.pack.js') }}"></script>
     <script>hljs.initHighlightingOnLoad();</script>
+
+    <script src="{{ url('js/floating-ui/core.js') }}?v=1.6.9"></script>
+    <script src="{{ url('js/floating-ui/dom.js') }}?v=1.6.13"></script>
+    <script src="{{ url('js/popovers.js') }}?v={{ config('app.version') }}"></script>
 
     <script src="{{ url('js/instantpage.js') }}?v=5.2.0" type="module" defer></script>
 </body>
