@@ -73,7 +73,7 @@ class EntryController extends Controller
         }
 
         if (
-            in_array($entry->type, ['article', 'note'], true) &&
+            in_array($entry->type, ['article', 'note', 'like'], true) &&
             request()->expectsJson() &&
             null === $entry->meta->firstWhere('key', '_like_of') &&
             null === $entry->meta->firstWhere('key', '_repost_of')
