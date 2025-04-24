@@ -20,7 +20,7 @@ class FollowerController extends Controller
             array_filter([
                 '@context' => ['https://www.w3.org/ns/activitystreams'],
                 'id' => route('activitypub.followers', $user),
-                'actor' => $user->actor_url,
+                'actor' => $user->author_url,
                 'type' => 'OrderedCollectionPage',
                 'partOf' => route('activitypub.followers', $user),
                 'totalItems' => $followers->total(),

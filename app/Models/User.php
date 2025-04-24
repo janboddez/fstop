@@ -12,6 +12,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
+use TorMorten\Eventy\Facades\Events as Eventy;
 
 class User extends Authenticatable
 {
@@ -81,8 +82,7 @@ class User extends Authenticatable
     protected function actorUrl(): Attribute
     {
         return Attribute::make(
-            // get: fn () => $this->author_url
-            get: fn () => url('@' . $this->login)
+            get: fn () => Eventy::filter('activitypub:actor_url', url('@' . $this->login))
         );
     }
 
@@ -206,7 +206,7 @@ class User extends Authenticatable
                     ],
                 ],
             ],
-            'id' => route('users.show', $this),
+            'id' => $this->author_url,
             'type' => 'Person',
             // 'following' => route('activitypub.following', $this),
             'followers' => route('activitypub.followers', $this),
@@ -222,8 +222,8 @@ class User extends Authenticatable
                 ? str_replace('+00:00', 'Z', $this->created_at->toIso8601String())
                 : str_replace('+00:00', 'Z', now()->toIso8601String()),
             'publicKey' => [
-                'id' => $this->actor_url . '#main-key',
-                'owner' => route('users.show', $this),
+                'id' => $this->author_url . '#main-key',
+                'owner' => $this->author_url,
                 'publicKeyPem' => $this->public_key,
             ],
             'endpoints' => [

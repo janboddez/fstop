@@ -80,9 +80,9 @@ class Follow
 
         $body = json_encode([
             '@context' => 'https://www.w3.org/ns/activitystreams',
-            'id' => $this->user->actor_url . '#follow-' . bin2hex(random_bytes(16)),
+            'id' => $this->user->author_url . '#follow-' . bin2hex(random_bytes(16)),
             'type' => 'Accept',
-            'actor' => $this->user->actor_url,
+            'actor' => $this->user->author_url,
             'object' => json_decode($this->request->getContent(), true),
         ]);
 
