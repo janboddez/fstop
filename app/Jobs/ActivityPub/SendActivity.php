@@ -68,7 +68,7 @@ class SendActivity implements ShouldQueue
             $activity = array_filter([
                 '@context' => ['https://www.w3.org/ns/activitystreams'],
                 'type' => $this->type,
-                'actor' => $this->object->user->actor_url,
+                'actor' => $this->object->user->author_url,
                 'object' => $object,
                 'published' => $object['published'],
                 'updated' => $this->type === 'Create' ? null : ($object['updated'] ?? null),
@@ -131,6 +131,9 @@ class SendActivity implements ShouldQueue
             $response = Http::withHeaders($headers)
                 ->withBody($body, 'application/activity+json')
                 ->post($this->inbox);
+
+            Log::debug($headers);
+            Log::debug($body);
 
             if ($response->successful()) {
                 Log::debug("[ActivityPub] Successfully sent {$activity['type']} activity to {$this->inbox}");
