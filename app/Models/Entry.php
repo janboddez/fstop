@@ -226,7 +226,6 @@ class Entry extends Model
     }
 
     /**
-     * @todo Add blurhash, width, height?
      * @todo Cache this, like, for real.
      */
     protected function images(): Attribute
@@ -543,10 +542,13 @@ class Entry extends Model
                         $mentions[$match] = $meta['url'] ?? $url;
                     }
 
-                    $this->meta()->updateOrCreate(
-                        ['key' => '_activitypub_mentions'],
-                        ['value' => (array) $mentions]
-                    );
+                    if (! empty($this->id)) {
+                        // Can't save a relation if we haven't yet saved the current entry.
+                        $this->meta()->updateOrCreate(
+                            ['key' => '_activitypub_mentions'],
+                            ['value' => (array) $mentions]
+                        );
+                    }
                 }
 
                 return $mentions;
