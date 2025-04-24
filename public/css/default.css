@@ -1109,7 +1109,7 @@ a.sr-only:focus {
     body:not(.single) .article.has-thumbnail .entry-header {
         position: relative;
         background: #fff;
-        z-index: 10;
+        z-index: 200;
         margin-right: -4rem;
         padding-right: 6rem;
         padding-top: 1.5rem;
