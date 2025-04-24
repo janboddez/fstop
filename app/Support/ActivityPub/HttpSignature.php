@@ -33,7 +33,7 @@ class HttpSignature
         openssl_sign($stringToSign, $signature, $key, OPENSSL_ALGO_SHA256);
 
         // phpcs:ignore Generic.Files.LineLength.TooLong
-        $headers['Signature'] = 'keyId="' . $user->actor_url . '#main-key",headers="' . $signedHeaders . '",algorithm="rsa-sha256",signature="' . base64_encode($signature) . '"';
+        $headers['Signature'] = 'keyId="' . $user->author_url . '#main-key",headers="' . $signedHeaders . '",algorithm="rsa-sha256",signature="' . base64_encode($signature) . '"';
         unset($headers['(request-target)']);
 
         return $headers;
@@ -111,7 +111,7 @@ class HttpSignature
     {
         $headers = [
           '(request-target)' => "$method " . parse_url($url, PHP_URL_PATH),
-          'Date' => now()->format('D, d M Y H:i:s \G\M\T'),
+          'Date' => now()->timezone('UTC')->format('D, d M Y H:i:s \G\M\T'),
           'Host' => parse_url($url, PHP_URL_HOST),
           'Content-Type' => 'application/activity+json',
         ];
