@@ -13,6 +13,7 @@ class EntryTypesServiceProvider extends ServiceProvider
         // Need to call this in the `register()` (rather than `boot()`) method in order to register our routes before
         // "core's" catch-all page route.
         $this->loadRoutesFrom(__DIR__ . '/../routes.php');
+
         $this->registerHooks(); // For these, it doesn't really matter.
     }
 
