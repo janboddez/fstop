@@ -31,7 +31,8 @@ class ActivityPubServiceProvider extends ServiceProvider
                 return;
             }
 
-            if (! in_array($entry->type, Eventy::filter('activitypub:entry_types', ['article']), true)) {
+            if (! in_array($entry->type, Eventy::filter('activitypub:entry_types', ['article', 'note', 'like']), true)) {
+                // Again added these types explicitly, as the filter doesn't seem to run in time.
                 return;
             }
 
