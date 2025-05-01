@@ -212,13 +212,27 @@ function object_to_id(mixed $object): ?string
 
 function store_avatar(string $avatarUrl, string $authorUrl = '', int $size = 150): ?string
 {
-    $hash = md5(! empty($authorUrl) ? $authorUrl : $avatarUrl);
-    $relativeAvatarPath = 'activitypub/' . substr($hash, 0, 2) . '/' . substr($hash, 2, 2) . '/' . $hash;
-    $fullAvatarPath = Storage::disk('public')->path($relativeAvatarPath);
+    if (extension_loaded('imagick') && class_exists('Imagick')) {
+        Log::debug('[ActivityPub] Using Imagick');
+        $manager = new ImageManager(new ImagickDriver());
+    } elseif (extension_loaded('gd') && function_exists('gd_info')) {
+        Log::debug('[ActivityPub] Using GD');
+        $manager = new ImageManager(new GdDriver());
+    } else {
+        Log::warning('[ActivityPub] Imagick nor GD installed');
 
-    foreach (glob($fullAvatarPath . '.*') as $match) {
+        return null;
+    }
+
+    $hash = md5(! empty($authorUrl) ? $authorUrl : $avatarUrl);
+
+    // (Relative) destination path, without extension (for now).
+    $relativeAvatarPath = 'activitypub/' . substr($hash, 0, 2) . '/' . substr($hash, 2, 2) . '/' . $hash;
+
+    foreach (glob(Storage::disk('public')->path($relativeAvatarPath) . '.*') as $match) {
         if (time() - filectime($match) < 60 * 60 * 24 * 30) {
             Log::debug('[ActivityPub] Found a recently cached image for ' . $avatarUrl);
+
             return Storage::disk('public')->url(get_relative_path($match));
         }
 
@@ -251,15 +265,7 @@ function store_avatar(string $avatarUrl, string $authorUrl = '', int $size = 150
             return null;
         }
 
-        $blob = $response->body();
-
-        if (empty($blob)) {
-            Log::warning('[ActivityPub] Missing image data');
-
-            return null;
-        }
-
-        return $blob;
+        return $response->body();
     });
 
     if (empty($blob)) {
@@ -269,34 +275,46 @@ function store_avatar(string $avatarUrl, string $authorUrl = '', int $size = 150
     }
 
     try {
-        // Recursively create directory if it doesn't exist, yet.
-        // if (! Storage::disk('public')->has($dir = dirname($relativeAvatarPath))) {
-        //     Storage::disk('public')->makeDirectory($dir);
-        // }
+        // Temporarily store original. (Somehow resizing PNGs may lead to corrupted images if we don't save them locally
+        // first.)
+        $tempFile = tempnam(sys_get_temp_dir(), $hash);
 
-        // Store original. (Somehow resizing PNGs may lead to corrupted images if we don't save them locally first.)
-        Storage::disk('public')->put($relativeAvatarPath, $blob);
+        if (! file_put_contents($tempFile, $blob)) {
+            Log::warning('[ActivityPub] Empty file.');
 
-        if (extension_loaded('imagick') && class_exists('Imagick')) {
-            Log::debug('[ActivityPub] Using Imagick');
-            $manager = new ImageManager(new ImagickDriver());
-        } elseif (extension_loaded('gd') && function_exists('gd_info')) {
-            Log::debug('[ActivityPub] Using GD');
-            $manager = new ImageManager(new GdDriver());
-        } else {
-            Log::warning('[ActivityPub] Imagick nor GD installed');
+            return null;
+        };
+
+        // Try and apply a meaningful file extension.
+        $finfo = new \finfo(FILEINFO_EXTENSION);
+        $extension = explode('/', $finfo->file($tempFile))[0];
+
+        if (empty($extension) || ! in_array($extension, ['gif', 'jpeg', 'jpg', 'png', 'webp'], true)) {
+            Log::warning('[ActivityPub] Unknown file format.');
+            unlink($tempFile); // Delete.
 
             return null;
         }
 
+        $relativeAvatarPath = $relativeAvatarPath . ".$extension";
+        $fullAvatarPath = Storage::disk('public')->path($relativeAvatarPath);
+
+        // Recursively create directory if it doesn't exist, yet.
+        if (! Storage::disk('public')->has($dir = dirname($relativeAvatarPath))) {
+            Log::debug("[ActivityPub] Creating directory $dir");
+
+            Storage::disk('public')->makeDirectory($dir);
+        }
+
         // Load image.
-        $image = $manager->read($fullAvatarPath);
+        $image = $manager->read($tempFile);
         // Resize.
         $image->cover($size, $size);
         // Save image, overwriting the original.
         $image->save($fullAvatarPath);
 
         unset($image); // Free up memory.
+        unlink($tempFile); // Delete temporary file.
 
         if (! file_exists($fullAvatarPath)) {
             Log::warning('[ActivityPub] Something went wrong saving the thumbnail');
@@ -304,20 +322,7 @@ function store_avatar(string $avatarUrl, string $authorUrl = '', int $size = 150
             return null;
         }
 
-        // Try and apply a meaningful file extension.
-        $finfo = new \finfo(FILEINFO_EXTENSION);
-        $extension = explode('/', $finfo->file($fullAvatarPath))[0];
-        if (! empty($extension) && $extension !== '???') {
-            // Rename file.
-            Storage::disk('public')->move(
-                $relativeAvatarPath,
-                $relativeAvatarPath . ".$extension"
-            );
-        }
-
-        // Return the (absolute) local avatar URL.
-        /** @todo Verify this file actually exists? */
-        return Storage::disk('public')->url($relativeAvatarPath . ".$extension");
+        return Storage::disk('public')->url($relativeAvatarPath);
     } catch (\Exception $e) {
         Log::warning('[ActivityPub] Something went wrong saving or resizing the image: ' . $e->getMessage());
     }
