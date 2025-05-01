@@ -34,7 +34,7 @@ class AttachmentController extends Controller
     public function store(Request $request): View
     {
         $validated = $request->validate([
-            'file' => 'required|file|max:5120',
+            'file' => 'required|mimes:gif,jpg,pdf,png|max:5120',
         ]);
 
         $filename = $validated['file']->getClientOriginalName();
@@ -111,6 +111,13 @@ class AttachmentController extends Controller
 
     public static function createThumbnails(Attachment $attachment): void
     {
+        // Intervention Image doesn't do PDFs, and GD doesn't support them, either.
+        if (Str::endsWith($attachment->mime_type, 'pdf') && extension_loaded('imagick') && class_exists('Imagick')) {
+            static::createPdfThumbnail($attachment);
+
+            return;
+        }
+
         if (extension_loaded('imagick') && class_exists('Imagick')) {
             $manager = new ImageManager(new ImagickDriver());
         } elseif (extension_loaded('gd') && function_exists('gd_info')) {
@@ -180,8 +187,87 @@ class AttachmentController extends Controller
         $attachment->load('meta');
     }
 
+    public static function createPdfThumbnail(Attachment $attachment): void
+    {
+        if (! extension_loaded('imagick') || ! class_exists('Imagick')) {
+            Log::error('Imagick not installed');
+
+            return;
+        }
+
+        try {
+            $imagick = new \Imagick();
+
+            $fullPath = Storage::disk('public')->path($attachment->path);
+            $imagick->readimage($fullPath . '[0]'); // Read the first page.
+
+            $width = $imagick->getImageWidth();
+            $height = $imagick->getImageHeight();
+
+            $imagick->setImageFormat('png');
+
+            $sizes = [];
+
+            foreach (Attachment::SIZES as $size => $newWidth) {
+                if ($newWidth >= $width) {
+                    // Avoid generating larger versions.
+                    continue;
+                }
+
+                $copy = clone $imagick;
+
+                if ($size === 'thumbnail') {
+                    // Always crop thumbnails.
+                    $newHeight = $newWidth;
+                    $copy->cropThumbnailImage($newWidth, $newHeight);
+                } else {
+                    $newHeight = (int) $height * $newWidth / $width;
+                    $copy->resizeImage($newWidth, $newHeight, \Imagick::FILTER_CATROM, 1);
+                }
+
+                $copy->setImagePage(0, 0, 0, 0);
+
+                $fullThumbnailPath = sprintf(
+                    '%s-%dx%d.%s',
+                    preg_replace('~.' . pathinfo($fullPath, PATHINFO_EXTENSION) . '$~', '', $fullPath),
+                    $newWidth,
+                    $newHeight,
+                    'png'
+                );
+
+                $copy->writeImage($fullThumbnailPath);
+                $copy->destroy();
+
+                $relativeThumbnailPath = preg_replace(
+                    '~^' . Storage::disk('public')->path('') . '~',
+                    '',
+                    $fullThumbnailPath
+                );
+
+                $sizes[$size] = $relativeThumbnailPath;
+            }
+
+            $imagick->destroy();
+
+            // Store meta.
+            add_meta(
+                array_combine(['width', 'height', 'sizes'], [$width, $height, $sizes]),
+                $attachment
+            );
+
+            // Force reload meta.
+            $attachment->load('meta');
+        } catch (\Exception $e) {
+            Log::warning('Could not generate thumbnails: ' . $e->getMessage());
+        }
+    }
+
     public static function storeBlurhash(Attachment $attachment): void
     {
+        if (Str::endsWith($attachment->path, '.pdf')) {
+            return;
+        }
+
         if (extension_loaded('imagick') && class_exists('Imagick')) {
             $manager = new ImageManager(new ImagickDriver());
         } elseif (extension_loaded('gd') && function_exists('gd_info')) {
@@ -192,53 +278,57 @@ class AttachmentController extends Controller
             return;
         }
 
-        $thumbnail = $manager->read($attachment->thumbnail);
+        try {
+            $thumbnail = $manager->read($attachment->thumbnail);
 
-        $width = $thumbnail->width();
-        $height = $thumbnail->height();
+            $width = $thumbnail->width();
+            $height = $thumbnail->height();
 
-        if ($width > 200 || $height > 200) {
-            return; // Prevent memory issues.
-        }
-
-        $pixels = [];
-
-        for ($y = 0; $y < $height; ++$y) {
-            $row = [];
-
-            for ($x = 0; $x < $width; ++$x) {
-                $colors = $thumbnail->pickColor($x, $y);
-
-                if (! ($colors instanceof RgbColor)) {
-                    $colors = $colors->convertTo(new RgbColorspace());
-                }
-
-                $row[] = [
-                    $colors->channel(Red::class)->value(),
-                    $colors->channel(Green::class)->value(),
-                    $colors->channel(Blue::class)->value(),
-                ];
+            if ($width > 200 || $height > 200) {
+                return; // Prevent memory issues.
             }
 
-            $pixels[] = $row;
+            $pixels = [];
+
+            for ($y = 0; $y < $height; ++$y) {
+                $row = [];
+
+                for ($x = 0; $x < $width; ++$x) {
+                    $colors = $thumbnail->pickColor($x, $y);
+
+                    if (! ($colors instanceof RgbColor)) {
+                        $colors = $colors->convertTo(new RgbColorspace());
+                    }
+
+                    $row[] = [
+                        $colors->channel(Red::class)->value(),
+                        $colors->channel(Green::class)->value(),
+                        $colors->channel(Blue::class)->value(),
+                    ];
+                }
+
+                $pixels[] = $row;
+            }
+
+            // Free up memory.
+            $thumbnail = null;
+            unset($thumbnail);
+
+            $componentsX = 4;
+            $componentsY = 3;
+
+            if ($height > $width) {
+                $componentsX = 3;
+                $componentsY = 4;
+            }
+
+            $attachment->meta()->updateOrCreate(
+                ['key' => 'blurhash'],
+                ['value' => (array) Blurhash::encode($pixels, $componentsX, $componentsY)]
+            );
+        } catch (\Exception $e) {
+            Log::warning('Could not generate blurhash: ' . $e->getMessage());
         }
-
-        // Free up memory.
-        $thumbnail = null;
-        unset($thumbnail);
-
-        $componentsX = 4;
-        $componentsY = 3;
-
-        if ($height > $width) {
-            $componentsX = 3;
-            $componentsY = 4;
-        }
-
-        $attachment->meta()->updateOrCreate(
-            ['key' => 'blurhash'],
-            ['value' => (array) Blurhash::encode($pixels, $componentsX, $componentsY)]
-        );
     }
 
     protected static function getRelativePath(string $absolutePath, string $disk = 'public'): string
