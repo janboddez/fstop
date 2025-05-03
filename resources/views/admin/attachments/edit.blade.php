@@ -16,7 +16,11 @@
     <div class="columns">
         <div class="column is-8">
             <div class="field">
-                <img class="file" src="{{ $attachment->large }}" alt="{{ $attachment->alt ?? '' }}" style="max-width: 100%; height: auto;">
+                @if (Str::endsWith($attachment->mime_type, 'pdf'))
+                    <iframe class="file" src="{{ $attachment->url }}" style="width: 100%; min-height: 85vh;"></iframe>
+                @else
+                    <img class="file" src="{{ $attachment->large }}" alt="{{ $attachment->alt ?? '' }}" style="max-width: 100%; height: auto;">
+                @endif
             </div>
         </div>
 
