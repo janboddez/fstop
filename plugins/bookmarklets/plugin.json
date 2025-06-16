@@ -1,0 +1,14 @@
+{
+    "name": "janboddez/bookmarklets",
+    "description": "“In reply to” and “like of” bookmarklets.",
+    "extra": {
+        "laravel": {
+            "providers": ["Plugins\\Bookmarklets\\BookmarkletServiceProvider"]
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Plugins\\Bookmarklets\\": "src"
+        }
+    }
+}

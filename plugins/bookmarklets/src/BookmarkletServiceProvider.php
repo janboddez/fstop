@@ -1,0 +1,88 @@
+<?php
+
+namespace Plugins\Bookmarklets;
+
+use Illuminate\Support\ServiceProvider;
+
+class BookmarkletServiceProvider extends ServiceProvider
+{
+    public function boot(): void
+    {
+        $this->registerHooks();
+    }
+
+    protected function registerHooks(): void
+    {
+        add_action('admin:scripts', function () {
+            if (! request()->is('admin/entries/create')) {
+                return;
+            }
+
+            ?>
+<script>
+(() => {
+    const escapeHtml = (str) => {
+        const lookup = {
+            '&': '&amp;',
+            '"': '&quot;',
+            '\'': '&apos;',
+            '<': '&lt;',
+            '>': '&gt;',
+        };
+
+        return str.replace(/[&"'<>]/g, c => lookup[c]);
+    };
+
+    const isValidUrl = (str) => {
+        try {
+            new URL(str);
+        } catch (error) {
+            return false;
+        }
+
+        return true;
+    }
+
+    const content = document.getElementById('content');
+    if (! content) {
+        return;
+    }
+
+    const queryString = window.location.search;
+    if (! queryString) {
+        return;
+    }
+
+    const urlParams = new URLSearchParams(queryString);
+    let value = '';
+
+    const bookmarkOf = urlParams?.get('bookmark_of');
+    if (bookmarkOf && isValidUrl(bookmarkOf)) {
+        value = '*Bookmarked [' + bookmarkOf + '](' + bookmarkOf + '){.u-bookmark-of}.*';
+    }
+
+    const likeOf = urlParams?.get('like_of');
+
+    if (likeOf && isValidUrl(likeOf)) {
+        value = '*Likes [' + likeOf + '](' + likeOf + '){.u-like-of}.*';
+    }
+
+    const inReplyTo = urlParams?.get('in_reply_to');
+    if (inReplyTo && isValidUrl(inReplyTo)) {
+        value = '*In reply to [' + inReplyTo + '](' + inReplyTo + '){.u-in-reply-to}.*';
+    }
+
+    const selectedText = urlParams?.get('selected_text');
+
+    if (selectedText) {
+        // @todo Loop over all lines, and prepend each line with `> `.
+        value += "\n\n<div class=\"e-content\" markdown=\"1\">\n" + escapeHtml(selectedText) + '\n</div>';
+    }
+
+    content.value = value.trim();
+})();
+</script>
+            <?php
+        });
+    }
+}

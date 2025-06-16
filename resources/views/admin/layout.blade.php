@@ -79,5 +79,8 @@
 
     @section('scripts')
     @show
+
+    {{-- @todo Merge this call with the one above? --}}
+    @action('admin:scripts')
 </body>
 </html>
