@@ -197,6 +197,8 @@
                 </tbody>
             </table>
         </div>
+
+        @action('admin:dashboard')
     </div>
 </div>
 @stop

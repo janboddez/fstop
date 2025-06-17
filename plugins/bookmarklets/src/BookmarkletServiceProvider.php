@@ -8,11 +8,39 @@ class BookmarkletServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
+        if (! class_exists('\\Plugins\\EntryTypes\\EntryTypesServiceProvider')) {
+            // Do nothing.
+            return;
+        }
+
         $this->registerHooks();
     }
 
     protected function registerHooks(): void
     {
+        add_action('admin:dashboard', function () {
+            ?>
+            <div class="card mt-5">
+                <table class="table is-fullwidth is-striped">
+                    <thead>
+                        <tr>
+                            <th colspan="2"><?php echo __('Bookmarklets'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <a class="button" href="javascript:(() => {window.open('<?php echo route('admin.entries.create', ['type' => 'note']); // phpcs:ignore Generic.Files.LineLength.TooLong ?>&bookmark_of=' + encodeURIComponent(window.location.href) + '&selected_text=' + encodeURIComponent(window.getSelection()?.toString()));})();"><?php echo __('Bookmark'); ?></a>
+                                <a class="button" href="javascript:(() => {window.open('<?php echo route('admin.entries.create', ['type' => 'like']); // phpcs:ignore Generic.Files.LineLength.TooLong ?>&like_of=' + encodeURIComponent(window.location.href) + '&selected_text=' + encodeURIComponent(window.getSelection()?.toString()));})();"><?php echo __('Like'); ?></a>
+                                <a class="button" href="javascript:(() => {window.open('<?php echo route('admin.entries.create', ['type' => 'note']); // phpcs:ignore Generic.Files.LineLength.TooLong ?>&in_reply_to=' + encodeURIComponent(window.location.href) + '&selected_text=' + encodeURIComponent(window.getSelection()?.toString()));})();"><?php echo __('Reply'); ?></a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <?php
+        });
+
         add_action('admin:scripts', function () {
             if (! request()->is('admin/entries/create')) {
                 return;
