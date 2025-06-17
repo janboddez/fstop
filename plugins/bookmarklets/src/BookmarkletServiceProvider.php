@@ -41,7 +41,7 @@ class BookmarkletServiceProvider extends ServiceProvider
         }
 
         return true;
-    }
+    };
 
     const content = document.getElementById('content');
     if (! content) {
