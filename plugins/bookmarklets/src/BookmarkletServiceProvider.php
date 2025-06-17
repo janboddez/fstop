@@ -106,7 +106,7 @@ class BookmarkletServiceProvider extends ServiceProvider
         // @todo Loop over all lines, and prepend each line with `> `.
         value += "\n\n<div class=\"e-content\" markdown=\"1\">\n" + escapeHtml(selectedText) + '\n</div>';
     } else {
-        value += "\n\n<div class=\"e-content\" markdown=\"1\">\n</div>';
+        value += "\n\n<div class=\"e-content\" markdown=\"1\">\n</div>";
     }
 
     content.value = value.trim();
