@@ -14,13 +14,24 @@
         <file>routes</file>
         <file>tests</file>
 
-        <exclude-pattern>bootstrap/cache/*</exclude-pattern>
-        <exclude-pattern>bootstrap/autoload.php</exclude-pattern>
         <exclude-pattern>*/migrations/*</exclude-pattern>
         <exclude-pattern>*/seeds/*</exclude-pattern>
         <exclude-pattern>*/vendor/*</exclude-pattern>
         <exclude-pattern>*.blade.php</exclude-pattern>
         <exclude-pattern>*.js</exclude-pattern>
+        <exclude-pattern>bootstrap/cache/*</exclude-pattern>
+        <exclude-pattern>bootstrap/autoload.php</exclude-pattern>
+        <exclude-pattern>config/cache.php</exclude-pattern>
+        <exclude-pattern>config/database.php</exclude-pattern>
+        <exclude-pattern>config/filesystems.php</exclude-pattern>
+        <exclude-pattern>config/logging.php</exclude-pattern>
+        <exclude-pattern>config/session.php</exclude-pattern>
+        <exclude-pattern>public/index.php</exclude-pattern>
+        <exclude-pattern>tests/Pest.php</exclude-pattern>
+
+        <rule ref="PSR12.Files.FileHeader">
+            <exclude-pattern>routes/*</exclude-pattern>
+        </rule>
 
         <!-- Show progression -->
         <arg value="p"/>

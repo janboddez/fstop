@@ -239,7 +239,8 @@ class Entry extends Model
                     $image = [
                         'type' => 'Image',
                         'url' => $this->thumbnail,
-                        'mediaType' => get_mime_type($this->thumbnail), // Because older thumbnails may not exist as attachments.
+                        // Because older thumbnails may not exist as attachments.
+                        'mediaType' => get_mime_type($this->thumbnail),
                     ];
 
                     $attachment = url_to_attachment($this->thumbnail);
@@ -259,7 +260,8 @@ class Entry extends Model
                 $doc = new \DOMDocument();
                 $useInternalErrors = libxml_use_internal_errors(true);
                 $doc->loadHTML(
-                    mb_convert_encoding("<div>$this->content</div>", 'HTML-ENTITIES', 'UTF-8'), // To preserve emoji, etc.
+                     // Preserve emoji, etc.
+                    mb_convert_encoding("<div>$this->content</div>", 'HTML-ENTITIES', 'UTF-8'),
                     LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
                 );
                 $xpath = new \DOMXpath($doc);

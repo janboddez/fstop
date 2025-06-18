@@ -344,8 +344,9 @@ class MicropubController extends Controller
             return trim(
                 $context . "\n\n" . (
                     ! empty($properties['content'][0])
-                    ? "<blockquote class=\"e-content\" markdown=\"1\">\n" . $properties['content'][0] . "\n</blockquote>"
-                    : ''
+                        ? "<blockquote class=\"e-content\" markdown=\"1\">\n" . $properties['content'][0] .
+                            "\n</blockquote>"
+                        : ''
                 )
             );
         }
