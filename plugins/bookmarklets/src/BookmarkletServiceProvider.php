@@ -49,7 +49,7 @@ class BookmarkletServiceProvider extends ServiceProvider
             ?>
 <script>
 (() => {
-    const escapeHtml = (str) => {
+    const escapeHtml = str => {
         const lookup = {
             '&': '&amp;',
             '"': '&quot;',
@@ -61,7 +61,7 @@ class BookmarkletServiceProvider extends ServiceProvider
         return str.replace(/[&"'<>]/g, c => lookup[c]);
     };
 
-    const isValidUrl = (str) => {
+    const isValidUrl = str => {
         try {
             new URL(str);
         } catch (error) {
@@ -100,13 +100,19 @@ class BookmarkletServiceProvider extends ServiceProvider
         value = '*In reply to [' + inReplyTo + '](' + inReplyTo + '){.u-in-reply-to}.*';
     }
 
-    const selectedText = urlParams?.get('selected_text');
-
+    let selectedText = urlParams?.get('selected_text');
     if (selectedText) {
-        // @todo Loop over all lines, and prepend each line with `> `.
-        value += "\n\n<div class=\"e-content\" markdown=\"1\">\n" + escapeHtml(selectedText) + '\n</div>';
-    } else {
-        value += "\n\n<div class=\"e-content\" markdown=\"1\">\n</div>";
+        // Loop over all lines and prepend them with `> `.
+        const lines = selectedText.split(/\r\n|(?!\r\n)[\n-\r\x85\u2028\u2029]/g);
+        selectedText = '';
+
+        lines.forEach(line => {
+            selectedText += '> ' + escapeHtml(line) + "\r\n";
+        });
+
+        value += "\r\n\r\n<div class=\"e-content\" markdown=\"1\">\r\n" + selectedText + '</div>';
+    } else if (value) {
+        value += "\r\n\r\n<div class=\"e-content\" markdown=\"1\">\r\n</div>";
     }
 
     content.value = value.trim();
