@@ -33,6 +33,7 @@ class BookmarkletServiceProvider extends ServiceProvider
                                 <a class="button" href="javascript:(() => {window.open('<?php echo route('admin.entries.create', ['type' => 'note']); // phpcs:ignore Generic.Files.LineLength.TooLong ?>&bookmark_of=' + encodeURIComponent(window.location.href) + '&selected_text=' + encodeURIComponent(window.getSelection()?.toString()));})();"><?php echo __('Bookmark'); ?></a>
                                 <a class="button" href="javascript:(() => {window.open('<?php echo route('admin.entries.create', ['type' => 'like']); // phpcs:ignore Generic.Files.LineLength.TooLong ?>&like_of=' + encodeURIComponent(window.location.href) + '&selected_text=' + encodeURIComponent(window.getSelection()?.toString()));})();"><?php echo __('Like'); ?></a>
                                 <a class="button" href="javascript:(() => {window.open('<?php echo route('admin.entries.create', ['type' => 'note']); // phpcs:ignore Generic.Files.LineLength.TooLong ?>&in_reply_to=' + encodeURIComponent(window.location.href) + '&selected_text=' + encodeURIComponent(window.getSelection()?.toString()));})();"><?php echo __('Reply'); ?></a>
+                                <a class="button" href="javascript:(() => {window.open('<?php echo route('admin.entries.create', ['type' => 'note']); // phpcs:ignore Generic.Files.LineLength.TooLong ?>&repost_of=' + encodeURIComponent(window.location.href) + '&selected_text=' + encodeURIComponent(window.getSelection()?.toString()));})();"><?php echo __('Repost'); ?></a>
                             </td>
                         </tr>
                     </tbody>
@@ -89,28 +90,37 @@ class BookmarkletServiceProvider extends ServiceProvider
         value = '*Bookmarked [' + bookmarkOf + '](' + bookmarkOf + '){.u-bookmark-of}.*';
     }
 
-    const likeOf = urlParams?.get('like_of');
-
-    if (likeOf && isValidUrl(likeOf)) {
-        value = '*Likes [' + likeOf + '](' + likeOf + '){.u-like-of}.*';
-    }
-
     const inReplyTo = urlParams?.get('in_reply_to');
     if (inReplyTo && isValidUrl(inReplyTo)) {
         value = '*In reply to [' + inReplyTo + '](' + inReplyTo + '){.u-in-reply-to}.*';
     }
 
+    const likeOf = urlParams?.get('like_of');
+    if (likeOf && isValidUrl(likeOf)) {
+        value = '*Likes [' + likeOf + '](' + likeOf + '){.u-like-of}.*';
+    }
+
     let selectedText = urlParams?.get('selected_text');
     if (selectedText) {
+        const repostOf = urlParams?.get('repost_of');
+        if (repostOf && isValidUrl(repostOf)) {
+            value = `<div class="u-repost-of h-cite">
+*Reposted [` + repostOf + `](` + repostOf + `){.u-url}.*
+<blockquote class="e-content" markdown="1">
+` + escapeHtml(selectedText) + `
+</blockquote>
+</div>`;
+        } else {
         // Loop over all lines and prepend them with `> `.
-        const lines = selectedText.split(/\r\n|(?!\r\n)[\n-\r\x85\u2028\u2029]/g);
-        selectedText = '';
+            const lines = selectedText.split(/\r\n|(?!\r\n)[\n-\r\x85\u2028\u2029]/g);
+            selectedText = '';
 
-        lines.forEach(line => {
-            selectedText += '> ' + escapeHtml(line) + "\r\n";
-        });
+            lines.forEach(line => {
+                selectedText += '> ' + escapeHtml(line) + "\r\n";
+            });
 
-        value += "\r\n\r\n<div class=\"e-content\" markdown=\"1\">\r\n" + selectedText + '</div>';
+            value += "\r\n\r\n<div class=\"e-content\" markdown=\"1\">\r\n" + selectedText + '</div>';
+        }
     } else if (value) {
         value += "\r\n\r\n<div class=\"e-content\" markdown=\"1\">\r\n</div>";
     }
