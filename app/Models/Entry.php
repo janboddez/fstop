@@ -139,7 +139,7 @@ class Entry extends Model
     protected function content(): Attribute
     {
         return Attribute::make(
-            get: function (string $value = null) {
+            get: function (?string $value = null) {
                 if (empty($value)) {
                     return '';
                 }
@@ -317,7 +317,7 @@ class Entry extends Model
     protected function name(): Attribute
     {
         return Attribute::make(
-            get: function (string $value = null) {
+            get: function (?string $value = null) {
                 if (empty($value)) {
                     return '';
                 }
@@ -345,7 +345,7 @@ class Entry extends Model
     protected function rawName(): Attribute
     {
         return Attribute::make(
-            get: function (string $value = null, array $attributes) {
+            get: function (?string $value = null, array $attributes) {
                 $value = $attributes['name'] ?? '';
 
                 // Replace common HTML entities with Unicode characters, for easier editing.
@@ -363,7 +363,7 @@ class Entry extends Model
     protected function rawContent(): Attribute
     {
         return Attribute::make(
-            get: function (string $value = null, array $attributes) {
+            get: function (?string $value = null, array $attributes) {
                 $value = $attributes['content'] ?? '';
 
                 // Replace common HTML entities with Unicode characters, for easier editing.
@@ -384,7 +384,7 @@ class Entry extends Model
     protected function rawSummary(): Attribute
     {
         return Attribute::make(
-            get: function (string $value = null, array $attributes) {
+            get: function (?string $value = null, array $attributes) {
                 if (empty($attributes['summary'])) {
                     return '';
                 }
@@ -409,7 +409,7 @@ class Entry extends Model
     protected function summary(): Attribute
     {
         return Attribute::make(
-            get: function (string $value = null) {
+            get: function (?string $value = null) {
                 if (empty($value)) {
                     // Autogenerate a summary.
                     $value = strip_tags($this->content);
@@ -515,7 +515,7 @@ class Entry extends Model
     {
         return Attribute::make(
             // phpcs:ignore Generic.Files.LineLength.TooLong
-            get: fn (string $value = null) => ($value === null || ! in_array($value, get_registered_entry_types(), true))
+            get: fn (?string $value = null) => ($value === null || ! in_array($value, get_registered_entry_types(), true))
                 ? array_keys(self::TYPES)[0] // Treat "unsupported" types as, in this case, articles.
                 : $value
         )->shouldCache();
@@ -524,7 +524,7 @@ class Entry extends Model
     protected function mentions(): Attribute
     {
         return Attribute::make(
-            get: function (string $value = null, array $attributes) {
+            get: function (?string $value = null, array $attributes) {
                 if (($meta = $this->meta->firstWhere('key', '_activitypub_mentions')) && ! empty($meta->value)) {
                     return (array) $meta->value;
                 }

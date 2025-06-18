@@ -67,7 +67,7 @@ class Comment extends Model
     protected function authorUrl(): Attribute
     {
         return Attribute::make(
-            get: function (string $value = null) {
+            get: function (?string $value = null) {
                 if ($value) {
                     return $value;
                 }
@@ -90,7 +90,7 @@ class Comment extends Model
     protected function content(): Attribute
     {
         return Attribute::make(
-            get: function (string $value = null) {
+            get: function (?string $value = null) {
                 if (empty($value)) {
                     return '';
                 }
@@ -112,7 +112,7 @@ class Comment extends Model
     protected function parentId(): Attribute
     {
         return Attribute::make(
-            get: fn ($value = null) => $value ?? 0
+            get: fn (mixed $value = null) => (int) $value ?? 0
         )->shouldCache();
     }
 

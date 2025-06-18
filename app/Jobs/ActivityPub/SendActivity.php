@@ -22,7 +22,7 @@ class SendActivity implements ShouldQueue
     /**
      * Create a new job instance.
      */
-    public function __construct(string $type, string $inbox, Entry|User $object, string $hash = null)
+    public function __construct(string $type, string $inbox, Entry|User $object, ?string $hash = null)
     {
         $this->type = $type;
         $this->inbox = $inbox;

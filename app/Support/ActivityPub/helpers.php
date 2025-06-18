@@ -13,7 +13,7 @@ use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
 use Intervention\Image\ImageManager;
 use TorMorten\Eventy\Facades\Events as Eventy;
 
-function fetch_object(string $url, User $user = null): array
+function fetch_object(string $url, ?User $user = null): array
 {
     if (empty($user->id)) {
         // Shared inbox request. Find the oldest user with both a private and a public key. We'll eventually want to
@@ -59,7 +59,7 @@ function fetch_object(string $url, User $user = null): array
     return (array) $response; // For now.
 }
 
-function fetch_profile(string $url, User $user = null, bool $cacheAvatar = false): array
+function fetch_profile(string $url, ?User $user = null, bool $cacheAvatar = false): array
 {
     if (empty($user->id)) {
         // Shared inbox request. Find the oldest user with both a private and a public key. We'll eventually want to

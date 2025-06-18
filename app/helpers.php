@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use TorMorten\Eventy\Facades\Events as Eventy;
 
-function is_archive(string $type = null): bool
+function is_archive(?string $type = null): bool
 {
     if (request()->is('admin/*')) {
         return false;
@@ -58,7 +58,7 @@ function is_archive(string $type = null): bool
     return false;
 }
 
-function is_tag(string $name = null): bool
+function is_tag(?string $name = null): bool
 {
     if (! request()->is('tags/*')) {
         return false;
@@ -75,7 +75,7 @@ function is_tag(string $name = null): bool
     return true;
 }
 
-function is_page(string $name = null): bool
+function is_page(?string $name = null): bool
 {
     if (! is_singular('page')) {
         return false;
@@ -92,7 +92,7 @@ function is_page(string $name = null): bool
     return true;
 }
 
-function is_singular(string $type = null): bool
+function is_singular(?string $type = null): bool
 {
     if (request()->is('admin/*')) {
         return false;
@@ -246,7 +246,7 @@ function get_mime_type(string $url, string $disk = 'public'): ?string
 /**
  * @param  string|array $exclude
  */
-function get_registered_entry_types(string $returnType = null, mixed $exclude = null): array
+function get_registered_entry_types(?string $returnType = null, mixed $exclude = null): array
 {
     $types = (array) Eventy::filter('entries:registered_types', Entry::TYPES);
 

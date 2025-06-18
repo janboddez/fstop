@@ -25,7 +25,7 @@ class LocationServiceProvider extends ServiceProvider
         /**
          * Display "Location" "meta box."
          */
-        add_action('admin:entries:edit', function (Entry $entry = null, string $type = null) {
+        add_action('admin:entries:edit', function (?Entry $entry = null, ?string $type = null) {
             if (! in_array($type, ['article', 'note'], true)) {
                 return;
             }

@@ -15,7 +15,7 @@ class HttpSignature
     public static function sign(
         User $user,
         string $url,
-        string $body = null,
+        ?string $body = null,
         array $extraHeaders = [],
         string $method = 'post'
     ): array {
@@ -107,7 +107,7 @@ class HttpSignature
         );
     }
 
-    protected static function headersToSign(string $url, string $digest = null, $method = 'post'): array
+    protected static function headersToSign(string $url, ?string $digest = null, $method = 'post'): array
     {
         $headers = [
           '(request-target)' => "$method " . parse_url($url, PHP_URL_PATH),
