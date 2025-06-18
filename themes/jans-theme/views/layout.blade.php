@@ -11,6 +11,11 @@
         <title>{{ site_name() }}</title>
     @endif
 
+    <link rel="icon" href="{{ asset('vendor/jans-theme/favicon/favicon-192x192.png') }}" sizes="32x32">
+    <link rel="icon" href="{{ asset('vendor/jans-theme/favicon/favicon-512x512.png') }}" sizes="192x192">
+    <link rel="apple-touch-icon" href="{{ asset('vendor/jans-theme/favicon/favicon-512x512.png') }}">
+    <meta name="msapplication-TileImage" content="{{ asset('vendor/jans-theme/favicon/favicon-512x512.png') }}">
+
     @if (request()->is('articles') || request()->is('users/*'))
         {{-- Copies of the homepage and stream, respectively. --}}
         <meta name="robots" content="noindex">
