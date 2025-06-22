@@ -61,11 +61,11 @@ class PluginController extends Controller
         $option->value = $plugins;
         $option->save();
 
-        // Update route and view caches. Note that not everyone might want this ...
-        /** @todo Do this in the plugin itself, in a sort of `activate` hook. */
-        Artisan::call('route:cache');
-        Artisan::call('view:cache');
-        Artisan::call('queue:restart');
+        if (Eventy::filter('plugin:activate:optimize', true)) {
+            Artisan::call('route:cache');
+            Artisan::call('view:cache');
+            Artisan::call('queue:restart');
+        }
 
         return back()
             ->withSuccess(__('Changes saved!'));

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Option;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use TorMorten\Eventy\Facades\Events as Eventy;
 
 class ThemeController extends Controller
 {
@@ -59,8 +60,10 @@ class ThemeController extends Controller
         $option->value = $themes;
         $option->save();
 
-        // Update view cache. Note that not everyone might want this ...
-        Artisan::call('view:cache');
+        if (Eventy::filter('theme:activate:optimize', true)) {
+            // Update view cache.
+            Artisan::call('view:cache');
+        }
 
         return back()
             ->withSuccess(__('Changes saved!'));
