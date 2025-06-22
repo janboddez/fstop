@@ -57,18 +57,18 @@
                 </div>
             </div>
 
-            <div class="card mt-5">
+            <div class="card mt-5" id="custom-fields">
                 <header class="card-header">
                     <h2 class="card-header-title">{{ __('Custom Fields') }}</h2>
                 </header>
 
                 <div class="card-content">
-                    <div class="field">
+                    <div class="field is-clearfix">
                         @if (isset($entry) && ! blank($entry->meta))
                             @foreach ($entry->meta as $meta)
                                 @if (! Str::startsWith($meta->key, '_'))
                                     {{-- Allow for "custom fields" to be "hidden." --}}
-                                    <div class="columns">
+                                    <div class="columns custom-field">
                                         <div class="column">
                                             <div class="control">
                                                 <input type="text" class="input" name="meta_keys[]" value="{{ $meta->key }}">
@@ -89,7 +89,7 @@
                             @endforeach
                         @endif
 
-                        <div class="columns">
+                        <div class="columns custom-field">
                             <div class="column">
                                 <div class="control">
                                     <input type="text" class="input" name="meta_keys[]">
@@ -227,4 +227,21 @@
         @csrf
     </form>
 @endif
+@stop
+
+@section('scripts')
+<script>
+    const lastRow = document.querySelector('.custom-field:last-of-type');
+    lastRow.insertAdjacentHTML(
+        'afterend',
+        `<div>
+            <button type="button" class="button is-pulled-right add-field">{{ __('Add') }}</button>
+        </div>`
+    );
+
+    // Hook this up to that newly created button.
+    document.querySelector('#custom-fields .add-field').addEventListener('click', (event) => {
+        event.target.parentNode.insertAdjacentElement('beforebegin', lastRow.cloneNode(true));
+    });
+</script>
 @stop
