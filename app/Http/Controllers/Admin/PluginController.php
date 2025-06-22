@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Option;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use TorMorten\Eventy\Facades\Events as Eventy;
 
 class PluginController extends Controller
 {
