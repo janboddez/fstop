@@ -117,7 +117,7 @@
                         </div>
                         <div class="control">
                             <label class="is-sr-only" for="time">{{ __('Time') }}</label>
-                            <input type="time" class="input" name="time" id="time" value="{{ old('time', isset($entry) ? $entry->created_at->format('H:i') : '') }}">
+                            <input type="time" class="input" name="time" id="time" value="{{ old('time', isset($entry) ? $entry->created_at->format('H:i:s') : '') }}">
                         </div>
                     </div>
 
