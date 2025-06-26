@@ -57,15 +57,8 @@ class EntryController extends Controller
                 $query->approved();
             }]);
 
-        /** @todo Use `when()`? */
-        if ($request->input('preview') === 'true') {
-            // To be honest, even draft entries get a slug, so there's no actual reason to search by ID other than that
-            // it, like the `preview=true` query argument, may help set previews apart.
-            $entry = $entry->findOrFail((int) $slug);
-        } else {
-            $entry = $entry->where('slug', $slug)
-                ->firstOrFail();
-        }
+        $entry = $entry->where('slug', $slug)
+            ->firstOrFail();
 
         if (($entry->status !== 'published' || $entry->visibility === 'private') && ! Auth::check()) {
             // "Hide" draft and "private" entries. ("Unlisted" entries can still be accessed directly.)

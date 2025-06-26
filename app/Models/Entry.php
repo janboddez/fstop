@@ -336,10 +336,15 @@ class Entry extends Model
         return Attribute::make(
             get: function () {
                 if ($this->status !== 'published') {
-                    return route(Str::plural($this->type) . '.show', ['slug' => $this->id, 'preview' => 'true']);
+                    $permalink = route(Str::plural($this->type) . '.show', [
+                        'slug' => $this->slug,
+                        'preview' => 'true',
+                    ]);
+                } else {
+                    $permalink = route(Str::plural($this->type) . '.show', $this->slug);
                 }
 
-                return route(Str::plural($this->type) . '.show', $this->slug);
+                return $permalink;
             }
         );
     }
@@ -645,7 +650,7 @@ class Entry extends Model
                     'sensitive' => 'as:sensitive',
                 ],
             ],
-            'id' => $this->permalink,
+            'id' => strtok($this->permalink, '?'),
             'type' => 'Note',
             'attributedTo' => $this->user->author_url,
             'content' => $content,
@@ -660,6 +665,7 @@ class Entry extends Model
             'cc' => ! empty($cc) ? $cc : [route('activitypub.followers', $this->user)],
             'tag' => ! empty($tags) ? $tags : null,
         ]);
+        strtok('', '');
 
         if (($inReplyTo = $this->meta->firstWhere('key', '_in_reply_to')) && ! empty($inReplyTo->value[0])) {
             $object = fetch_object($inReplyTo->value[0], $this->user);
