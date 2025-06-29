@@ -24,10 +24,11 @@
     textarea {
         font-family: "Inter", sans-serif;
     }
+    a {
+        text-decoration: underline;
+    }
     .box {
-        /* border: 1px solid #dbdbdb; */
         border-radius: 0;
-        /* box-shadow: none; */
     }
     .input,
     .textarea {
@@ -65,9 +66,13 @@
                             </div>
 
                             <div class="field mt-5">
-                                <button class="button is-success">{{ __('Log In') }}</button>
+                                <button type="submit" class="button is-success">{{ __('Log In') }}</button>
                             </div>
                         </form>
+
+                        <p class="has-text-centered has-text-dark">
+                            <a href="{{ url('/') }}" class="mt-5">{{ __('Return to :site_name', ['site_name' => site_name()]) }}</a>
+                        </p>
                     </div>
                 </div>
             </div>
