@@ -2,7 +2,7 @@
 Simple blogware.
 
 ## Installation
-F-Stop is built on top of Laravel 11. It requires PHP 8.2 or higher and either a MariaDB 10.3+, MySQL 5.7+, or PostgreSQL 9.5+ database. Image support requires either the GD or ImageMagick extension.
+F-Stop is built on top of Laravel 12. It requires PHP 8.2 or higher and either a MariaDB 10.3+, MySQL 5.7+, or PostgreSQL 10.0+ database. Image support requires either the GD or ImageMagick extension.
 
 To install, first download the source:
 ```
