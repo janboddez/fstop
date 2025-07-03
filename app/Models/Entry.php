@@ -45,6 +45,10 @@ class Entry extends Model
         'created_at',
     ];
 
+    protected $casts = [
+        'published' => 'datetime',
+    ];
+
     protected $with = ['meta'];
 
     public function meta(): MorphMany
@@ -81,25 +85,19 @@ class Entry extends Model
 
     public function likes(): HasMany
     {
-        return $this->hasMany(Comment::class)
-            ->orderBy('created_at', 'asc')
-            ->orderBy('id', 'asc')
+        return $this->comments()
             ->where('type', 'like');
     }
 
     public function reposts(): HasMany
     {
-        return $this->hasMany(Comment::class)
-            ->orderBy('created_at', 'asc')
-            ->orderBy('id', 'asc')
+        return $this->comments()
             ->where('type', 'repost');
     }
 
     public function bookmarks(): HasMany
     {
-        return $this->hasMany(Comment::class)
-            ->orderBy('created_at', 'asc')
-            ->orderBy('id', 'asc')
+        return $this->comments()
             ->where('type', 'bookmark');
     }
 
