@@ -66,8 +66,8 @@
                     <div class="field is-clearfix">
                         @if (isset($entry) && ! blank($entry->meta))
                             @foreach ($entry->meta as $meta)
-                                @if (! Str::startsWith($meta->key, '_'))
-                                    {{-- Allow for "custom fields" to be "hidden." --}}
+                                @if (! apply_filters('meta:hidden', Str::startsWith($meta->key, '_'), $meta))
+                                    {{-- If the custom field is not "hidden." --}}
                                     <div class="columns custom-field">
                                         <div class="column">
                                             <div class="control">
