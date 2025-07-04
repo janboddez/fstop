@@ -113,7 +113,7 @@ class ProcessWebmentions implements ShouldQueue
                 'author_url' => parse_url($webmention->source, PHP_URL_SCHEME) . '://' .
                     parse_url($webmention->source, PHP_URL_HOST),
                 'content' => __('&hellip; mentioned this.'),
-                'status' => 'pending',
+                'status' => Eventy::filter('comment:set_status', 'pending', $webmention->source),
                 'type' => 'mention',
                 'created_at' => now(),
             ];
