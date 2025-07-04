@@ -158,7 +158,7 @@
                     <div class="field is-grouped is-grouped-multiline mt-4">
                         @if (isset($entry))
                             <div class="control">
-                                <button class="button is-success">{{ __('Update') }}</button>
+                                <button class="button is-success" id="update">{{ __('Update') }}</button>
                             </div>
 
                             <div class="control">
@@ -170,7 +170,7 @@
                             </div>
                         @else
                             <div class="control">
-                                <button class="button is-success">{{ __('Create') }}</button>
+                                <button class="button is-success" id="create">{{ __('Create') }}</button>
                             </div>
                         @endif
                     </div>
@@ -231,17 +231,41 @@
 
 @section('scripts')
 <script>
+    // On a freshly loaded page, the last row is always empty.
     const lastRow = document.querySelector('.custom-field:last-of-type');
-    lastRow.insertAdjacentHTML(
-        'afterend',
-        `<div>
-            <button type="button" class="button is-pulled-right add-field">{{ __('Add') }}</button>
-        </div>`
-    );
+    if (lastRow) {
+        // Append a button.
+        lastRow.insertAdjacentHTML(
+            'afterend',
+            `<div>
+                <button type="button" class="button is-pulled-right add-field">{{ __('Add') }}</button>
+            </div>`
+        );
+    }
 
     // Hook this up to that newly created button.
     document.querySelector('#custom-fields .add-field').addEventListener('click', (event) => {
         event.target.parentNode.insertAdjacentElement('beforebegin', lastRow.cloneNode(true));
     });
+
+    @if (empty($entry) || $entry->status !== 'published')
+        {{-- Entry is new, or "draft." --}}
+        const saveButton = document.querySelector('#create, #update');
+        saveButton.parentNode.insertAdjacentHTML(
+            'afterend',
+            `<div class="control">
+                <button type="button" class="button is-success" id="publish">{{ __('Publish') }}</button>
+            </div>`
+        );
+
+        // Strip any "Create" or "Update" button of its `is-success` class.
+        saveButton.classList.remove('is-success');
+
+        document.getElementById('publish').addEventListener('click', (event) => {
+            document.querySelector('[name="status"][value="draft"]').checked = false;
+            document.querySelector('[name="status"][value="published"]').checked = true;
+            document.querySelector('main form:first-of-type').submit();
+        });
+    @endif
 </script>
 @stop
