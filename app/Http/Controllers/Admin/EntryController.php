@@ -144,7 +144,7 @@ class EntryController extends Controller
             add_meta(array_combine($validated['meta_keys'], $validated['meta_values']), $entry);
         }
 
-        Eventy::action('entries:saved', $entry);
+        Eventy::action('entries:saved', $entry, null);
 
         return redirect()->route('admin.entries.edit', compact('entry'))
             ->withSuccess(__('Created!'));
@@ -164,6 +164,7 @@ class EntryController extends Controller
     public function update(StoreEntryRequest $request, Entry $entry): Response
     {
         $validated = $request->validated();
+        $previousStatus = $entry->getOriginal('status');
 
         if (! empty($validated['featured'])) {
             $relativePath = Str::replaceStart(Storage::disk('public')->url(''), '', $validated['featured']);
@@ -211,7 +212,7 @@ class EntryController extends Controller
             }
         }
 
-        Eventy::action('entries:saved', $entry);
+        Eventy::action('entries:saved', $entry, $previousStatus);
 
         return back()
             ->withSuccess(__('Changes saved!'));
