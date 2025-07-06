@@ -42,12 +42,14 @@
                             </form>
                         </small>
                     </td>
-                    <td style="width: 8%;">{!! sprintf(
+                    <td style="width: 8%;">{!! ! Str::endsWith($attachment->thumbnail, '.pdf')
+                        ? sprintf(
                             '<img src="%s" width="%d" alt="%s">',
                             $attachment->thumbnail,
                             '90',
                             $attachment->alt
-                        ) !!}</td>
+                        )
+                        : '' !!}</td>
 
                     @if (! blank($attachment->entry) && ! $attachment->entry->trashed())
                         <td class="is-hidden-mobile" style="width: 20%;"><a href="{{ route('admin.entries.edit', $attachment->entry) }}">{{ $attachment->entry->name ?? __('(No Title)') }}</a></td>
@@ -121,10 +123,10 @@
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    (document.querySelectorAll('.copy-trigger') || []).forEach(($trigger) => {
+    (document.querySelectorAll('.copy-trigger') || []).forEach((el) => {
         var text = '';
-        $trigger.addEventListener('click', () => {
-            text = $trigger.value;
+        el.addEventListener('click', () => {
+            text = el.value;
             navigator.clipboard.writeText(text).then(() => {
                 alert('{{ __('Copied to clipboard!') }}');
             });
@@ -132,36 +134,36 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Functions to open and close a modal
-    function openModal($el) {
-        $el.classList.add('is-active');
+    function openModal(el) {
+        el.classList.add('is-active');
     }
 
-    function closeModal($el) {
-        $el.classList.remove('is-active');
+    function closeModal(el) {
+        el.classList.remove('is-active');
     }
 
     function closeAllModals() {
-        (document.querySelectorAll('.modal') || []).forEach(($modal) => {
-            closeModal($modal);
+        (document.querySelectorAll('.modal') || []).forEach((el) => {
+            closeModal(el);
         });
     }
 
     // Add a click event on buttons to open a specific modal
-    (document.querySelectorAll('.upload-modal-trigger') || []).forEach(($trigger) => {
-        const modal = $trigger.dataset.target;
-        const $target = document.getElementById(modal);
+    (document.querySelectorAll('.upload-modal-trigger') || []).forEach((el) => {
+        const modal = el.dataset.target;
+        const target = document.getElementById(modal);
 
-        $trigger.addEventListener('click', () => {
-            openModal($target);
+        el.addEventListener('click', () => {
+            openModal(target);
         });
     });
 
     // Add a click event on various child elements to close the parent modal
-    (document.querySelectorAll('.modal-background, .modal-close, .modal-card-head .delete, .modal-card-foot .button') || []).forEach(($close) => {
-        const $target = $close.closest('.modal');
+    (document.querySelectorAll('.modal-background, .modal-close, .modal-card-head .delete, .modal-card-foot .button') || []).forEach((el) => {
+        const target = el.closest('.modal');
 
-        $close.addEventListener('click', () => {
-            closeModal($target);
+        el.addEventListener('click', () => {
+            closeModal(target);
         });
     });
 
