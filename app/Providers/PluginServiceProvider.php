@@ -63,5 +63,10 @@ class PluginServiceProvider extends ServiceProvider
         } catch (\Exception $e) {
             // Do nothing, like when the database hasn't been set up, yet.
         }
+
+        // Allow for a WordPress-like `app/functions.php`.
+        if (is_file(__DIR__ . '/../functions.php')) {
+            include_once __DIR__ . '/../functions.php';
+        }
     }
 }
