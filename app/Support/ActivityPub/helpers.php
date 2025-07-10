@@ -34,8 +34,10 @@ function fetch_object(string $url, ?User $user = null): array
     strtok('', '');
 
     $response = Cache::remember('activitypub:entry:' . md5($url), 60 * 60 * 24, function () use ($url, $user) {
+        Log::debug("[ActivityPub] Attempting to fetch (uncached) object at $url");
+
         try {
-            return Http::withHeaders(HttpSignature::sign(
+            $response = Http::withHeaders(HttpSignature::sign(
                 $user,
                 $url,
                 null,
@@ -43,12 +45,16 @@ function fetch_object(string $url, ?User $user = null): array
                 'get'
             ))
             ->get($url)
-            ->json();
+            ->json(); // Could still return `null`, which wouldn't be cached.
         } catch (\Exception $e) {
             Log::warning("[ActivityPub] Failed to fetch $url (" . $e->getMessage() . ')');
         }
 
-        return null;
+        if (! empty($response)) {
+            return $response;
+        }
+
+        return []; // Instead of `null`.
     });
 
     /** @todo We may eventually want to also store (and locally cache) avatars. And an `@-@` handle. */
