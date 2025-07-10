@@ -45,16 +45,16 @@ function fetch_object(string $url, ?User $user = null): array
                 'get'
             ))
             ->get($url)
-            ->json(); // Could still return `null`, which wouldn't be cached.
+            ->json();
         } catch (\Exception $e) {
             Log::warning("[ActivityPub] Failed to fetch $url (" . $e->getMessage() . ')');
         }
 
-        if (! empty($response['@context'])) {
-            return $response;
+        if (empty($response['@context'])) {
+            return []; // Instead of `null`.
         }
 
-        return []; // Instead of `null`.
+        return $response;
     });
 
     /** @todo We may eventually want to also store (and locally cache) avatars. And an `@-@` handle. */
@@ -85,7 +85,7 @@ function fetch_profile(string $url, ?User $user = null, bool $cacheAvatar = fals
         try {
             Log::debug("[ActivityPub] Fetching profile at $url");
 
-            return Http::withHeaders(HttpSignature::sign(
+            $response = Http::withHeaders(HttpSignature::sign(
                 $user,
                 $url,
                 null,
@@ -98,7 +98,11 @@ function fetch_profile(string $url, ?User $user = null, bool $cacheAvatar = fals
             Log::warning("[ActivityPub] Failed to fetch the profile at $url (" . $e->getMessage() . ')');
         }
 
-        return null;
+        if (empty($response)) {
+            return []; // Instead of `null`.
+        }
+
+        return $response;
     });
 
     /** @todo We may eventually want to also store (and locally cache) avatars. And an `@-@` handle. */
@@ -152,14 +156,18 @@ function fetch_webfinger(string $resource): ?string
 
     $response = Cache::remember('activitypub:webfinger:' . md5($url), 60 * 60 * 24, function () use ($url) {
         try {
-            return Http::withHeaders(['Accept' => 'application/jrd+json'])
+            $response = Http::withHeaders(['Accept' => 'application/jrd+json'])
                 ->get($url)
                 ->json();
         } catch (\Exception $e) {
             Log::warning("[ActivityPub] Failed to fetch $url (" . $e->getMessage() . ')');
         }
 
-        return null;
+        if (empty($response)) {
+            return []; // Instead of `null`.
+        }
+
+        return $response;
     });
 
     /** @todo We may eventually want to also store (and locally cache) avatars. And an `@-@` handle. */
