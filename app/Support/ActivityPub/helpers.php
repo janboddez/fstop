@@ -50,7 +50,7 @@ function fetch_object(string $url, ?User $user = null): array
             Log::warning("[ActivityPub] Failed to fetch $url (" . $e->getMessage() . ')');
         }
 
-        if (! empty($response)) {
+        if (! empty($response['@context'])) {
             return $response;
         }
 
@@ -58,10 +58,6 @@ function fetch_object(string $url, ?User $user = null): array
     });
 
     /** @todo We may eventually want to also store (and locally cache) avatars. And an `@-@` handle. */
-    if (empty($response['@context'])) {
-        return [];
-    }
-
     return (array) $response; // For now.
 }
 
