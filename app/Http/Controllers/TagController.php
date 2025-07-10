@@ -11,7 +11,7 @@ class TagController extends Controller
     {
         $entries = $tag->entries()
             ->whereIn('type', get_registered_entry_types('slug', 'page'))
-            ->orderBy('created_at', 'desc')
+            ->orderBy('published', 'desc')
             ->orderBy('id', 'desc')
             ->published()
             ->public()

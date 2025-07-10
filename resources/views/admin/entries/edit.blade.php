@@ -110,14 +110,14 @@
         <div class="column is-3-desktop">
             <div class="card mb-5">
                 <div class="card-content">
-                    <label class="title is-6 is-block mb-2" for="created_at">{{ __('Date') }}</label>
+                    <label class="title is-6 is-block mb-2" for="published">{{ __('Date') }}</label>
                     <div class="field is-grouped is-grouped-multiline mb-4">
                         <div class="control">
-                            <input type="date" class="input" name="created_at" id="created_at" value="{{ old('created_at', isset($entry) ? $entry->created_at->format('Y-m-d') : '') }}">
+                            <input type="date" class="input" name="published" id="published" value="{{ old('published', isset($entry->published) ? $entry->published->format('Y-m-d') : '') }}">
                         </div>
                         <div class="control">
                             <label class="is-sr-only" for="time">{{ __('Time') }}</label>
-                            <input type="time" class="input" name="time" id="time" value="{{ old('time', isset($entry) ? $entry->created_at->format('H:i:s') : '') }}">
+                            <input type="time" class="input" name="time" id="time" value="{{ old('time', isset($entry->published) ? $entry->published->format('H:i:s') : '') }}">
                         </div>
                     </div>
 

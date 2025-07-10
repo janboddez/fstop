@@ -73,26 +73,26 @@ class EntryObserver implements ShouldHandleEventsAfterCommit
 
         $entry->slug = $newSlug ?? $slug;
 
-        // Ensure `created_at` is always set. There's no need to do this for, or otherwise modify `updated_at`, as
-        // Laravel should take care of it automatically.
-        if ($entry->getOriginal('status') !== 'published' && $entry->status === 'published') {
-            // Entry is either new or draft, and about to get "published."
-            $createdAt = now();
-        } else {
-            // Entry was published before.
-            if (
-                preg_match('~\d{4}-\d{2}-\d{2}~', request()->input('created_at')) &&
-                preg_match('~\d{2}:\d{2}:\d{2}~', request()->input('time'))
-            ) {
-                // If we were given a date and a time, use those.
-                $createdAt = Carbon::parse(request()->input('created_at') . ' ' . request()->input('time'));
+        if ($entry->status === 'published') {
+            if ($entry->getOriginal('status') !== 'published') {
+                // Entry is either new or draft, and about to get "published."
+                $published = now();
             } else {
-                // Keep unchanged, or fall back to "now."
-                $createdAt = $entry->created_at ?? now();
+                // Entry was published before.
+                if (
+                    preg_match('~\d{4}-\d{2}-\d{2}~', request()->input('published')) &&
+                    preg_match('~\d{2}:\d{2}:\d{2}~', request()->input('time'))
+                ) {
+                    // If we were given a date and a time, use those.
+                    $published = Carbon::parse(request()->input('published') . ' ' . request()->input('time'));
+                } else {
+                    // Keep unchanged, or fall back to "now."
+                    $published = $entry->published ?? now();
+                }
             }
         }
 
-        $entry->created_at = $createdAt;
+        $entry->published = $published ?? null;
     }
 
     public function saved(Entry $entry): void

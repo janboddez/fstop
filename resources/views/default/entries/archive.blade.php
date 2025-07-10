@@ -7,13 +7,13 @@
 
 @if (! blank($entries))
     {{-- "Current" month. --}}
-    <h2>{{ $current = $entries[0]->created_at->format('F Y') }}</h2>
+    <h2>{{ $current = $entries[0]->published->format('F Y') }}</h2>
     <ul>
         @foreach ($entries as $entry)
-            @if ($current !== $entry->created_at->format('F Y'))
+            @if ($current !== $entry->published->format('F Y'))
                 </ul>
 
-                <h2>{{ $current = $entry->created_at->format('F Y') }}</h2>
+                <h2>{{ $current = $entry->published->format('F Y') }}</h2>
                 <ul>
             @endif
 

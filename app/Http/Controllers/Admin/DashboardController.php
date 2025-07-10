@@ -12,14 +12,14 @@ class DashboardController extends Controller
     public function __invoke(Request $request)
     {
         $articles = Entry::ofType('article')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('published', 'desc')
             ->orderBy('id', 'desc') // Prevent pagination issues by also sorting by ID.
             ->published()
             ->limit(5)
             ->get();
 
         $drafts = Entry::ofType('article')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('updated_at', 'desc')
             ->orderBy('id', 'desc')
             ->where('status', 'draft')
             ->limit(5)
@@ -61,7 +61,7 @@ class DashboardController extends Controller
                         ->orWhereRaw('json_extract(`value`, "$.*.result") is null'); // 'Cause legacy?
                 });
         })
-        ->orderBy('created_at', 'desc')
+        ->orderBy('published', 'desc')
         ->orderBy('id', 'desc')
         ->limit(10)
         ->get();

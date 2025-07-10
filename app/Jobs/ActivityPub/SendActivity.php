@@ -40,30 +40,30 @@ class SendActivity implements ShouldQueue
     {
         if ($this->object instanceof Entry) {
             /** @todo Make smarter. */
-            if ($this->object->created_at->lt(now()->subHours(12))) {
+            if ($this->type === 'Create' && $this->object->published->lt(now()->subHours(12))) {
                 Log::debug("[ActivityPub] Skipping entry {$this->object->id}: too old");
-
                 return;
             }
 
-            if ($this->type !== 'Delete' && $this->object->trashed()) {
+            if (($this->object->trashed() || $this->object->status !== 'published') && $this->type !== 'Delete') {
+                // We support only the Delete type for trashed or unpublished entries.
+                Log::debug("[ActivityPub] Entry is trashed or unpublished but activity type is {$this->type}");
                 return;
             }
 
             /** @todo Make this filterable. Also, "note" isn't even in "core." */
             if (! in_array($this->object->type, ['article', 'note', 'like'], true)) {
-                return;
-            }
-
-            if ($this->object->status !== 'published') {
+                Log::debug('[ActivityPub] Invalid entry type.');
                 return;
             }
 
             if ($this->object->visibility === 'private') {
+                Log::debug('[ActivityPub] Private entry.');
                 return;
             }
 
             $object = $this->object->serialize();
+            Log::debug($object);
 
             $activity = array_filter([
                 '@context' => ['https://www.w3.org/ns/activitystreams'],
@@ -132,8 +132,8 @@ class SendActivity implements ShouldQueue
                 ->withBody($body, 'application/activity+json')
                 ->post($this->inbox);
 
-            Log::debug($headers);
-            Log::debug($body);
+            // Log::debug($headers);
+            // Log::debug($body);
 
             if ($response->successful()) {
                 Log::debug("[ActivityPub] Successfully sent {$activity['type']} activity to {$this->inbox}");

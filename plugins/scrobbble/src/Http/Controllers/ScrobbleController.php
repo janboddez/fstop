@@ -253,7 +253,7 @@ class ScrobbleController
             'type' => 'listen',
             'status' => 'published',
             'user_id' => $session->user_id,
-            'created_at' => $time,
+            'published' => $time,
         ]);
 
         if (isset($data['mbid'])) {

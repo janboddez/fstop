@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\SupportsMicropub;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
@@ -42,7 +43,7 @@ class Entry extends Model
         'type',
         'attachment_id',
         'user_id',
-        'created_at',
+        'published',
     ];
 
     protected $casts = [
@@ -653,10 +654,10 @@ class Entry extends Model
             'attributedTo' => $this->user->author_url,
             'content' => $content,
             'contentMap' => $contentMap,
-            'published' => $this->created_at
-                ? str_replace('+00:00', 'Z', $this->created_at->toIso8601String())
+            'published' => $this->published
+                ? str_replace('+00:00', 'Z', $this->published->toIso8601String())
                 : str_replace('+00:00', 'Z', now()->toIso8601String()),
-            'updated' => ($this->updated_at && $this->updated_at->gt($this->created_at))
+            'updated' => ($this->updated_at && $this->updated_at->gt($this->published))
                 ? str_replace('+00:00', 'Z', $this->updated_at->toIso8601String())
                 : null,
             'to' => $to ?? ['https://www.w3.org/ns/activitystreams#Public'],

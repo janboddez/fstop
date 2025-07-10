@@ -22,7 +22,7 @@ class UserController extends Controller
 
         $entries = $user->entries()
             ->whereIn('type', get_registered_entry_types('slug', 'page'))
-            ->orderBy('created_at', 'desc')
+            ->orderBy('published', 'desc')
             ->orderBy('id', 'desc') // Prevent pagination issues by also sorting by ID.
             ->published()
             ->public()

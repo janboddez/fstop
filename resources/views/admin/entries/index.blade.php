@@ -147,7 +147,13 @@
                         </td>
                     @endif
 
-                    <td><time>{{ $entry->created_at->format('M j, Y') }}<br><small>{{ $entry->created_at->format('h:i A') }}</small></time></td>
+                    <td><time>{{ $entry->published
+                        ? $entry->published->format('M j, Y')
+                        : $entry->created_at->format('M j, Y')
+                    }}<br><small>{{ $entry->published
+                        ? $entry->published->format('h:i A')
+                        : $entry->created_at->format('h:i A')
+                    }}</small></time></td>
                 </tr>
             @empty
                 <tr>

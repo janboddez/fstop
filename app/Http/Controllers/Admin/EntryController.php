@@ -29,7 +29,12 @@ class EntryController extends Controller
         if ($type === 'page') {
             $entries = $entries->orderBy('slug', 'asc');
         } else {
-            $entries = $entries->orderBy('created_at', 'desc');
+            // This puts notes that were never published at the top (in trash), rather than last. We could also sort on
+            // status. (Maybe we should?)
+            $entries = $entries
+                ->orderBy('status', 'asc')
+                ->orderByRaw('CASE WHEN published IS NULL THEN 0 ELSE 1 END ASC')
+                ->orderBy('published', 'desc');
         }
 
         $entries = $entries->orderBy('id', 'desc'); // Prevent pagination issues by *also* sorting by ID.

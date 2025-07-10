@@ -57,7 +57,7 @@ trait SupportsMicropub
         foreach ($properties as $property) {
             if ($property === 'published') {
                 // Prevent Carbon from casting to the default format.
-                $value[$property] = (array) $this->created_at->format('c');
+                $value[$property] = (array) $this->published->format('c');
             } else {
                 $value[$property] = (array) $this->$property;
             }

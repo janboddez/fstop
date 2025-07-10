@@ -52,7 +52,9 @@ class MicropubController extends Controller
                     ]);
                 }
 
-                $entries = Entry::orderBy('created_at', 'desc')
+                $entries = Entry::orderBy('status', 'asc')
+                    ->orderByRaw('CASE WHEN published IS NULL THEN 0 ELSE 1 END ASC')
+                    ->orderBy('published', 'desc')
                     ->orderBy('id', 'desc')
                     ->limit($request->filled('limit') ? (int) $request->input('limit') : 10);
 
@@ -177,7 +179,7 @@ class MicropubController extends Controller
 
             $properties['type'] = [$type ?? 'note'];
 
-            $properties['created_at'] = [
+            $properties['published'] = [
                 ! empty($properties['published'][0])
                     ? new Carbon($properties['published'][0])
                     : now(),

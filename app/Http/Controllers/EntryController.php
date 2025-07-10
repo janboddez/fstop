@@ -22,7 +22,7 @@ class EntryController extends Controller
         abort_unless(in_array($type, get_registered_entry_types('slug', 'page'), true), 404);
 
         $entries = Entry::ofType($type)
-            ->orderBy('created_at', 'desc')
+            ->orderBy('published', 'desc')
             ->orderBy('id', 'desc') // Prevent pagination issues by also sorting by ID.
             ->published()
             ->public()
@@ -88,7 +88,7 @@ class EntryController extends Controller
         $types = get_registered_entry_types('slug', 'page');
 
         $entries = Entry::whereIn('type', $types)
-            ->orderBy('created_at', 'desc')
+            ->orderBy('published', 'desc')
             ->orderBy('id', 'desc')
             ->published()
             ->public()
@@ -106,7 +106,7 @@ class EntryController extends Controller
     public function articleArchive(): View
     {
         $entries = Entry::ofType('article')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('published', 'desc')
             ->orderBy('id', 'desc')
             ->published()
             ->public()

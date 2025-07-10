@@ -22,7 +22,7 @@
 
             @if ($entry->type === 'article')
                 <div class="entry-meta">
-                    <a class="u-url" href="{{ $entry->permalink }}" rel="bookmark"><time class="dt-published" datetime="{{ $entry->created_at->format('c') }}">{{ $entry->created_at->format('M j, Y') }}</time></a>
+                    <a class="u-url" href="{{ $entry->permalink }}" rel="bookmark"><time class="dt-published" datetime="{{ $entry->published->format('c') }}">{{ $entry->published->format('M j, Y') }}</time></a>
 
                     @if (($shortUrl = $entry->meta->firstWhere('key', 'short_url')) && ($parts = parse_url($shortUrl->value[0])) !== false)
                         &bull;
@@ -103,7 +103,7 @@
         {{-- Date, location or client info, and syndication links. --}}
         <footer class="entry-footer">
             <div class="entry-meta">
-                <a class="u-url" href="{{ route(Str::plural($entry->type) . '.show', $entry->slug) }}" rel="bookmark"><time class="dt-published" datetime="{{ $entry->created_at->format('c') }}">{{ $entry->created_at->format('M j, Y') }}</time></a>
+                <a class="u-url" href="{{ route(Str::plural($entry->type) . '.show', $entry->slug) }}" rel="bookmark"><time class="dt-published" datetime="{{ $entry->published->format('c') }}">{{ $entry->published->format('M j, Y') }}</time></a>
 
                 @if (($shortUrl = $entry->meta->firstWhere('key', 'short_url')) && ($parts = parse_url($shortUrl->value[0])) !== false)
                     &bull;

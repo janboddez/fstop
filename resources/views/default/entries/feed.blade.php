@@ -39,7 +39,7 @@
         @endif
 
         <description><![CDATA[{!! $content !!}]]></description>
-        <pubDate>{{ $entry->created_at->format('r') }}</pubDate>
+        <pubDate>{{ $entry->published->format('r') }}</pubDate>
 
         <link>{{ route(Str::plural($entry->type) . '.show', $entry->slug) }}</link>
         <guid>{{ route(Str::plural($entry->type) . '.show', $entry->slug) }}</guid>

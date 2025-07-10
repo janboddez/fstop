@@ -133,7 +133,10 @@
                     @forelse ($articles as $article)
                         <tr>
                             <td style="width: 67%;"><a href="{{ route('admin.entries.edit', $article) }}">{{ $article->name }}</a></td>
-                            <td class="has-text-right-desktop"><time>{{ $article->created_at->format('M j, Y') }}</time></td>
+                            <td class="has-text-right-desktop"><time>{{ $article->updated_at
+                                ? $article->updated_at->format('M j, Y')
+                                : $article->created_at->format('M j, Y')
+                            }}</time></td>
                         </tr>
                     @empty
                         <tr>

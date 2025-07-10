@@ -16,7 +16,7 @@ class FeedController extends Controller
             ? Str::singular($request->segment(1))
             : null;
 
-        $entries = Entry::orderBy('created_at', 'desc')
+        $entries = Entry::orderBy('published', 'desc')
             ->orderBy('id', 'desc') // Prevent pagination issues by also sorting by ID.
             ->published()
             ->public()
