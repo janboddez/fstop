@@ -62,7 +62,7 @@ class GetPreviewCard implements ShouldQueue
 
         // Fetch the remote page.
         $hash = md5($url);
-        $body = Cache::remember("preview-cards:$hash", 60 * 60, function () use ($url) {
+        $body = Cache::remember("preview-cards:$hash", 60 * 60, function () use ($url): string {
             $response = Http::withHeaders([
                 'User-Agent' => Eventy::filter(
                     'preview-cards:user_agent',
@@ -74,7 +74,7 @@ class GetPreviewCard implements ShouldQueue
             if (! $response->successful()) {
                 Log::error('[Preview Cards] Failed to fetch the page at ' . $url);
 
-                return null;
+                return '';
             }
 
             $body = $response->body();
@@ -82,7 +82,7 @@ class GetPreviewCard implements ShouldQueue
             if (empty($body)) {
                 Log::error('[Preview Cards] Missing page body');
 
-                return null;
+                return '';
             }
 
             return $body;
@@ -136,7 +136,7 @@ class GetPreviewCard implements ShouldQueue
 
         // Download image.
         $hash = md5($thumbnailUrl);
-        $blob = Cache::remember("preview-cards:$hash", 60 * 60, function () use ($thumbnailUrl) {
+        $blob = Cache::remember("preview-cards:$hash", 60 * 60, function () use ($thumbnailUrl): string {
             $response = Http::withHeaders([
                 'User-Agent' => Eventy::filter(
                     'preview-cards:user_agent',
@@ -148,7 +148,7 @@ class GetPreviewCard implements ShouldQueue
             if (! $response->successful()) {
                 Log::warning('[Preview Cards] Something went wrong fetching the image at ' . $thumbnailUrl);
 
-                return null;
+                return '';
             }
 
             $blob = $response->body();
@@ -156,7 +156,7 @@ class GetPreviewCard implements ShouldQueue
             if (empty($blob)) {
                 Log::warning('[Preview Cards] Missing image data');
 
-                return null;
+                return '';
             }
 
             return $blob;

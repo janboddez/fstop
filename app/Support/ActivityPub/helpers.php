@@ -33,7 +33,7 @@ function fetch_object(string $url, ?User $user = null): array
     $url = strtok($url, '#');
     strtok('', '');
 
-    $response = Cache::remember('activitypub:entry:' . md5($url), 60 * 60 * 24, function () use ($url, $user) {
+    $response = Cache::remember('activitypub:entry:' . md5($url), 60 * 60 * 24, function () use ($url, $user): array {
         Log::debug("[ActivityPub] Attempting to fetch (uncached) object at $url");
 
         try {
@@ -45,16 +45,12 @@ function fetch_object(string $url, ?User $user = null): array
                 'get'
             ))
             ->get($url)
-            ->json();
+            ->json(null, []);
         } catch (\Exception $e) {
             Log::warning("[ActivityPub] Failed to fetch $url (" . $e->getMessage() . ')');
         }
 
-        if (empty($response['@context'])) {
-            return []; // Instead of `null`.
-        }
-
-        return $response;
+        return [];
     });
 
     /** @todo We may eventually want to also store (and locally cache) avatars. And an `@-@` handle. */
@@ -81,7 +77,7 @@ function fetch_profile(string $url, ?User $user = null, bool $cacheAvatar = fals
     $url = strtok($url, '#');
     strtok('', '');
 
-    $response = Cache::remember('activitypub:profile:' . md5($url), 60 * 60 * 24, function () use ($url, $user) {
+    $response = Cache::remember('activitypub:profile:' . md5($url), 60 * 60 * 24, function () use ($url, $user): array {
         try {
             Log::debug("[ActivityPub] Fetching profile at $url");
 
@@ -93,16 +89,12 @@ function fetch_profile(string $url, ?User $user = null, bool $cacheAvatar = fals
                 'get'
             ))
             ->get($url)
-            ->json();
+            ->json(null, []);
         } catch (\Exception $e) {
             Log::warning("[ActivityPub] Failed to fetch the profile at $url (" . $e->getMessage() . ')');
         }
 
-        if (empty($response)) {
-            return []; // Instead of `null`.
-        }
-
-        return $response;
+        return [];
     });
 
     /** @todo We may eventually want to also store (and locally cache) avatars. And an `@-@` handle. */
@@ -154,20 +146,16 @@ function fetch_webfinger(string $resource): ?string
 
     $url = "https://{$host}/.well-known/webfinger?resource=" . rawurlencode("acct:{$login}@{$host}");
 
-    $response = Cache::remember('activitypub:webfinger:' . md5($url), 60 * 60 * 24, function () use ($url) {
+    $response = Cache::remember('activitypub:webfinger:' . md5($url), 60 * 60 * 24, function () use ($url): array {
         try {
-            $response = Http::withHeaders(['Accept' => 'application/jrd+json'])
+            return Http::withHeaders(['Accept' => 'application/jrd+json'])
                 ->get($url)
-                ->json();
+                ->json(null, []);
         } catch (\Exception $e) {
             Log::warning("[ActivityPub] Failed to fetch $url (" . $e->getMessage() . ')');
         }
 
-        if (empty($response)) {
-            return []; // Instead of `null`.
-        }
-
-        return $response;
+        return []; // Instead of `null`.
     });
 
     /** @todo We may eventually want to also store (and locally cache) avatars. And an `@-@` handle. */
@@ -252,7 +240,8 @@ function store_avatar(string $avatarUrl, string $authorUrl = '', int $size = 150
     // Download image.
     Log::debug('[ActivityPub] Downloading the image at ' . $avatarUrl);
 
-    $blob = Cache::remember('activitypub:avatar:' . md5($avatarUrl), 60 * 60 * 24, function () use ($avatarUrl) {
+    // phpcs:ignore Generic.Files.LineLength.TooLong
+    $blob = Cache::remember('activitypub:avatar:' . md5($avatarUrl), 60 * 60 * 24, function () use ($avatarUrl): string {
         $response = Http::withHeaders(HttpSignature::sign(
             User::find(1),
             $avatarUrl,
@@ -272,7 +261,7 @@ function store_avatar(string $avatarUrl, string $authorUrl = '', int $size = 150
         if (! $response->successful()) {
             Log::warning('[ActivityPub] Something went wrong fetching the image at ' . $avatarUrl);
 
-            return null;
+            return '';
         }
 
         return $response->body();

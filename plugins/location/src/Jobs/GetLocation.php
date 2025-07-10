@@ -100,10 +100,10 @@ class GetLocation implements ShouldQueue
             if (! $response->successful()) {
                 Log::error("[Location] Failed to retrieve address data for $lat, $lon");
 
-                return null;
+                return [];
             }
 
-            return $response->json();
+            return $response->json(null, []);
         });
 
         if (! empty($data['error'])) {

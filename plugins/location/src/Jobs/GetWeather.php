@@ -87,20 +87,21 @@ class GetWeather implements ShouldQueue
         $weather = [];
 
         // Try the cache first.
-        $data = Cache::remember("location:weather:$lat:$lon", 60 * 15, function () use ($lat, $lon) {
+        $data = Cache::remember("location:weather:$lat:$lon", 60 * 15, function () use ($lat, $lon): array {
             $response = Http::get('https://api.openweathermap.org/data/2.5/weather', [
                     'lat' => $lat,
                     'lon' => $lon,
                     'appid' => config('location.weather.api_key'),
-                ]);
+                ])
+                ->json(null, []);
 
             if (! $response->successful()) {
                 Log::error("[Location] Failed to retrieve weather data for $lat, $lon");
 
-                return null;
+                return [];
             }
 
-            return $response->json();
+            return $response->json(null, []);
         });
 
         $weather['temperature'] = isset($data['main']['temp']) && is_numeric($data['main']['temp'])

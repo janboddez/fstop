@@ -60,11 +60,16 @@ class ProcessWebmentions implements ShouldQueue
                 if (! $response->successful()) {
                     Log::error("[Webmention] Failed to retrieve the page at {$webmention->source}");
 
-                    return null;
+                    return ['', 0];
                 }
 
                 return [$response->body(), $response->status()];
             });
+
+            if (empty($html) || empty($status)) {
+                // Skip.
+                continue;
+            }
 
             if (in_array($status, [404, 410], true) || strpos($html, $webmention->target) === false) {
                 // The source page no longer exists or simply does not mention our "target." Attempt to delete previous
