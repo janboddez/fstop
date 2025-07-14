@@ -9,28 +9,21 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use TorMorten\Eventy\Facades\Events as Eventy;
 
 class SendActivity implements ShouldQueue
 {
     use Queueable;
 
-    protected string $type;
-    protected string $inbox;
-    protected Entry|User $object;
-    protected string $hash;
-
     /**
      * Create a new job instance.
      */
-    public function __construct(string $type, string $inbox, Entry|User $object, ?string $hash = null)
-    {
-        $this->type = $type;
-        $this->inbox = $inbox;
-        $this->object = $object->withoutRelations(); // Looks like it'll nevertheless autoload `meta`, _which is good_.
-
-        if ($hash) {
-            $this->hash = $hash; // We've calculated this upfront.
-        }
+    public function __construct(
+        protected string $inbox,
+        protected array $activity,
+        protected Entry|User $object,
+        protected ?string $hash = null
+    ) {
     }
 
     /**
@@ -39,104 +32,65 @@ class SendActivity implements ShouldQueue
     public function handle(): void
     {
         if ($this->object instanceof Entry) {
-            /** @todo Make smarter. */
-            if ($this->type === 'Create' && $this->object->published->lt(now()->subHours(12))) {
+            if (! $this->object->published) {
+                Log::debug('[ActivityPub] Missing `published` date.');
+
+                return;
+            }
+
+            if ($this->activity['type'] === 'Create' && $this->object->published->lt(now()->subHours(12))) {
+                // Prevent "old" entries from all of a sudden getting federated.
+                /** @todo Make smarter. */
                 Log::debug("[ActivityPub] Skipping entry {$this->object->id}: too old");
+
                 return;
             }
 
-            if (($this->object->trashed() || $this->object->status !== 'published') && $this->type !== 'Delete') {
-                // We support only the Delete type for trashed or unpublished entries.
-                Log::debug("[ActivityPub] Entry is trashed or unpublished but activity type is {$this->type}");
-                return;
-            }
+            if (
+                ($this->object->trashed() || $this->object->status !== 'published') &&
+                ! in_array($this->activity['type'], ['Delete', 'Undo'], true)
+            ) {
+                // For trashed or unpublished entries, we support but the Delete and Undo types.
+                // phpcs:ignore Generic.Files.LineLength.TooLong
+                Log::debug("[ActivityPub] Entry is trashed or unpublished but activity type is {$this->activity['type']}");
 
-            /** @todo Make this filterable. Also, "note" isn't even in "core." */
-            if (! in_array($this->object->type, ['article', 'note', 'like'], true)) {
-                Log::debug('[ActivityPub] Invalid entry type.');
                 return;
             }
 
             if ($this->object->visibility === 'private') {
                 Log::debug('[ActivityPub] Private entry.');
+
                 return;
             }
 
-            $object = $this->object->serialize();
-            Log::debug($object);
+            $supportedTypes = Eventy::filter('activitypub:entry_types', ['article', 'note', 'like']);
+            if (! in_array($this->object->type, $supportedTypes, true)) {
+                Log::debug('[ActivityPub] Invalid entry type.');
 
-            $activity = array_filter([
-                '@context' => ['https://www.w3.org/ns/activitystreams'],
-                'type' => $this->type,
-                'actor' => $this->object->user->author_url,
-                'object' => $object,
-                'published' => $object['published'],
-                'updated' => $this->type === 'Create' ? null : ($object['updated'] ?? null),
-                'to' => $object['to'] ?? ['https://www.w3.org/ns/activitystreams#Public'],
-                'cc' => $object['cc'] ?? [url("activitypub/users/{$this->object->user->id}/followers")],
-            ]);
-
-            /**
-             * This part's kinda "nasty"; it's where we try to add Like and Announce support.
-             */
-            if (($likeOf = $this->object->meta->firstWhere('key', '_like_of')) && ! empty($likeOf->value[0])) {
-                // Convert to Like activity.
-                if ($this->type === 'Create') {
-                    $activity['type'] = 'Like';
-                    $activity['object'] = filter_var($likeOf->value[0], FILTER_VALIDATE_URL);
-                    unset($activity['updated']);
-                } elseif (
-                    $this->type === 'Delete' &&
-                    ($like = $this->object->meta->firstWhere('key', '_activitypub_activity')) &&
-                    ! empty($like->value)
-                ) {
-                    // Undoing a previous like.
-                    $activity['type'] = 'Undo';
-                    $activity['object'] = $like->value; // The Like activity from before.
-                    unset($activity['updated']);
-                }
-            } elseif (($repostOf = $this->object->meta->firstWhere('key', '_repost_of')) && ! empty($repostOf->value[0])) { // phpcs:ignore Generic.Files.LineLength.TooLong
-                // Convert to Announce activity.
-                if ($this->type === 'Create') {
-                    $activity['type'] = 'Announce';
-                    $activity['object'] = filter_var($repostOf->value[0], FILTER_VALIDATE_URL);
-                    unset($activity['updated']);
-                } elseif (
-                    $this->type === 'Delete' &&
-                    ($announce = $this->object->meta->firstWhere('key', '_activitypub_activity')) &&
-                    ! empty($announce->value)
-                ) {
-                    // Undoing a previous Announce.
-                    $activity['type'] = 'Undo';
-                    $activity['object'] = $announce->value; // The Announce activity from before.
-                    unset($activity['updated']);
-                }
+                return;
             }
 
-            $activity['id'] = $object['id'] . '#' .
-                strtolower($activity['type'] ?? $this->type) . '-' . bin2hex(random_bytes(16));
-
-            $body = json_encode($activity);
-
+            $body = json_encode($this->activity); // Was generated upfront.
+            $contentType = 'application/activity+json';
             $headers = HttpSignature::sign(
                 $this->object->user,
                 $this->inbox,
                 $body,
                 [
                     'Accept' => 'application/activity+json, application/json',
-                    'Content-Type' => 'application/activity+json', // Same as the `$contentType` argument below.
+                    'Content-Type' => $contentType, // Must be the same as the `$contentType` argument below.
                 ],
             );
 
             $response = Http::withHeaders($headers)
-                ->withBody($body, 'application/activity+json')
+                ->withBody($body, $contentType)
                 ->post($this->inbox);
 
             // Log::debug($headers);
             // Log::debug($body);
 
             if ($response->successful()) {
-                Log::debug("[ActivityPub] Successfully sent {$activity['type']} activity to {$this->inbox}");
+                Log::debug("[ActivityPub] Successfully sent {$this->activity['type']} activity to {$this->inbox}");
 
                 // if ($activity['type'] === 'Undo') {
                 //     // ~~We sent an Undo and can forget about the original activity.~~
@@ -146,31 +100,26 @@ class SendActivity implements ShouldQueue
                 //         ->delete();
                 // }
 
-                if (in_array($activity['type'], ['Like', 'Announce'], true)) {
-                    $this->object->meta()->updateOrCreate(
+                if (in_array($this->activity['type'], ['Like', 'Announce'], true)) {
+                    // Store Like or Announce activities, in case one day we want to Undo them.
+                    $this->object->meta()->firstOrCreate(
                         ['key' => '_activitypub_activity'],
-                        ['value' => (array) $activity] // So that we may one day undo it.
+                        ['value' => (array) $this->activity]
                     );
                 }
 
-                if (! empty($this->hash) && $this->type !== 'Delete') {
+                if (! empty($this->hash) && $this->activity['type'] !== 'Delete') {
                     // This is where we store a hash of the _body minus any `updated` property_, to avoid sending the
-                    // same version of a post over and over again. Except for Deletes; for those, we've probably already
+                    // same version of a post over and over again. Except for Deletes: for those, we've probably already
                     // deleted the previously stored value.
-                    $this->object->meta()->updateOrCreate(
+                    $this->object->meta()->firstOrCreate(
                         ['key' => 'activitypub_hash'],
                         ['value' => (array) $this->hash]
                     );
                 }
-
-                // The bad thing is we sort of do this for every job rather than once at the end (because we run them
-                // asynchronously). And if we somehow successfully sent a Create to, like, only half our followers, then
-                // the next update of the entry in question would result in an Update for _all_ followers.
-                // Alternatively, we could run all jobs inline and only store the "hash" once, but that'd lead to other
-                // problems, or store one hash per follower inbox (or shared inbox), which would lead to quite some
-                // metadata but otherwise seems like it could work.
             } else {
-                Log::error("[ActivityPub] Something went wrong sending {$this->type} activity to {$this->inbox}");
+                // phpcs:ignore Generic.Files.LineLength.TooLong
+                Log::error("[ActivityPub] Something went wrong sending {$this->activity['type']} activity to {$this->inbox}");
                 Log::debug($body);
                 Log::debug($response);
             }

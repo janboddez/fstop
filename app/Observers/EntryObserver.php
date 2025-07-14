@@ -92,7 +92,8 @@ class EntryObserver implements ShouldHandleEventsAfterCommit
             }
         }
 
-        $entry->published = $published ?? null;
+        // Either set to `$published` or keep unchanged.
+        $entry->published = $published ?? $entry->published;
     }
 
     public function saved(Entry $entry): void

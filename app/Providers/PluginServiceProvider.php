@@ -65,6 +65,7 @@ class PluginServiceProvider extends ServiceProvider
         }
 
         // Allow for a WordPress-like `app/functions.php`.
+        /** @todo Move to "theme"? */
         if (is_file(__DIR__ . '/../functions.php')) {
             include_once __DIR__ . '/../functions.php';
         }

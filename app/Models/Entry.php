@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Traits\SupportsMicropub;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
@@ -259,7 +258,7 @@ class Entry extends Model
                 $doc = new \DOMDocument();
                 $useInternalErrors = libxml_use_internal_errors(true);
                 $doc->loadHTML(
-                     // Preserve emoji, etc.
+                    // Preserve emoji, etc.
                     mb_convert_encoding("<div>$this->content</div>", 'HTML-ENTITIES', 'UTF-8'),
                     LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
                 );
@@ -586,6 +585,7 @@ class Entry extends Model
                         $content
                     );
                     strtok('', '');
+
                     break;
                 }
             }

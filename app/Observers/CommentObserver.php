@@ -28,14 +28,12 @@ class CommentObserver
     }
 
     /**
-     * Runs whenever a comment has first been created.
+     * Runs whenever a comment was first created.
      */
     public function created(Comment $comment): void
     {
-        if ($comment->status === 'pending') {
-            /** @todo Implement user roles and whatnot. */
-            User::find(1)
-                ->notify(new CommentPending($comment));
-        }
+        /** @todo Implement user roles and whatnot rather use than this hardcoded ID. */
+        User::find(1)
+            ->notify(new CommentPending($comment));
     }
 }

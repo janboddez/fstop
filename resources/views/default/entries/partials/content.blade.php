@@ -16,7 +16,7 @@
 
             @if ($entry->type === 'article')
                 <div class="entry-meta">
-                    <a class="u-url" href="{{ $entry->permalink }}" rel="bookmark"><time class="dt-published" datetime="{{ $entry->published->format('c') }}">{{ $entry->published->format('M j, Y') }}</time></a>
+                    <a class="u-url" href="{{ $entry->permalink }}" rel="bookmark"><time class="dt-published" datetime="{{ $entry->published ? $entry->published->format('c') : $entry->created_at->format('c') }}">{{ $entry->published ? $entry->published->format('M j, Y') : $entry->created_at->format('M j, Y') }}</time></a>
 
                     @auth
                         &bull;

@@ -7,8 +7,6 @@ use App\Models\Comment;
 use App\Models\Entry;
 use App\Observers\CommentObserver;
 use App\Observers\EntryObserver;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use TorMorten\Eventy\Facades\Events as Eventy;
