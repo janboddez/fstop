@@ -37,7 +37,7 @@ function fetch_object(string $url, ?User $user = null): array
         Log::debug("[ActivityPub] Attempting to fetch (uncached) object at $url");
 
         try {
-            $response = Http::withHeaders(HttpSignature::sign(
+            return Http::withHeaders(HttpSignature::sign(
                 $user,
                 $url,
                 null,
@@ -81,7 +81,7 @@ function fetch_profile(string $url, ?User $user = null, bool $cacheAvatar = fals
         try {
             Log::debug("[ActivityPub] Fetching profile at $url");
 
-            $response = Http::withHeaders(HttpSignature::sign(
+            return Http::withHeaders(HttpSignature::sign(
                 $user,
                 $url,
                 null,
