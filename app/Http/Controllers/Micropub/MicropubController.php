@@ -288,7 +288,7 @@ class MicropubController extends Controller
 
         if (! empty($properties['like-of'][0])) {
             $context = __(
-                '*Liked [:name](:url){.u-like-of}.*',
+                '*Likes [:name](:url){.u-like-of}.*',
                 [
                     'name' => e(
                         ! empty($properties['name'][0])
