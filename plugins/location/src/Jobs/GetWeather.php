@@ -93,15 +93,11 @@ class GetWeather implements ShouldQueue
                     'lon' => $lon,
                     'appid' => config('location.weather.api_key'),
                 ])
-                ->json(null, []);
+                ->json();
 
-            if (! $response->successful()) {
-                Log::error("[Location] Failed to retrieve weather data for $lat, $lon");
-
-                return [];
-            }
-
-            return $response->json(null, []);
+            return isset($response) && is_array($response)
+                ? $response
+                : [];
         });
 
         $weather['temperature'] = isset($data['main']['temp']) && is_numeric($data['main']['temp'])

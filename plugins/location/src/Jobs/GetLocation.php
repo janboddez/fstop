@@ -95,15 +95,12 @@ class GetLocation implements ShouldQueue
                     'lon' => $lon,
                     'zoom' => 18,
                     'addressdetails' => 1,
-                ]);
+                ])
+                ->json();
 
-            if (! $response->successful()) {
-                Log::error("[Location] Failed to retrieve address data for $lat, $lon");
-
-                return [];
-            }
-
-            return $response->json(null, []);
+            return isset($response) && is_array($response)
+                ? $response
+                : [];
         });
 
         if (! empty($data['error'])) {
