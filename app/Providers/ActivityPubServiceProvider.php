@@ -62,9 +62,9 @@ class ActivityPubServiceProvider extends ServiceProvider
                 return;
             }
 
-            $entry->load('meta');
+            $entry->refresh();
 
-            if (($hash = $entry->meta()->firstWhere('key', 'activitypub_hash')) && ! empty($hash->value[0])) {
+            if (($hash = $entry->meta->firstWhere('key', 'activitypub_hash')) && ! empty($hash->value[0])) {
                 // Update. But first, verify anything actually changed.
                 $array = $entry->serialize();
                 unset($array['updated']);
@@ -120,9 +120,7 @@ class ActivityPubServiceProvider extends ServiceProvider
 
         Eventy::addAction('entries:deleted', function (Entry $entry) {
             static::sendDelete($entry);
-
-            return;
-        });
+        }, PHP_INT_MAX); // Execute, or rather, schedule (!) after, well, everything else.
     }
 
     protected static function sendDelete(Entry $entry): void
@@ -155,8 +153,10 @@ class ActivityPubServiceProvider extends ServiceProvider
 
     protected static function generateActivity(string $type, Entry $entry): ?array
     {
+        // Turn entry into Activity Streams object.
         $object = $entry->serialize();
 
+        // Wrap in "Activity."
         $activity = array_filter([
             '@context' => ['https://www.w3.org/ns/activitystreams'],
             'type' => $type,
@@ -168,50 +168,55 @@ class ActivityPubServiceProvider extends ServiceProvider
             'cc' => $object['cc'] ?? [url("activitypub/users/{$entry->user->id}/followers")],
         ]);
 
-        /**
-         * This part's kinda "nasty"; it's where we try to add Like and Announce support.
-         */
+        $entry->refresh(); // Just in case.
+
+        // This is where we add like and repost support ...
         if (($likeOf = $entry->meta->firstWhere('key', '_like_of')) && ! empty($likeOf->value[0])) {
-            // Convert to Like activity.
-            if ($type === 'Create') {
+            // This is a "like."
+            if (
+                $type === 'Create' &&
+                ($author = $entry->meta->firstWhere('key', '_like_of_author')) &&
+                ! empty($author->value)
+            ) {
+                // Since the entry appears to support ActivityPub, convert to Like activity.
                 $activity['type'] = 'Like';
-
-                /** @todo Verify the liked page even supports ActivityPub, and return early if it doesn't. */
                 $activity['object'] = filter_var($likeOf->value[0], FILTER_VALIDATE_URL);
-
-                /** @todo Add the remote page's author to our mentions even if they weren't mentioned explicitly. */
-
                 unset($activity['updated']);
-            } elseif ($type === 'Delete') {
-                if (($like = $entry->meta->firstWhere('key', '_activitypub_activity')) && ! empty($like->value)) {
-                    // Undoing a previous like.
-                    $activity['type'] = 'Undo';
-                    $activity['object'] = $like->value; // The Like activity from before.
-                    unset($activity['updated']);
-                } else {
-                    return null;
-                }
+            } elseif (
+                $type === 'Delete' &&
+                ($like = $entry->meta->firstWhere('key', '_activitypub_activity')) &&
+                ! empty($like->value)
+            ) {
+                // Undo previous like.
+                $activity['type'] = 'Undo';
+                $activity['object'] = $like->value; // The Like activity from before.
+                unset($activity['updated']);
+            } else {
+                // We don't support Update or whatnot, not for likes.
+                return null;
             }
         } elseif (($repostOf = $entry->meta->firstWhere('key', '_repost_of')) && ! empty($repostOf->value[0])) {
-            // Convert to Announce activity.
-            if ($type === 'Create') {
+            // This is a "repost."
+            if (
+                $type === 'Create' &&
+                ($author = $entry->meta->firstWhere('key', '_repost_of_author')) &&
+                ! empty($author->value)
+            ) {
+                // Convert to Announce activity.
                 $activity['type'] = 'Announce';
-
-                /** @todo Verify the "reposted" page even supports ActivityPub, and return early if it doesn't. */
                 $activity['object'] = filter_var($repostOf->value[0], FILTER_VALIDATE_URL);
-
-                /** @todo Add the remote page's author to our mentions even if they weren't mentioned explicitly. */
-
                 unset($activity['updated']);
-            } elseif ($type === 'Delete') {
-                if (($announce = $entry->meta->firstWhere('key', '_activitypub_activity')) && ! empty($announce->value)) {
-                    // Undoing a previous Announce.
-                    $activity['type'] = 'Undo';
-                    $activity['object'] = $announce->value; // The Announce activity from before.
-                    unset($activity['updated']);
-                } else {
-                    return null;
-                }
+            } elseif (
+                $type === 'Delete' &&
+                ($announce = $entry->meta->firstWhere('key', '_activitypub_activity')) &&
+                ! empty($announce->value)
+            ) {
+                // Undoing a previous Announce.
+                $activity['type'] = 'Undo';
+                $activity['object'] = $announce->value; // The Announce activity from before.
+                unset($activity['updated']);
+            } else {
+                return null;
             }
         }
 
