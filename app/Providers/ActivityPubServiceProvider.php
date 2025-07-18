@@ -76,7 +76,9 @@ class ActivityPubServiceProvider extends ServiceProvider
                     Log::debug('[ActivityPub] Previously federated this entry; scheduling "Update"');
 
                     // Generate the "activity" just once.
-                    $activity = static::generateActivity('Update', $entry);
+                    if (! $activity = static::generateActivity('Update', $entry)) {
+                        return;
+                    }
 
                     $inboxes = [];
                     foreach ($entry->user->followers as $follower) {
@@ -101,7 +103,9 @@ class ActivityPubServiceProvider extends ServiceProvider
             $newHash = md5(json_encode($array));
 
             // Generate the "activity" just once.
-            $activity = static::generateActivity('Create', $entry);
+            if (! $activity = static::generateActivity('Create', $entry)) {
+                return;
+            }
 
             $inboxes = [];
             foreach ($entry->user->followers as $follower) {
@@ -127,7 +131,10 @@ class ActivityPubServiceProvider extends ServiceProvider
             // Entry was federated before. (We don't know to what servers, but we also don't know what other servers
             // it ended up on, so that should be okay.)
             Log::debug('[ActivityPub] Deleted entry; scheduling "Delete"');
-            $activity = static::generateActivity('Delete', $entry);
+
+            if (! $activity = static::generateActivity('Delete', $entry)) {
+                return;
+            }
 
             $inboxes = [];
             foreach ($entry->user->followers as $follower) {
@@ -146,7 +153,7 @@ class ActivityPubServiceProvider extends ServiceProvider
         }
     }
 
-    protected static function generateActivity(string $type, Entry $entry): array
+    protected static function generateActivity(string $type, Entry $entry): ?array
     {
         $object = $entry->serialize();
 
@@ -168,32 +175,43 @@ class ActivityPubServiceProvider extends ServiceProvider
             // Convert to Like activity.
             if ($type === 'Create') {
                 $activity['type'] = 'Like';
+
+                /** @todo Verify the liked page even supports ActivityPub, and return early if it doesn't. */
                 $activity['object'] = filter_var($likeOf->value[0], FILTER_VALIDATE_URL);
+
+                /** @todo Add the remote page's author to our mentions even if they weren't mentioned explicitly. */
+
                 unset($activity['updated']);
-            } elseif (
-                $type === 'Delete' &&
-                ($like = $entry->meta->firstWhere('key', '_activitypub_activity')) && ! empty($like->value)
-            ) {
-                // Undoing a previous like.
-                $activity['type'] = 'Undo';
-                $activity['object'] = $like->value; // The Like activity from before.
-                unset($activity['updated']);
+            } elseif ($type === 'Delete') {
+                if (($like = $entry->meta->firstWhere('key', '_activitypub_activity')) && ! empty($like->value)) {
+                    // Undoing a previous like.
+                    $activity['type'] = 'Undo';
+                    $activity['object'] = $like->value; // The Like activity from before.
+                    unset($activity['updated']);
+                } else {
+                    return null;
+                }
             }
         } elseif (($repostOf = $entry->meta->firstWhere('key', '_repost_of')) && ! empty($repostOf->value[0])) {
             // Convert to Announce activity.
             if ($type === 'Create') {
                 $activity['type'] = 'Announce';
+
+                /** @todo Verify the "reposted" page even supports ActivityPub, and return early if it doesn't. */
                 $activity['object'] = filter_var($repostOf->value[0], FILTER_VALIDATE_URL);
+
+                /** @todo Add the remote page's author to our mentions even if they weren't mentioned explicitly. */
+
                 unset($activity['updated']);
-            } elseif (
-                $type === 'Delete' &&
-                ($announce = $entry->meta->firstWhere('key', '_activitypub_activity')) &&
-                ! empty($announce->value)
-            ) {
-                // Undoing a previous Announce.
-                $activity['type'] = 'Undo';
-                $activity['object'] = $announce->value; // The Announce activity from before.
-                unset($activity['updated']);
+            } elseif ($type === 'Delete') {
+                if (($announce = $entry->meta->firstWhere('key', '_activitypub_activity')) && ! empty($announce->value)) {
+                    // Undoing a previous Announce.
+                    $activity['type'] = 'Undo';
+                    $activity['object'] = $announce->value; // The Announce activity from before.
+                    unset($activity['updated']);
+                } else {
+                    return null;
+                }
             }
         }
 

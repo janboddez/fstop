@@ -11,6 +11,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use TorMorten\Eventy\Facades\Events as Eventy;
 
+use function App\Support\ActivityPub\fetch_object;
+use function App\Support\ActivityPub\fetch_profile;
 use function App\Support\ActivityPub\fetch_webfinger;
 
 class AppServiceProvider extends ServiceProvider
@@ -70,28 +72,10 @@ class AppServiceProvider extends ServiceProvider
         // Serves a similar purpose as the `EntryObserver::saved()` method, but runs _after tags and metadata are
         // saved, too_.
         Eventy::addAction('entries:saved', function (Entry $entry) {
+            // We'll be needing this later.
+            $mentions = [];
+
             $content = $entry->content;
-
-            // Parse for "Fediverse" mentions, so we don't have to do this come render time.
-            if (preg_match_all('~@[A-Za-z0-9\._-]+@(?:[A-Za-z0-9_-]+\.)+[A-Za-z]+~i', $content, $matches)) {
-                $mentions = [];
-
-                foreach (array_unique($matches[0]) as $match) {
-                    if (! $url = fetch_webfinger($match)) {
-                        continue;
-                    }
-
-                    $mentions[$match] = $url;
-                }
-
-                if (! empty($mentions)) {
-                    // Store.
-                    $entry->meta()->updateOrCreate(
-                        ['key' => '_activitypub_mentions'],
-                        ['value' => (array) $mentions]
-                    );
-                }
-            }
 
             // Parse for microformats. If an entry happens to be a "reply," "like" or "repost," we'd rather store that
             // information now.
@@ -114,21 +98,46 @@ class AppServiceProvider extends ServiceProvider
                     ! empty($hentry['properties']['in-reply-to'][0]) &&
                     Str::isUrl($hentry['properties']['in-reply-to'][0], ['http', 'https'])
                 ) {
-                    $entry->meta()->updateOrCreate(
-                        ['key' => '_in_reply_to'],
-                        ['value' => (array) filter_var($hentry['properties']['in-reply-to'][0], FILTER_SANITIZE_URL)]
-                    );
+                    $inReplyTo = $hentry['properties']['in-reply-to'][0];
                 } elseif (
                     ! empty($hentry['properties']['in-reply-to'][0]['properties']['url']) &&
                     Str::isUrl($hentry['properties']['in-reply-to'][0]['properties']['url'][0], ['http', 'https'])
                 ) {
+                    $inReplyTo = $hentry['properties']['in-reply-to'][0]['properties']['url'][0];
+                }
+
+                if (! empty($inReplyTo)) {
                     $entry->meta()->updateOrCreate(
                         ['key' => '_in_reply_to'],
-                        ['value' => (array) filter_var(
-                            $hentry['properties']['in-reply-to'][0]['properties']['url'][0],
-                            FILTER_SANITIZE_URL
-                        )]
+                        ['value' => (array) filter_var($inReplyTo, FILTER_SANITIZE_URL)]
                     );
+
+                    // Try and see if this remote page supports ActivityPub.
+                    $object = fetch_object(filter_var($inReplyTo, FILTER_SANITIZE_URL), $entry->user);
+                    if (! empty($object['attributedTo']) && Str::isUrl($object['attributedTo'], ['http', 'https'])) {
+                        $actor = fetch_profile(filter_var($object['attributedTo'], FILTER_SANITIZE_URL), $entry->user);
+                        if (
+                            ! empty($actor['username']) &&
+                            ! empty($actor['url']) &&
+                            Str::isUrl($actor['url'], ['http', 'https'])
+                        ) {
+                            /** @todo Is this even correct? */
+                            $handle = '@' . filter_var(
+                                $actor['username'] . '@' . parse_url($actor['url'], PHP_URL_HOST),
+                                FILTER_SANITIZE_EMAIL
+                            );
+
+                            // Add to mentions.
+                            $mentions[$handle] = filter_var($object['attributedTo'], FILTER_SANITIZE_URL);
+
+                            // Store for future use (i.e., to later on determine if the remote page supports
+                            // ActivityPub).
+                            $entry->meta()->updateOrCreate(
+                                ['key' => '_in_reply_to_author'],
+                                ['value' => [$handle => filter_var($object['attributedTo'], FILTER_SANITIZE_URL)]]
+                            );
+                        }
+                    }
                 }
 
                 /**
@@ -138,21 +147,43 @@ class AppServiceProvider extends ServiceProvider
                     ! empty($hentry['properties']['like-of'][0]) &&
                     Str::isUrl($hentry['properties']['like-of'][0], ['http', 'https'])
                 ) {
-                    $entry->meta()->updateOrCreate(
-                        ['key' => '_like_of'],
-                        ['value' => (array) filter_var($hentry['properties']['like-of'][0], FILTER_SANITIZE_URL)]
-                    );
+                    $likeOf = $hentry['properties']['like-of'][0];
                 } elseif (
                     ! empty($hentry['properties']['like-of'][0]['properties']['url']) &&
                     Str::isUrl($hentry['properties']['like-of'][0]['properties']['url'][0], ['http', 'https'])
                 ) {
+                    $likeOf = $hentry['properties']['like-of'][0]['properties']['url'][0];
+                }
+
+                if (! empty($likeOf)) {
                     $entry->meta()->updateOrCreate(
                         ['key' => '_like_of'],
-                        ['value' => (array) filter_var(
-                            $hentry['properties']['like-of'][0]['properties']['url'][0],
-                            FILTER_SANITIZE_URL
-                        )]
+                        ['value' => (array) filter_var($likeOf, FILTER_SANITIZE_URL)]
                     );
+
+                    // Try and see if this remote page supports ActivityPub.
+                    $object = fetch_object(filter_var($likeOf, FILTER_SANITIZE_URL), $entry->user);
+                    if (! empty($object['attributedTo']) && Str::isUrl($object['attributedTo'], ['http', 'https'])) {
+                        $actor = fetch_profile(filter_var($object['attributedTo'], FILTER_SANITIZE_URL), $entry->user);
+                        if (
+                            ! empty($actor['username']) &&
+                            ! empty($actor['url']) &&
+                            Str::isUrl($actor['url'], ['http', 'https'])
+                        ) {
+                            /** @todo Is this even correct? */
+                            $handle = '@' . filter_var(
+                                $actor['username'] . '@' . parse_url($actor['url'], PHP_URL_HOST),
+                                FILTER_SANITIZE_EMAIL
+                            );
+
+                            $mentions[$handle] = filter_var($object['attributedTo'], FILTER_SANITIZE_URL);
+
+                            $entry->meta()->updateOrCreate(
+                                ['key' => '_like_of_author'],
+                                ['value' => [$handle => filter_var($object['attributedTo'], FILTER_SANITIZE_URL)]]
+                            );
+                        }
+                    }
                 }
 
                 /**
@@ -162,22 +193,64 @@ class AppServiceProvider extends ServiceProvider
                     ! empty($hentry['properties']['repost-of'][0]) &&
                     Str::isUrl($hentry['properties']['repost-of'][0], ['http', 'https'])
                 ) {
-                    $entry->meta()->updateOrCreate(
-                        ['key' => '_repost_of'],
-                        ['value' => (array) filter_var($hentry['properties']['repost-of'][0], FILTER_SANITIZE_URL)]
-                    );
+                    $repostOf = $hentry['properties']['repost-of'][0];
                 } elseif (
                     ! empty($hentry['properties']['repost-of'][0]['properties']['url']) &&
                     Str::isUrl($hentry['properties']['repost-of'][0]['properties']['url'][0], ['http', 'https'])
                 ) {
+                    $repostOf = $hentry['properties']['repost-of'][0]['properties']['url'][0];
+                }
+
+                if (! empty($repostOf)) {
                     $entry->meta()->updateOrCreate(
                         ['key' => '_repost_of'],
-                        ['value' => (array) filter_var(
-                            $hentry['properties']['repost-of'][0]['properties']['url'][0],
-                            FILTER_SANITIZE_URL
-                        )]
+                        ['value' => (array) filter_var($repostOf, FILTER_SANITIZE_URL)]
                     );
+
+                    // Try and see if this remote page supports ActivityPub.
+                    $object = fetch_object(filter_var($repostOf, FILTER_SANITIZE_URL), $entry->user);
+                    if (! empty($object['attributedTo']) && Str::isUrl($object['attributedTo'], ['http', 'https'])) {
+                        /** @todo Fetch @-@ handle? Add to mentions? */
+                        $actor = fetch_profile(filter_var($object['attributedTo'], FILTER_SANITIZE_URL), $entry->user);
+                        if (
+                            ! empty($actor['username']) &&
+                            ! empty($actor['url']) &&
+                            Str::isUrl($actor['url'], ['http', 'https'])
+                        ) {
+                            /** @todo Is this even correct? */
+                            $handle = '@' . filter_var(
+                                $actor['username'] . '@' . parse_url($actor['url'], PHP_URL_HOST),
+                                FILTER_SANITIZE_EMAIL
+                            );
+
+                            $mentions[$handle] = filter_var($object['attributedTo'], FILTER_SANITIZE_URL);
+
+                            $entry->meta()->updateOrCreate(
+                                ['key' => '_repost_of_author'],
+                                ['value' => [$handle => filter_var($object['attributedTo'], FILTER_SANITIZE_URL)]]
+                            );
+                        }
+                    }
                 }
+            }
+
+            // Parse for "Fediverse" mentions, so we don't have to do this come render time.
+            if (preg_match_all('~@[A-Za-z0-9\._-]+@(?:[A-Za-z0-9_-]+\.)+[A-Za-z]+~i', $content, $matches)) {
+                foreach (array_unique($matches[0]) as $match) {
+                    if (! $url = fetch_webfinger($match)) {
+                        continue;
+                    }
+
+                    $mentions[$match] = $url;
+                }
+            }
+
+            if (! empty($mentions)) {
+                // Store.
+                $entry->meta()->updateOrCreate(
+                    ['key' => '_activitypub_mentions'],
+                    ['value' => array_unique($mentions)]
+                );
             }
         });
 

@@ -37,7 +37,7 @@ function fetch_object(string $url, ?User $user = null): array
         Log::debug("[ActivityPub] Attempting to fetch (uncached) object at $url");
 
         try {
-            return Http::withHeaders(HttpSignature::sign(
+            $response = Http::withHeaders(HttpSignature::sign(
                 $user,
                 $url,
                 null,
@@ -45,12 +45,14 @@ function fetch_object(string $url, ?User $user = null): array
                 'get'
             ))
             ->get($url)
-            ->json(null, []);
+            ->json();
         } catch (\Exception $e) {
             Log::warning("[ActivityPub] Failed to fetch $url (" . $e->getMessage() . ')');
         }
 
-        return [];
+        return isset($response) && is_array($response)
+            ? $response
+            : [];
     });
 
     /** @todo We may eventually want to also store (and locally cache) avatars. And an `@-@` handle. */
@@ -81,7 +83,7 @@ function fetch_profile(string $url, ?User $user = null, bool $cacheAvatar = fals
         try {
             Log::debug("[ActivityPub] Fetching profile at $url");
 
-            return Http::withHeaders(HttpSignature::sign(
+            $response = Http::withHeaders(HttpSignature::sign(
                 $user,
                 $url,
                 null,
@@ -89,12 +91,14 @@ function fetch_profile(string $url, ?User $user = null, bool $cacheAvatar = fals
                 'get'
             ))
             ->get($url)
-            ->json(null, []);
+            ->json();
         } catch (\Exception $e) {
             Log::warning("[ActivityPub] Failed to fetch the profile at $url (" . $e->getMessage() . ')');
         }
 
-        return [];
+        return isset($response) && is_array($response)
+            ? $response
+            : [];
     });
 
     /** @todo We may eventually want to also store (and locally cache) avatars. And an `@-@` handle. */
