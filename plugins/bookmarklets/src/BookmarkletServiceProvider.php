@@ -104,7 +104,7 @@ class BookmarkletServiceProvider extends ServiceProvider
     if (selectedText) {
         const repostOf = urlParams?.get('repost_of');
         if (repostOf && isValidUrl(repostOf)) {
-            value = `<div class="u-repost-of h-cite">
+            value = `<div class="u-repost-of h-cite" markdown="1">
 *Reposted [` + repostOf + `](` + repostOf + `){.u-url}.*
 <blockquote class="e-content" markdown="1">
 ` + escapeHtml(selectedText) + `
