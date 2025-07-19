@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use TorMorten\Eventy\Facades\Events as Eventy;
 
+use function App\Support\ActivityPub\generate_activity;
+
 class ActivityPubServiceProvider extends ServiceProvider
 {
     /**
@@ -76,7 +78,7 @@ class ActivityPubServiceProvider extends ServiceProvider
                     Log::debug('[ActivityPub] Previously federated this entry; scheduling "Update"');
 
                     // Generate the "activity" just once.
-                    if (! $activity = static::generateActivity('Update', $entry)) {
+                    if (! $activity = generate_activity('Update', $entry)) {
                         return;
                     }
 
@@ -103,7 +105,7 @@ class ActivityPubServiceProvider extends ServiceProvider
             $newHash = md5(json_encode($array));
 
             // Generate the "activity" just once.
-            if (! $activity = static::generateActivity('Create', $entry)) {
+            if (! $activity = generate_activity('Create', $entry)) {
                 return;
             }
 
@@ -130,7 +132,7 @@ class ActivityPubServiceProvider extends ServiceProvider
             // it ended up on, so that should be okay.)
             Log::debug('[ActivityPub] Deleted entry; scheduling "Delete"');
 
-            if (! $activity = static::generateActivity('Delete', $entry)) {
+            if (! $activity = generate_activity('Delete', $entry)) {
                 return;
             }
 
@@ -149,85 +151,5 @@ class ActivityPubServiceProvider extends ServiceProvider
                 ->firstWhere('key', 'activitypub_hash')
                 ->delete();
         }
-    }
-
-    protected static function generateActivity(string $type, Entry $entry): ?array
-    {
-        // Turn entry into Activity Streams object.
-        $object = $entry->serialize();
-
-        // Wrap in "Activity."
-        $activity = array_filter([
-            '@context' => ['https://www.w3.org/ns/activitystreams'],
-            'type' => $type,
-            'actor' => $entry->user->author_url,
-            'object' => $object,
-            'published' => $object['published'],
-            'updated' => $type === 'Create' ? null : ($object['updated'] ?? null),
-            'to' => $object['to'] ?? ['https://www.w3.org/ns/activitystreams#Public'],
-            'cc' => $object['cc'] ?? [url("activitypub/users/{$entry->user->id}/followers")],
-        ]);
-
-        $entry->refresh(); // Just in case.
-
-        // This is where we add like and repost support ...
-        if (($likeOf = $entry->meta->firstWhere('key', '_like_of')) && ! empty($likeOf->value[0])) {
-            // This is a "like."
-            if (
-                $type === 'Create' &&
-                ($author = $entry->meta->firstWhere('key', '_like_of_author')) &&
-                ! empty($author->value)
-            ) {
-                // Since the entry appears to support ActivityPub, convert to Like activity.
-                $activity['type'] = 'Like';
-                $activity['object'] = filter_var($likeOf->value[0], FILTER_VALIDATE_URL);
-                unset($activity['updated']);
-            } elseif (
-                $type === 'Delete' &&
-                ($like = $entry->meta->firstWhere('key', '_activitypub_activity')) &&
-                ! empty($like->value)
-            ) {
-                // Undo previous like.
-                $activity['type'] = 'Undo';
-                $activity['object'] = $like->value; // The Like activity from before.
-                unset($activity['updated']);
-            } else {
-                // We don't support Update or whatnot, not for likes.
-                return null;
-            }
-        } elseif (($repostOf = $entry->meta->firstWhere('key', '_repost_of')) && ! empty($repostOf->value[0])) {
-            // This is a "repost."
-            if (
-                $type === 'Create' &&
-                ($author = $entry->meta->firstWhere('key', '_repost_of_author')) &&
-                ! empty($author->value)
-            ) {
-                // Convert to Announce activity.
-                $activity['type'] = 'Announce';
-                $activity['object'] = filter_var($repostOf->value[0], FILTER_VALIDATE_URL);
-                unset($activity['updated']);
-            } elseif (
-                $type === 'Delete' &&
-                ($announce = $entry->meta->firstWhere('key', '_activitypub_activity')) &&
-                ! empty($announce->value)
-            ) {
-                // Undoing a previous Announce.
-                $activity['type'] = 'Undo';
-                $activity['object'] = $announce->value; // The Announce activity from before.
-                unset($activity['updated']);
-            } else {
-                return null;
-            }
-        }
-
-        if ($activity['type'] === 'Update') {
-            // We want (only) Updates to have a truly unique activity ID.
-            $activity['id'] = $object['id'] . '#' . strtolower($activity['type'] ?? $type) . '-'
-                . bin2hex(random_bytes(16));
-        } else {
-            $activity['id'] = $object['id'] . '#' . strtolower($activity['type']);
-        }
-
-        return $activity;
     }
 }

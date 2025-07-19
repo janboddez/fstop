@@ -2,6 +2,7 @@
 
 namespace App\Support\ActivityPub;
 
+use App\Models\Entry;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -210,6 +211,88 @@ function object_to_id(mixed $object): ?string
     return isset($id) && is_string($id)
         ? $id
         : null;
+}
+
+function generate_activity(string $type, Entry $entry): ?array
+{
+    $entry->refresh(); // Just in case.
+
+    // Turn entry into Activity Streams object.
+    $object = $entry->serialize();
+
+    // Wrap in "Activity."
+    $activity = array_filter([
+        '@context' => ['https://www.w3.org/ns/activitystreams'],
+        'type' => $type,
+        'actor' => $entry->user->author_url,
+        'object' => $object,
+        'published' => $object['published'],
+        'updated' => $type === 'Create' ? null : ($object['updated'] ?? null),
+        'to' => $object['to'] ?? ['https://www.w3.org/ns/activitystreams#Public'],
+        'cc' => $object['cc'] ?? [url("activitypub/users/{$entry->user->id}/followers")],
+    ]);
+
+    // This is where we add like and repost support ...
+    if (($likeOf = $entry->meta->firstWhere('key', '_like_of')) && ! empty($likeOf->value[0])) {
+        // This would be a "like."
+        if (
+            $type === 'Create' &&
+            ($author = $entry->meta->firstWhere('key', '_like_of_author')) &&
+            ! empty($author->value)
+        ) {
+            // Convert to Like activity.
+            $activity['type'] = 'Like';
+            $activity['object'] = filter_var($likeOf->value[0], FILTER_VALIDATE_URL);
+            unset($activity['updated']);
+        } elseif (
+            $type === 'Delete' &&
+            ($like = $entry->meta->firstWhere('key', '_activitypub_activity')) &&
+            ! empty($like->value)
+        ) {
+            // Undo previous like.
+            $activity['type'] = 'Undo';
+            $activity['object'] = $like->value; // The Like activity from before.
+            unset($activity['updated']);
+        } else {
+            // Either we're dealing with an Update, or the remote server seemingly doesn't support ActivityPub.
+            return null;
+        }
+    } elseif (($repostOf = $entry->meta->firstWhere('key', '_repost_of')) && ! empty($repostOf->value[0])) {
+        // This would be a "repost."
+        if (
+            $type === 'Create' &&
+            ($author = $entry->meta->firstWhere('key', '_repost_of_author')) &&
+            ! empty($author->value)
+        ) {
+            // Convert to Announce activity.
+            $activity['type'] = 'Announce';
+            $activity['object'] = filter_var($repostOf->value[0], FILTER_VALIDATE_URL);
+            unset($activity['updated']);
+        } elseif (
+            $type === 'Delete' &&
+            ($announce = $entry->meta->firstWhere('key', '_activitypub_activity')) &&
+            ! empty($announce->value)
+        ) {
+            // Undo previous Announce.
+            $activity['type'] = 'Undo';
+            $activity['object'] = $announce->value; // The Announce activity from before.
+            unset($activity['updated']);
+        } else {
+            // Either we're dealing with an Update, or the remote server seemingly doesn't support ActivityPub.
+            return null;
+        }
+    }
+
+    // Neither like nor repost. Continue as per the uge.
+    if ($activity['type'] === 'Update') {
+        // We want (only) Updates to have a truly unique activity ID.
+        $activity['id'] = $object['id'] . '#' . strtolower($activity['type'] ?? $type) . '-'
+            . bin2hex(random_bytes(16));
+    } else {
+        $activity['id'] = $object['id'] . '#' . strtolower($activity['type']);
+    }
+
+    return $activity;
 }
 
 function store_avatar(string $avatarUrl, string $authorUrl = '', int $size = 150): ?string
