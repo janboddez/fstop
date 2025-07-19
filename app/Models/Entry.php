@@ -530,11 +530,27 @@ class Entry extends Model
     {
         return Attribute::make(
             get: function (?string $value = null, array $attributes) {
+                $mentions = [];
+
                 if (($meta = $this->meta->firstWhere('key', '_activitypub_mentions')) && ! empty($meta->value)) {
-                    return (array) $meta->value;
+                    $mentions = array_merge($mentions, (array) $meta->value);
                 }
 
-                $mentions = [];
+                if (($meta = $this->meta->firstWhere('key', '_in_reply_to_author')) && ! empty($meta->value)) {
+                    $mentions = array_merge($mentions, (array) $meta->value);
+                }
+
+                if (($meta = $this->meta->firstWhere('key', '_like_of_author')) && ! empty($meta->value)) {
+                    $mentions = array_merge($mentions, (array) $meta->value);
+                }
+
+                if (($meta = $this->meta->firstWhere('key', '_repost_of_author')) && ! empty($meta->value)) {
+                    $mentions = array_merge($mentions, (array) $meta->value);
+                }
+
+                if (! empty($mentions)) {
+                    return $mentions;
+                }
 
                 // phpcs:ignore Generic.Files.LineLength.TooLong
                 if (preg_match_all('~[^\/](@[A-Za-z0-9\._-]+@(?:[A-Za-z0-9_-]+\.)+[A-Za-z]+)[^\/]~i', $attributes['content'], $matches)) {

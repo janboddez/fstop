@@ -72,9 +72,6 @@ class AppServiceProvider extends ServiceProvider
         // Serves a similar purpose as the `EntryObserver::saved()` method, but runs _after tags and metadata are
         // saved, too_.
         Eventy::addAction('entries:saved', function (Entry $entry) {
-            // We'll be needing this later.
-            $mentions = [];
-
             $content = $entry->content;
 
             // Parse for microformats. If an entry happens to be a "reply," "like" or "repost," we'd rather store that
@@ -127,9 +124,6 @@ class AppServiceProvider extends ServiceProvider
                                 FILTER_SANITIZE_EMAIL
                             );
 
-                            // Add to mentions.
-                            $mentions[$handle] = filter_var($object['attributedTo'], FILTER_SANITIZE_URL);
-
                             // Store for future use (i.e., to later on determine if the remote page supports
                             // ActivityPub).
                             $entry->meta()->updateOrCreate(
@@ -137,7 +131,17 @@ class AppServiceProvider extends ServiceProvider
                                 ['value' => [$handle => filter_var($object['attributedTo'], FILTER_SANITIZE_URL)]]
                             );
                         }
+                    } else {
+                        // Delete any previously stored remote author details.
+                        $entry->meta()
+                            ->where('key', '_in_reply_to_author')
+                            ->delete();
                     }
+                } else {
+                    // Not, or no longer, a reply.
+                    $entry->meta()
+                        ->whereIn('key', ['_in_reply_to', '_in_reply_to_author'])
+                        ->delete();
                 }
 
                 /**
@@ -176,14 +180,22 @@ class AppServiceProvider extends ServiceProvider
                                 FILTER_SANITIZE_EMAIL
                             );
 
-                            $mentions[$handle] = filter_var($object['attributedTo'], FILTER_SANITIZE_URL);
-
                             $entry->meta()->updateOrCreate(
                                 ['key' => '_like_of_author'],
                                 ['value' => [$handle => filter_var($object['attributedTo'], FILTER_SANITIZE_URL)]]
                             );
                         }
+                    } else {
+                        // Delete any previously stored remote author details.
+                        $entry->meta()
+                            ->where('key', '_like_of_author')
+                            ->delete();
                     }
+                } else {
+                    // Not, or no longer, a like.
+                    $entry->meta()
+                        ->whereIn('key', ['_like_of', '_like_of_author'])
+                        ->delete();
                 }
 
                 /**
@@ -223,19 +235,29 @@ class AppServiceProvider extends ServiceProvider
                                 FILTER_SANITIZE_EMAIL
                             );
 
-                            $mentions[$handle] = filter_var($object['attributedTo'], FILTER_SANITIZE_URL);
-
                             $entry->meta()->updateOrCreate(
                                 ['key' => '_repost_of_author'],
                                 ['value' => [$handle => filter_var($object['attributedTo'], FILTER_SANITIZE_URL)]]
                             );
                         }
+                    } else {
+                        // Delete any previously stored remote author details.
+                        $entry->meta()
+                            ->where('key', '_repost_of_author')
+                            ->delete();
                     }
+                } else {
+                    // Not, or no longer, a repost.
+                    $entry->meta()
+                        ->whereIn('key', ['_repost_of', '_repost_of_author'])
+                        ->delete();
                 }
             }
 
             // Parse for "Fediverse" mentions, so we don't have to do this come render time.
             if (preg_match_all('~@[A-Za-z0-9\._-]+@(?:[A-Za-z0-9_-]+\.)+[A-Za-z]+~i', $content, $matches)) {
+                $mentions = [];
+
                 foreach (array_unique($matches[0]) as $match) {
                     if (! $url = fetch_webfinger($match)) {
                         continue;
@@ -243,14 +265,14 @@ class AppServiceProvider extends ServiceProvider
 
                     $mentions[$match] = $url;
                 }
-            }
 
-            if (! empty($mentions)) {
-                // Store.
-                $entry->meta()->updateOrCreate(
-                    ['key' => '_activitypub_mentions'],
-                    ['value' => array_unique($mentions)]
-                );
+                if (! empty($mentions)) {
+                    // Store.
+                    $entry->meta()->updateOrCreate(
+                        ['key' => '_activitypub_mentions'],
+                        ['value' => array_unique($mentions)]
+                    );
+                }
             }
         });
 
