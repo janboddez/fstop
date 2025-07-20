@@ -8,6 +8,10 @@ class BookmarkletServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
+        $this->publishes([
+            __DIR__ . '/../public' => public_path('vendor/bookmarklets'),
+        ], 'public');
+
         if (! class_exists('\\Plugins\\EntryTypes\\EntryTypesServiceProvider')) {
             // Do nothing.
             return;
@@ -47,88 +51,17 @@ class BookmarkletServiceProvider extends ServiceProvider
                 return;
             }
 
-            ?>
-<script>
-(() => {
-    const escapeHtml = str => {
-        const lookup = {
-            '&': '&amp;',
-            '"': '&quot;',
-            '\'': '&apos;',
-            '<': '&lt;',
-            '>': '&gt;',
-        };
+            // Super hacky JS localization.
+            echo '<script>
+var bookmarklets_obj = {
+    bookmarked: "' . e(__('Bookmarked %s.')) . '",
+    in_reply_to: "' . e(__('In reply to %s.')) . '",
+    likes: "' . e(__('Likes %s.')) . '",
+    reposted: "' . e(__('Reposted %s.')) . '",
+};
+</script>' . PHP_EOL;
 
-        return str.replace(/[&"'<>]/g, c => lookup[c]);
-    };
-
-    const isValidUrl = str => {
-        try {
-            new URL(str);
-        } catch (error) {
-            return false;
-        }
-
-        return true;
-    };
-
-    const content = document.getElementById('content');
-    if (! content) {
-        return;
-    }
-
-    const queryString = window.location.search;
-    if (! queryString) {
-        return;
-    }
-
-    const urlParams = new URLSearchParams(queryString);
-    let value = '';
-
-    const bookmarkOf = urlParams?.get('bookmark_of');
-    if (bookmarkOf && isValidUrl(bookmarkOf)) {
-        value = '*Bookmarked [' + bookmarkOf + '](' + bookmarkOf + '){.u-bookmark-of}.*';
-    }
-
-    const inReplyTo = urlParams?.get('in_reply_to');
-    if (inReplyTo && isValidUrl(inReplyTo)) {
-        value = '*In reply to [' + inReplyTo + '](' + inReplyTo + '){.u-in-reply-to}.*';
-    }
-
-    const likeOf = urlParams?.get('like_of');
-    if (likeOf && isValidUrl(likeOf)) {
-        value = '*Likes [' + likeOf + '](' + likeOf + '){.u-like-of}.*';
-    }
-
-    let selectedText = urlParams?.get('selected_text');
-    if (selectedText) {
-        const repostOf = urlParams?.get('repost_of');
-        if (repostOf && isValidUrl(repostOf)) {
-            value = `<div class="u-repost-of h-cite" markdown="1">
-*Reposted [` + repostOf + `](` + repostOf + `){.u-url}.*
-<blockquote class="e-content" markdown="1">
-` + escapeHtml(selectedText) + `
-</blockquote>
-</div>`;
-        } else {
-        // Loop over all lines and prepend them with `> `.
-            const lines = selectedText.split(/\r\n|(?!\r\n)[\n-\r\x85\u2028\u2029]/g);
-            selectedText = '';
-
-            lines.forEach(line => {
-                selectedText += '> ' + escapeHtml(line) + "\r\n";
-            });
-
-            value += "\r\n\r\n<div class=\"e-content\" markdown=\"1\">\r\n" + selectedText + '</div>';
-        }
-    } else if (value) {
-        value += "\r\n\r\n<div class=\"e-content\" markdown=\"1\">\r\n</div>";
-    }
-
-    content.value = value.trim();
-})();
-</script>
-            <?php
+            echo '<script src="' . asset('vendor/bookmarklets/bookmarklets.js') . '"></script>' . PHP_EOL;
         });
     }
 }
