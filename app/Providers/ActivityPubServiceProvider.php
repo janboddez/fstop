@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use TorMorten\Eventy\Facades\Events as Eventy;
 
+use function App\Support\ActivityPub\fetch_profile;
 use function App\Support\ActivityPub\generate_activity;
 
 class ActivityPubServiceProvider extends ServiceProvider
@@ -84,7 +85,13 @@ class ActivityPubServiceProvider extends ServiceProvider
 
                     $inboxes = [];
                     foreach ($entry->user->followers as $follower) {
-                        $inboxes[] = $follower->shared_inbox;
+                        $inboxes[] = $follower->shared_inbox ?? $follower->inbox;
+                    }
+
+                    foreach ($entry->mentions as $actorUrl) {
+                        // Include mentioned actors' inboxes.
+                        $profile = fetch_profile($actorUrl, $entry->user);
+                        $inboxes[] = $profile['shared_inbox'] ?? $profile['inbox'] ?? null;
                     }
 
                     $inboxes = array_unique(array_filter($inboxes));
@@ -112,6 +119,12 @@ class ActivityPubServiceProvider extends ServiceProvider
             $inboxes = [];
             foreach ($entry->user->followers as $follower) {
                 $inboxes[] = $follower->shared_inbox;
+            }
+
+            foreach ($entry->mentions as $actorUrl) {
+                // Include mentioned actors' inboxes.
+                $profile = fetch_profile($actorUrl, $entry->user);
+                $inboxes[] = $profile['shared_inbox'] ?? $profile['inbox'] ?? null;
             }
 
             $inboxes = array_unique(array_filter($inboxes));
