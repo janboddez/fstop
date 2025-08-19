@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Jobs\ActivityPub\SendActivity;
 use App\Models\Entry;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use TorMorten\Eventy\Facades\Events as Eventy;
@@ -136,6 +137,27 @@ class ActivityPubServiceProvider extends ServiceProvider
         Eventy::addAction('entries:deleted', function (Entry $entry) {
             static::sendDelete($entry);
         }, PHP_INT_MAX); // Execute, or rather, schedule (!) after, well, everything else.
+
+        Eventy::addAction('users:saved', function (User $user) {
+            // Generate the "activity" just once.
+            $array = $user->serialize();
+            unset($array['updated']);
+            $newHash = md5(json_encode($array));
+
+            if (! $activity = generate_activity('Update', $user)) {
+                return;
+            }
+
+            $inboxes = [];
+            foreach ($user->followers as $follower) {
+                $inboxes[] = $follower->shared_inbox;
+            }
+
+            $inboxes = array_unique(array_filter($inboxes));
+            foreach ($inboxes as $inbox) {
+                SendActivity::dispatch($inbox, $activity, $user, $newHash);
+            }
+        }, PHP_INT_MAX);
     }
 
     protected static function sendDelete(Entry $entry): void

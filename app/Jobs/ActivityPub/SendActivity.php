@@ -126,7 +126,43 @@ class SendActivity implements ShouldQueue
         }
 
         if ($this->object instanceof User) {
-            // We'll have to figure this out later.
+            $body = json_encode($this->activity); // Was generated upfront.
+            $contentType = 'application/activity+json';
+            $headers = HttpSignature::sign(
+                $this->object,
+                $this->inbox,
+                $body,
+                [
+                    'Accept' => 'application/activity+json, application/json',
+                    'Content-Type' => $contentType, // Must be the same as the `$contentType` argument below.
+                ],
+            );
+
+            $response = Http::withHeaders($headers)
+                ->withBody($body, $contentType)
+                ->post($this->inbox);
+
+            // Log::debug($headers);
+            // Log::debug($body);
+
+            if ($response->successful()) {
+                Log::debug("[ActivityPub] Successfully sent {$this->activity['type']} activity to {$this->inbox}");
+
+                if (! empty($this->hash) && $this->activity['type'] !== 'Delete') {
+                    // This is where we store a hash of the _body minus any `updated` property_, to avoid sending the
+                    // same version of a post over and over again. Except for Deletes: for those, we've probably already
+                    // deleted the previously stored value.
+                    $this->object->meta()->firstOrCreate(
+                        ['key' => 'activitypub_hash'],
+                        ['value' => (array) $this->hash]
+                    );
+                }
+            } else {
+                // phpcs:ignore Generic.Files.LineLength.TooLong
+                Log::error("[ActivityPub] Something went wrong sending {$this->activity['type']} activity to {$this->inbox}");
+                Log::debug($body);
+                Log::debug($response);
+            }
         }
     }
 }
