@@ -43,7 +43,12 @@ class InboxController extends Controller
         })
         ->first();
 
-        if ($actor || $request->input('type') !== 'Delete') {
+        if (! $actor && $request->input('type') === 'Delete') {
+            // Delete for (or by!) an actor we don't know. Ignore.
+            /** @todo What about Delete requests for comments by an actor we may somehow have deleted? */
+            // Should we check `object`, see if it corresponds to an actor?
+            return response()->json(new \stdClass(), 202);
+        } else {
             // Only log deletes for or by actors we know. Other requests are okay.
             Log::debug($request->path());
             Log::debug(json_encode($request->all()));
@@ -60,10 +65,10 @@ class InboxController extends Controller
         }
 
         if (empty($publicKey)) {
-            if ($request->input('type') === 'Delete') {
-                // Delete for or by an actor we don't know. Ignore.
-                return response()->json(new \stdClass(), 202);
-            }
+            // if ($request->input('type') === 'Delete') {
+            //     // Delete for or by an actor we don't know. Ignore.
+            //     return response()->json(new \stdClass(), 202);
+            // }
 
             abort(500, __('Failed to fetch public key'));
         }
