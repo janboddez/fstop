@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use TorMorten\Eventy\Facades\Events as Eventy;
 
 class ProfileController extends Controller
 {
@@ -23,6 +24,10 @@ class ProfileController extends Controller
 
         // Previously set user meta.
         foreach ($user->meta as $meta) {
+            if (Str::startsWith($meta->key, 'activitypub_')) {
+                continue;
+            }
+
             if (Str::endsWith($meta->key, '_key')) {
                 continue;
             }
@@ -59,6 +64,8 @@ class ProfileController extends Controller
                 ['value' => $value]
             );
         }
+
+        Eventy::action('users:saved', $user);
 
         return back()
             ->withSuccess(__('Changes saved!'));
