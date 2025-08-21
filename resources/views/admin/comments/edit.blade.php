@@ -1,16 +1,23 @@
 @extends('admin.layout')
 
-@section('title', __('Edit Comment'))
+@section('title', isset($comment) ? __('Edit Comment') : __('Create Comment'))
 
 @section('content')
-<header class="my-4">
-    <h1 class="title">@yield('title')</h1>
+<header class="my-4 is-clearfix">
+    <h1 class="title is-pulled-left mr-3">@yield('title')</h1>
+
+    @if (isset($comment))
+        <a class="button is-small" href="{{ route('admin.comments.create') }}">{{ __('New Comment') }}</a>
+    @endif
 </header>
 
 @include('admin.partials.flash-message')
 
-<form action="{{ route('admin.comments.update', $comment) }}" method="post">
-    @method('PUT')
+<form action="{{ isset($comment) ? route('admin.comments.update', $comment) : route('admin.comments.store') }}" method="post">
+    @if (isset($comment))
+        @method('PUT')
+    @endif
+
     @csrf
 
     <div class="columns">
@@ -51,7 +58,7 @@
 
                 <div class="card-content">
                     <div class="field">
-                        @if (! blank($comment->meta))
+                        @if (isset($comment) && ! blank($comment->meta))
                             @foreach ($comment->meta as $meta)
                                 <div class="columns">
                                     <div class="column">
@@ -127,19 +134,25 @@
                     </div>
 
                     <div class="field is-grouped is-grouped-multiline">
-                        <div class="control">
-                            <button class="button is-success">{{ __('Update') }}</button>
-                        </div>
-
-                        @if ($comment->status === 'approved' && ! empty($comment->entry) && $comment->entry->status === 'published' && $comment->entry->visibility !== 'private')
+                        @if (isset($comment))
                             <div class="control">
-                                <a class="button" href="{{ route(Str::plural($comment->entry->type) . '.show', $comment->entry->slug) }}#comment-{{ $comment->id }}" rel="noopener noreferrer" target="_blank">{{ __('View Comment') }}</a>
+                                <button class="button is-success">{{ __('Update') }}</button>
+                            </div>
+
+                            @if (isset($comment) && $comment->status === 'approved' && ! empty($comment->entry) && $comment->entry->status === 'published' && $comment->entry->visibility !== 'private')
+                                <div class="control">
+                                    <a class="button" href="{{ route(Str::plural($comment->entry->type) . '.show', $comment->entry->slug) }}#comment-{{ $comment->id }}" rel="noopener noreferrer" target="_blank">{{ __('View Comment') }}</a>
+                                </div>
+                            @endif
+
+                            <div class="control">
+                                <button class="button is-danger" type="submit" form="delete-form">{{ __('Permanently Delete') }}</button>
+                            </div>
+                        @else
+                            <div class="control">
+                                <button class="button is-success" id="save">{{ __('Create') }}</button>
                             </div>
                         @endif
-
-                        <div class="control">
-                            <button class="button is-danger" type="submit" form="delete-form">{{ __('Permanently Delete') }}</button>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -147,9 +160,11 @@
     </div>
 </form>
 
-{{-- Wanting to avoid AJAX, we have the "Trash" button above submit this here form. --}}
-<form action="{{ route('admin.comments.destroy', $comment) }}" method="post" id="delete-form">
-    @method('DELETE')
-    @csrf
-</form>
+@if (isset($comment))
+    {{-- Wanting to avoid AJAX, we have the "Trash" button above submit this here form. --}}
+    <form action="{{ route('admin.comments.destroy', $comment) }}" method="post" id="delete-form">
+        @method('DELETE')
+        @csrf
+    </form>
+@endif
 @stop

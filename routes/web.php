@@ -56,7 +56,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin', 'as' => 'admin.'], fu
         ->except('show');
 
     Route::resource('comments', CommentController::class)
-        ->except(['create', 'show']);
+        ->except('show');
 
     /**
      * Everything Else

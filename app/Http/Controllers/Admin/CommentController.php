@@ -48,6 +48,41 @@ class CommentController extends Controller
         return view('admin.comments.index', compact('comments', 'approved', 'pending'));
     }
 
+    public function create(Request $request): View
+    {
+        return view('admin.comments.edit');
+    }
+
+    public function store(Request $request, Comment $comment): Response
+    {
+        $validated = $request->validate([
+            'author' => 'required|max:250',
+            'author_email' => 'nullable|email',
+            'author_url' => 'nullable|url',
+            'content' => 'required',
+            'status' => 'required|in:pending,approved',
+            'created_at' => 'required|date_format:Y-m-d',
+            'meta_keys' => 'nullable|array',
+            'meta_values' => 'array',
+            'meta_keys.*' => 'nullable|string|max:250',
+            'meta_values.*' => 'nullable|string',
+        ]);
+
+        $comment = Comment::create($validated);
+
+        // Add (or update) any metadata.
+        if (
+            ! empty($validated['meta_keys']) &&
+            ! empty($validated['meta_values']) &&
+            count($validated['meta_keys']) === count($validated['meta_values'])
+        ) {
+            add_meta(array_combine($validated['meta_keys'], $validated['meta_values']), $comment);
+        }
+
+        return redirect()->route('admin.comments.edit', compact('comment'))
+            ->withSuccess(__('Created!'));
+    }
+
     public function edit(Comment $comment): View
     {
         return view('admin.comments.edit', compact('comment'));
