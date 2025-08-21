@@ -38,12 +38,19 @@ class SendActivity implements ShouldQueue
                 return;
             }
 
-            if ($this->activity['type'] === 'Create' && $this->object->published->lt(now()->subHours(12))) {
-                // Prevent "old" entries from all of a sudden getting federated.
-                /** @todo Make smarter. */
-                Log::debug("[ActivityPub] Skipping entry {$this->object->id}: too old");
+            if ($this->activity['type'] === 'Create') {
+                if ($this->object->published->lt(now()->subHours(12))) {
+                    // Prevent "old" entries from all of a sudden getting federated.
+                    /** @todo Make smarter. */
+                    Log::debug("[ActivityPub] Skipping Create: entry {$this->object->id} is too old");
 
-                return;
+                    return;
+                }
+            // } elseif (null === $entry->meta->firstWhere('key', 'activitypub_hash')) {
+            //     // phpcs:ignore Generic.Files.LineLength.TooLong
+            //     Log::debug("[ActivityPub] Skipping {$this->activity['type']}: entry {$this->object->id} not previously federated");
+
+            //     return;
             }
 
             if (
