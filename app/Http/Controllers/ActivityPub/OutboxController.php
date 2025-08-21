@@ -11,6 +11,35 @@ class OutboxController extends Controller
 {
     public function __invoke(Request $request, User $user): Response
     {
+        if (! $request->has('page')) {
+            $total = $user->entries()
+                ->whereIn('type', get_registered_entry_types('slug', 'page'))
+                ->orderBy('published', 'desc')
+                ->orderBy('id', 'desc') // Prevent pagination issues by also sorting by ID.
+                ->whereDoesntHave('meta', function ($query) {
+                    // Exclude likes.
+                    $query->where('key', '_like_of')
+                        ->whereNotNull('value');
+                })
+                ->published()
+                ->public()
+                ->count();
+
+            return response()->json(
+                array_filter([
+                    '@context' => ['https://www.w3.org/ns/activitystreams'],
+                    'id' => $user->outbox,
+                    'actor' => $user->author_url,
+                    'type' => 'OrderedCollection',
+                    'totalItems' => $total,
+                    'first' => route('activitypub.outbox', ['user' => $user, 'page' => 1]),
+                    'last' => route('activitypub.outbox', ['user' => $user, 'page' => ceil($total / 15)]),
+                ]),
+                200,
+                ['Content-Type' => 'application/activity+json']
+            );
+        }
+
         $entries = $user->entries()
             ->whereIn('type', get_registered_entry_types('slug', 'page'))
             ->orderBy('published', 'desc')
