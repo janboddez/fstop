@@ -15,7 +15,7 @@ class CommentObserver
         // Laravel should take care of it automatically.
         if (
             preg_match('~\d{4}-\d{2}-\d{2}~', request()->input('created_at')) &&
-            preg_match('~\d{2}:\d{2}~', request()->input('time'))
+            preg_match('~\d{2}:\d{2}:\d{2}~', request()->input('time'))
         ) {
             // If we were given a date and a time, use those.
             $createdAt = Carbon::parse(request()->input('created_at') . ' ' . request()->input('time'));

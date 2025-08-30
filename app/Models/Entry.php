@@ -610,6 +610,10 @@ class Entry extends Model
         $content = strip_tags($content, '<a><b><blockquote><cite><i><em><li><ol><p><pre><strong><sub><sup><ul>');
         $content = preg_replace('~<pre[^>]*>.*?</pre>(*SKIP)(*FAIL)|\r|\n|\t~s', '', $content);
 
+        // Our Markdown library seems to output whitespace between the opening `blockquote` and `p` tags.
+        /** @todo Revisit this if we ever switch Markdown implementations. */
+        $content = preg_replace('~(<blockquote[^>]*>)\s+?(<p[^>]*>)~s', "$1$2", $content);
+
         $permalink = (($meta = $this->meta->firstWhere('key', 'short_url')) && ! empty($meta->value[0]))
             ? $meta->value[0]
             : $this->permalink;
