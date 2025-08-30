@@ -37,8 +37,8 @@ class ProcessWebmentions implements ShouldQueue
     public function handle()
     {
         $webmentions = DB::select(
-            'SELECT * FROM webmentions WHERE status = ? ORDER BY created_at ASC LIMIT ?',
-            ['new', 5]
+            'SELECT * FROM webmentions WHERE status = ? ORDER BY created_at DESC LIMIT ?',
+            ['new', 10]
         );
 
         if (empty($webmentions)) {
