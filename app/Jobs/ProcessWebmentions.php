@@ -257,10 +257,24 @@ class ProcessWebmentions implements ShouldQueue
         $postType = 'mention';
 
         if (
+            ! empty($hentry['properties']['in-reply-to']['properties']['url']) &&
+            in_array($webmention->target, (array) $hentry['properties']['in-reply-to']['properties']['url'], true)
+        ) {
+            $postType = 'reply';
+        }
+
+        if (
             ! empty($hentry['properties']['in-reply-to']) &&
             in_array($webmention->target, (array) $hentry['properties']['in-reply-to'], true)
         ) {
             $postType = 'reply';
+        }
+
+        if (
+            ! empty($hentry['properties']['repost-of']['properties']['url']) &&
+            in_array($webmention->target, (array) $hentry['properties']['repost-of']['properties']['url'], true)
+        ) {
+            $postType = 'repost';
         }
 
         if (
@@ -271,10 +285,24 @@ class ProcessWebmentions implements ShouldQueue
         }
 
         if (
+            ! empty($hentry['properties']['bookmark-of']['properties']['url']) &&
+            in_array($webmention->target, (array) $hentry['properties']['bookmark-of']['properties']['url'], true)
+        ) {
+            $postType = 'bookmark';
+        }
+
+        if (
             ! empty($hentry['properties']['bookmark-of']) &&
             in_array($webmention->target, (array) $hentry['properties']['bookmark-of'], true)
         ) {
             $postType = 'bookmark';
+        }
+
+        if (
+            ! empty($hentry['properties']['like-of']['properties']['url']) &&
+            in_array($webmention->target, (array) $hentry['properties']['like-of']['properties']['url'], true)
+        ) {
+            $postType = 'like';
         }
 
         if (
