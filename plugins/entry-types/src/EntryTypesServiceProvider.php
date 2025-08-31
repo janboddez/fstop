@@ -26,7 +26,10 @@ class EntryTypesServiceProvider extends ServiceProvider
          */
         add_filter('entries:registered_types', function ($types) {
             $types['note'] = ['icon' => 'mdi mdi-message-outline'];
-            $types['like'] = ['icon' => 'mdi mdi-star-outline'];
+
+            if (! request()->is('feed')) {
+                $types['like'] = ['icon' => 'mdi mdi-star-outline'];
+            }
 
             return $types;
         });
@@ -37,10 +40,8 @@ class EntryTypesServiceProvider extends ServiceProvider
          * @param  array  $types Supported entry types.
          */
         add_filter('activitypub:entry_types', function ($types) {
-            $types = array_merge($types, [
-                'note',
-                'like',
-            ]);
+            $types[] = 'note';
+            $types[] = 'like';
 
             return array_unique($types);
         });
