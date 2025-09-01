@@ -1274,7 +1274,7 @@ a.sr-only:focus {
         padding: 1rem;
         transform: translateY(-50%);
         border: solid 1px #ddd;
-        z-index: 11;
+        z-index: 500;
     }
 
     .simple-pagination li:first-child .page-link {
