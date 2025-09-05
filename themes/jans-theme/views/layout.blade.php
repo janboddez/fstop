@@ -27,7 +27,7 @@
     <link rel="micropub" href="/micropub">
     <link rel="micropub_media" href="/micropub/media">
 
-    <link rel="stylesheet" href="/css/normalize.css?v={{ config('app.version') }}">
+    <link rel="stylesheet" href="/css/normalize.css?v=8.0.1">
     <link rel="stylesheet" href="/css/highlight.css?v={{ config('app.version') }}" media="screen">
     <link rel="stylesheet" href="/css/fonts.css?v={{ config('app.version') }}">
 
@@ -148,8 +148,8 @@
     <script src="{{ url('js/highlight.pack.js') }}"></script>
     <script>hljs.initHighlightingOnLoad();</script>
 
-    <script src="{{ url('js/floating-ui/core.js') }}?v=1.6.9"></script>
-    <script src="{{ url('js/floating-ui/dom.js') }}?v=1.6.13"></script>
+    <script src="{{ url('js/floating-ui/core.js') }}?v=1.7.3"></script>
+    <script src="{{ url('js/floating-ui/dom.js') }}?v=1.7.3"></script>
     <script src="{{ url('js/popovers.js') }}?v={{ config('app.version') }}"></script>
 
     <script src="{{ url('js/instantpage.js') }}?v=5.2.0" type="module" defer></script>
