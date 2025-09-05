@@ -27,6 +27,13 @@ class ActivityPubServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Eventy::addAction('theme:layout:head', function () {
+            if (request()->is('users/*') || request()->is('@*')) {
+                echo '<link rel="alternate" type="application/activity+json" title="' .
+                    site_name() . ' &ndash; ActivityPub (JSON)" href="' . url()->current() . '">' . "\n";
+            }
+        });
+
         // Serves a similar purpose as the `EntryObserver::saved()` method, but runs after tags and metadata are saved,
         // too.
         Eventy::addAction('entries:saved', function (Entry $entry, ?string $previousStatus = null) {
